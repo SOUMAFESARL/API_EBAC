@@ -13,12 +13,24 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('code', 150);
+            $table->string('user_code', 150);
+            $table->string('user_id', 150);
+            $table->string('nom', 150);
+            $table->string('prenoms', 150);
+            $table->string('email', 150)->unique();
             $table->string('password');
-            $table->rememberToken();
-            $table->timestamps();
+            $table->foreignId('id_role');
+            $table->enum('is_active', ['1', '0'])->default('1');
+            $table->enum('statut', ['Actif', 'Suspendu', 'Bloqué', 'Désactivé'])->default('Actif');
+            $table->tinyInteger('tentatives_echouees')->default(0);
+            $table->boolean('deux_fa_active')->default(false);
+            $table->dateTime('cree_le')->useCurrent();
+            $table->dateTime('derniere_connexion')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users');
+            $table->foreignId('updated_by')->nullable()->constrained('users');
+            $table->foreignId('deleted_by')->nullable()->constrained('users');
+            $table->dateTime('deleted_at')->nullable();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -42,8 +54,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };

@@ -7,15 +7,38 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Fillable([
+    'code',
+    'user_code',
+    'user_id',
+    'nom',
+    'prenoms',
+    'email',
+    'password',
+    'id_role',
+    'is_active',
+    'statut',
+    'tentatives_echouees',
+    'deux_fa_active',
+    'cree_le',
+    'derniere_connexion',
+    'created_by',
+    'updated_by',
+    'deleted_by',
+])]
+#[Hidden(['password'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
+
+    public $timestamps = false;
 
     /**
      * Get the attributes that should be cast.
@@ -25,8 +48,38 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'deux_fa_active' => 'boolean',
+            'tentatives_echouees' => 'integer',
+            'cree_le' => 'datetime',
+            'derniere_connexion' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
+    }
+
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'id_role');
+    }
+
+    public function connexionsDeuxFacteurs(): HasMany
+    {
+        return $this->hasMany(ConnexionDeuxFacteurs::class, 'id_compte');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'created_by');
+    }
+
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'updated_by');
+    }
+
+    public function deleter(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'deleted_by');
     }
 }
