@@ -30,6 +30,12 @@ class Permission extends Model
             ->wherePivotNull('deleted_at');
     }
 
+    public function menus(): BelongsToMany
+    {
+        return $this->belongsToMany(Menu::class, 'menu_permissions', 'id_permission', 'id_menu')
+            ->withPivot('permission_principale');
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
@@ -29,6 +30,11 @@ class Role extends Model
             ->using(RolePermission::class)
             ->withPivot(['actif', 'created_by', 'updated_by', 'deleted_by', 'deleted_at'])
             ->wherePivotNull('deleted_at');
+    }
+
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class, 'id_role');
     }
 
     public function creator(): BelongsTo

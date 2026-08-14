@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('connexions_2fa', function (Blueprint $table) {
             $table->id('id_tentative');
-            $table->foreignId('id_compte')->constrained('users');
+            $table->foreignId('id_users')->constrained('users');
             $table->string('code_otp_hash', 255);
             $table->enum('canal', ['SMS', 'Email'])->default('SMS');
             $table->dateTime('envoye_le')->useCurrent();

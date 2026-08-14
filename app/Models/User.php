@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\ReinitialisationMotDePasseNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -12,13 +13,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable([
+    'matricule',
     'code',
     'user_code',
     'user_id',
     'nom',
     'prenoms',
+    'photo',
     'email',
     'password',
     'id_role',
@@ -29,6 +33,8 @@ use Illuminate\Notifications\Notifiable;
     'cree_le',
     'derniere_connexion',
     'created_by',
+    'created_by_user_id',
+    'created_by_user_code',
     'updated_by',
     'deleted_by',
 ])]
@@ -36,7 +42,7 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     public $timestamps = false;
 
@@ -63,9 +69,14 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class, 'id_role');
     }
 
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ReinitialisationMotDePasseNotification($token));
+    }
+
     public function connexionsDeuxFacteurs(): HasMany
     {
-        return $this->hasMany(ConnexionDeuxFacteurs::class, 'id_compte');
+        return $this->hasMany(ConnexionDeuxFacteurs::class, 'id_users');
     }
 
     public function creator(): BelongsTo

@@ -9,44 +9,40 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'id_users',
-    'code_otp_hash',
-    'canal',
-    'envoye_le',
-    'valide_le',
-    'reussi',
-    'adresse_ip',
-    'nom_appareil',
-    'tentatives',
+    'host',
+    'port',
+    'username',
+    'password',
+    'scheme',
+    'from_address',
+    'from_name',
+    'actif',
     'created_by',
     'updated_by',
     'deleted_by',
 ])]
-#[Hidden(['code_otp_hash'])]
-class ConnexionDeuxFacteurs extends Model
+#[Hidden(['password'])]
+class ConfigurationSmtp extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'connexions_2fa';
+    public const CREATED_AT = 'cree_le';
 
-    protected $primaryKey = 'id_tentative';
+    public const UPDATED_AT = 'modifie_le';
 
-    public $timestamps = false;
+    protected $table = 'configurations_smtp';
 
     protected function casts(): array
     {
         return [
-            'envoye_le' => 'datetime',
-            'valide_le' => 'datetime',
-            'reussi' => 'boolean',
-            'tentatives' => 'integer',
+            'port' => 'integer',
+            'username' => 'encrypted',
+            'password' => 'encrypted',
+            'actif' => 'boolean',
             'deleted_at' => 'datetime',
+            'cree_le' => 'datetime',
+            'modifie_le' => 'datetime',
         ];
-    }
-
-    public function compte(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'id_users');
     }
 
     public function creator(): BelongsTo

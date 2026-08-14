@@ -34,5 +34,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
             'id_role' => $role->id,
         ]);
+
+        $this->call(MenuAdministrationSeeder::class);
     }
 }
