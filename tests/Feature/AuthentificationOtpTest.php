@@ -78,6 +78,33 @@ class AuthentificationOtpTest extends TestCase
         ])->assertUnprocessable();
     }
 
+    public function test_le_template_email_otp_affiche_le_logo_et_le_code_mis_en_valeur(): void
+    {
+        $message = new class
+        {
+            public function embed(string $path): string
+            {
+                return 'cid:logo-ebac';
+            }
+        };
+
+        $html = view('emails.code-otp-connexion', [
+            'nomComplet' => 'Système Administrateur',
+            'code' => '317098',
+            'dureeValiditeMinutes' => 10,
+            'message' => $message,
+        ])->render();
+
+        $this->assertStringContainsString('cid:logo-ebac', $html);
+        $this->assertStringContainsString('317098', $html);
+        $this->assertStringContainsString('background:#123b8f', $html);
+        $this->assertStringContainsString('color:#ffffff', $html);
+        $this->assertStringContainsString('border-radius:50%', $html);
+        $this->assertStringContainsString('https://ebac.ci', $html);
+        $this->assertStringContainsString('Adresse de connexion', $html);
+        $this->assertStringNotContainsString('Regards,<br>Laravel', $html);
+    }
+
     private function creerUtilisateur(): User
     {
         $role = Role::query()->create([

@@ -15,6 +15,7 @@ class UtilisateurResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'civilite_id' => $this->civilite_id,
             'matricule' => $this->matricule,
             'code' => $this->code,
             'user_code' => $this->user_code,
@@ -32,8 +33,6 @@ class UtilisateurResource extends JsonResource
             'cree_le' => $this->cree_le?->toISOString(),
             'derniere_connexion' => $this->derniere_connexion?->toISOString(),
             'created_by' => $this->created_by,
-            'created_by_user_id' => $this->created_by_user_id,
-            'created_by_user_code' => $this->created_by_user_code,
             'updated_by' => $this->updated_by,
             'deleted_by' => $this->deleted_by,
             'role' => $this->whenLoaded('role', fn () => [
@@ -42,6 +41,12 @@ class UtilisateurResource extends JsonResource
                 'libelle' => $this->role->libelle,
                 'portee' => $this->role->portee,
             ]),
+            'civilite' => $this->whenLoaded('civilite', fn () => $this->civilite ? [
+                'id' => $this->civilite->id,
+                'code' => $this->civilite->code,
+                'name' => $this->civilite->name,
+                'abreviation' => $this->civilite->abreviation,
+            ] : null),
         ];
     }
 }

@@ -71,7 +71,7 @@ class AuthentificationController extends Controller
         ]));
 
         $utilisateur = User::query()
-            ->with('role')
+            ->with(['role', 'civilite'])
             ->where('email', $identifiants->email)
             ->first();
 
@@ -185,14 +185,14 @@ class AuthentificationController extends Controller
 
         return ConnexionResource::make([
             'token' => $jeton,
-            'utilisateur' => $utilisateur->fresh()->load('role'),
+            'utilisateur' => $utilisateur->fresh()->load(['role', 'civilite']),
         ])->response();
     }
 
     public function profil(Request $request): JsonResponse
     {
         return response()->json([
-            'utilisateur' => UtilisateurResource::make($request->user()?->load('role')),
+            'utilisateur' => UtilisateurResource::make($request->user()?->load(['role', 'civilite'])),
         ]);
     }
 

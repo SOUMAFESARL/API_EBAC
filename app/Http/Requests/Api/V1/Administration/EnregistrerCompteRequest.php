@@ -18,8 +18,9 @@ class EnregistrerCompteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'string', 'max:150'],
-            'user_code' => ['required', 'string', 'max:150'],
+            'civilite_id' => ['sometimes', 'nullable', 'integer', 'exists:civilite,id'],
+            'code' => ['prohibited'],
+            'user_code' => ['prohibited'],
             'user_id' => ['required', 'string', 'max:150'],
             'nom' => ['required', 'string', 'max:150'],
             'prenoms' => ['required', 'string', 'max:150'],

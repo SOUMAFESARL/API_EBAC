@@ -14,15 +14,15 @@ class ProfilController extends Controller
     public function show(Request $request): JsonResponse
     {
         return response()->json([
-            'profil' => UtilisateurResource::make($request->user()->load('role')),
+            'profil' => UtilisateurResource::make($request->user()->load(['role', 'civilite'])),
         ]);
     }
 
     public function edit(Request $request): JsonResponse
     {
         return response()->json([
-            'profil' => UtilisateurResource::make($request->user()->load('role')),
-            'champs_modifiables' => ['nom', 'prenoms', 'email', 'photo', 'password'],
+            'profil' => UtilisateurResource::make($request->user()->load(['role', 'civilite'])),
+            'champs_modifiables' => ['civilite_id', 'nom', 'prenoms', 'email', 'photo', 'password'],
         ]);
     }
 
@@ -51,7 +51,7 @@ class ProfilController extends Controller
 
         return response()->json([
             'message' => 'Profil modifié avec succès.',
-            'profil' => UtilisateurResource::make($utilisateur->fresh()->load('role')),
+            'profil' => UtilisateurResource::make($utilisateur->fresh()->load(['role', 'civilite'])),
         ]);
     }
 }

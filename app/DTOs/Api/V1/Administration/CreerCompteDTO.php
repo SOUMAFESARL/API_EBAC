@@ -20,8 +20,7 @@ final readonly class CreerCompteDTO
         public string $statut,
         public bool $deuxFaActive,
         public int $createdBy,
-        public string $createdByUserId,
-        public string $createdByUserCode,
+        public ?int $civiliteId = null,
         public ?string $photo = null,
     ) {}
 
@@ -37,7 +36,7 @@ final readonly class CreerCompteDTO
         return new self(
             matricule: $matricule,
             code: $donnees['code'],
-            userCode: $donnees['user_code'],
+            userCode: $administrateur->code,
             userId: $donnees['user_id'],
             nom: $donnees['nom'],
             prenoms: $donnees['prenoms'],
@@ -48,8 +47,7 @@ final readonly class CreerCompteDTO
             statut: $donnees['statut'] ?? 'Actif',
             deuxFaActive: (bool) ($donnees['deux_fa_active'] ?? false),
             createdBy: $administrateur->id,
-            createdByUserId: $administrateur->user_id,
-            createdByUserCode: $administrateur->user_code,
+            civiliteId: isset($donnees['civilite_id']) ? (int) $donnees['civilite_id'] : null,
             photo: $donnees['photo'] ?? null,
         );
     }
@@ -61,6 +59,7 @@ final readonly class CreerCompteDTO
     {
         return [
             'matricule' => $this->matricule,
+            'civilite_id' => $this->civiliteId,
             'code' => $this->code,
             'user_code' => $this->userCode,
             'user_id' => $this->userId,
@@ -74,8 +73,6 @@ final readonly class CreerCompteDTO
             'statut' => $this->statut,
             'deux_fa_active' => $this->deuxFaActive,
             'created_by' => $this->createdBy,
-            'created_by_user_id' => $this->createdByUserId,
-            'created_by_user_code' => $this->createdByUserCode,
         ];
     }
 }

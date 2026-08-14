@@ -18,6 +18,7 @@ class ModifierProfilRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'civilite_id' => ['sometimes', 'nullable', 'integer', 'exists:civilite,id'],
             'nom' => ['sometimes', 'required', 'string', 'max:150'],
             'prenoms' => ['sometimes', 'required', 'string', 'max:150'],
             'email' => [

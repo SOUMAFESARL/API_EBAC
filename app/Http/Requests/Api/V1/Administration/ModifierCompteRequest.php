@@ -20,8 +20,9 @@ class ModifierCompteRequest extends FormRequest
         $compte = $this->route('compte');
 
         return [
-            'code' => ['sometimes', 'required', 'string', 'max:150'],
-            'user_code' => ['sometimes', 'required', 'string', 'max:150'],
+            'civilite_id' => ['sometimes', 'nullable', 'integer', 'exists:civilite,id'],
+            'code' => ['prohibited'],
+            'user_code' => ['prohibited'],
             'user_id' => ['sometimes', 'required', 'string', 'max:150'],
             'nom' => ['sometimes', 'required', 'string', 'max:150'],
             'prenoms' => ['sometimes', 'required', 'string', 'max:150'],

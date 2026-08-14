@@ -16,6 +16,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable([
+    'civilite_id',
     'matricule',
     'code',
     'user_code',
@@ -33,8 +34,6 @@ use Laravel\Sanctum\HasApiTokens;
     'cree_le',
     'derniere_connexion',
     'created_by',
-    'created_by_user_id',
-    'created_by_user_code',
     'updated_by',
     'deleted_by',
 ])]
@@ -67,6 +66,11 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'id_role');
+    }
+
+    public function civilite(): BelongsTo
+    {
+        return $this->belongsTo(Civilite::class, 'civilite_id');
     }
 
     public function sendPasswordResetNotification($token): void

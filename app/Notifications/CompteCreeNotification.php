@@ -33,7 +33,7 @@ class CompteCreeNotification extends Notification
                 'email' => $notifiable->email,
                 'motDePasseTemporaire' => $this->motDePasseTemporaire,
                 'role' => $notifiable->role?->libelle ?? 'Utilisateur',
-                'urlConnexion' => url('/'),
+                'urlConnexion' => rtrim((string) config('app.frontend_url', 'https://ebac.ci'), '/'),
             ]);
     }
 }

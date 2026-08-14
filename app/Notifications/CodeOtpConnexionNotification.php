@@ -25,10 +25,10 @@ class CodeOtpConnexionNotification extends Notification
     {
         return (new MailMessage)
             ->subject('Votre code de connexion EBAC')
-            ->greeting('Bonjour '.trim("{$notifiable->prenoms} {$notifiable->nom}"))
-            ->line('Voici votre code de confirmation :')
-            ->line($this->code)
-            ->line("Ce code expire dans {$this->dureeValiditeMinutes} minutes.")
-            ->line("Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.");
+            ->view('emails.code-otp-connexion', [
+                'nomComplet' => trim("{$notifiable->prenoms} {$notifiable->nom}"),
+                'code' => $this->code,
+                'dureeValiditeMinutes' => $this->dureeValiditeMinutes,
+            ]);
     }
 }

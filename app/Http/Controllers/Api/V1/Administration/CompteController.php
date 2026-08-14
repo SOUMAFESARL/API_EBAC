@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Administration\EnregistrerCompteRequest;
 use App\Http\Requests\Api\V1\Administration\ModifierCompteRequest;
 use App\Http\Resources\Api\V1\UtilisateurResource;
+use App\Models\Civilite;
 use App\Models\Role;
 use App\Models\User;
 use App\Notifications\CompteCreeNotification;
@@ -26,6 +27,11 @@ class CompteController extends Controller
                 ->select(['id', 'code', 'libelle', 'portee'])
                 ->orderBy('libelle')
                 ->get(),
+            'civilites' => Civilite::query()
+                ->where('actif', true)
+                ->select(['id', 'code', 'name', 'abreviation'])
+                ->orderBy('name')
+                ->get(),
             'statuts' => ['Actif', 'Suspendu', 'Bloqué', 'Désactivé'],
             'valeurs_par_defaut' => [
                 'is_active' => true,
@@ -40,7 +46,7 @@ class CompteController extends Controller
         $parPage = min(max($request->integer('par_page', 15), 1), 100);
 
         $comptes = User::query()
-            ->with('role')
+            ->with(['role', 'civilite'])
             ->when($request->string('recherche')->toString(), function ($query, string $recherche) {
                 $query->where(function ($query) use ($recherche) {
                     $query->where('nom', 'like', "%{$recherche}%")
@@ -71,6 +77,7 @@ class CompteController extends Controller
 
         $compte = DB::transaction(function () use ($donnees, $motDePasseTemporaire, $administrateur) {
             $matricule = $this->genererMatricule($donnees['nom'], $donnees['prenoms']);
+            $donnees['code'] = $this->genererCode();
 
             $dto = CreerCompteDTO::fromArray(
                 $donnees,
@@ -86,24 +93,29 @@ class CompteController extends Controller
 
         return response()->json([
             'message' => 'Compte créé avec succès. Le mot de passe temporaire a été envoyé par email.',
-            'compte' => UtilisateurResource::make($compte->load('role')),
+            'compte' => UtilisateurResource::make($compte->load(['role', 'civilite'])),
         ], 201);
     }
 
     public function show(User $compte): JsonResponse
     {
         return response()->json([
-            'compte' => UtilisateurResource::make($compte->load('role')),
+            'compte' => UtilisateurResource::make($compte->load(['role', 'civilite'])),
         ]);
     }
 
     public function edit(User $compte): JsonResponse
     {
         return response()->json([
-            'compte' => UtilisateurResource::make($compte->load('role')),
+            'compte' => UtilisateurResource::make($compte->load(['role', 'civilite'])),
             'roles' => Role::query()
                 ->select(['id', 'code', 'libelle', 'portee'])
                 ->orderBy('libelle')
+                ->get(),
+            'civilites' => Civilite::query()
+                ->where('actif', true)
+                ->select(['id', 'code', 'name', 'abreviation'])
+                ->orderBy('name')
                 ->get(),
             'statuts' => ['Actif', 'Suspendu', 'Bloqué', 'Désactivé'],
         ]);
@@ -133,7 +145,7 @@ class CompteController extends Controller
 
         return response()->json([
             'message' => 'Compte modifié avec succès.',
-            'compte' => UtilisateurResource::make($compte->fresh()->load('role')),
+            'compte' => UtilisateurResource::make($compte->fresh()->load(['role', 'civilite'])),
         ]);
     }
 
@@ -172,5 +184,25 @@ class CompteController extends Controller
             : 1;
 
         return $prefixe.str_pad((string) $prochaineSequence, 4, '0', STR_PAD_LEFT);
+    }
+
+    private function genererCode(): string
+    {
+        $dernierCode = User::withTrashed()
+            ->where('code', 'like', 'USR-%')
+            ->lockForUpdate()
+            ->orderByDesc('id')
+            ->value('code');
+
+        $prochaineSequence = $dernierCode && preg_match('/^USR-(\d+)$/', $dernierCode, $correspondances)
+            ? ((int) $correspondances[1]) + 1
+            : 1;
+
+        do {
+            $code = 'USR-'.str_pad((string) $prochaineSequence, 6, '0', STR_PAD_LEFT);
+            $prochaineSequence++;
+        } while (User::withTrashed()->where('code', $code)->exists());
+
+        return $code;
     }
 }
