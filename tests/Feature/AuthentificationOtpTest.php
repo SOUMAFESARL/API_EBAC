@@ -6,7 +6,9 @@ use App\Models\ConnexionDeuxFacteurs;
 use App\Models\Role;
 use App\Models\User;
 use App\Notifications\CodeOtpConnexionNotification;
+use App\Notifications\CodeReinitialisationMotDePasseNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -103,6 +105,68 @@ class AuthentificationOtpTest extends TestCase
         $this->assertStringContainsString('https://ebac.ci', $html);
         $this->assertStringContainsString('Adresse de connexion', $html);
         $this->assertStringNotContainsString('Regards,<br>Laravel', $html);
+    }
+
+    public function test_mot_de_passe_oublie_genere_un_code_a_six_chiffres_et_une_notification(): void
+    {
+        Notification::fake();
+        $utilisateur = $this->creerUtilisateur();
+
+        $this->postJson('/api/v1/auth/mot-de-passe-oublie', [
+            'email' => $utilisateur->email,
+        ])->assertOk();
+
+        Notification::assertSentTo($utilisateur, CodeReinitialisationMotDePasseNotification::class);
+        $this->assertDatabaseHas('password_reset_tokens', ['email' => $utilisateur->email]);
+
+        $notification = Notification::sent($utilisateur, CodeReinitialisationMotDePasseNotification::class)->first();
+        $code = (new \ReflectionClass($notification))->getProperty('code')->getValue($notification);
+        $this->assertMatchesRegularExpression('/^\d{6}$/', $code);
+        $this->assertTrue(Hash::check(
+            $code,
+            DB::table('password_reset_tokens')->where('email', $utilisateur->email)->value('token'),
+        ));
+    }
+
+    public function test_un_code_valide_autorise_le_reset_puis_reinitialise_le_mot_de_passe(): void
+    {
+        Notification::fake();
+        $utilisateur = $this->creerUtilisateur();
+        $utilisateur->createToken('ancien-appareil');
+        $this->postJson('/api/v1/auth/mot-de-passe-oublie', ['email' => $utilisateur->email])->assertOk();
+        $notification = Notification::sent($utilisateur, CodeReinitialisationMotDePasseNotification::class)->first();
+        $code = (new \ReflectionClass($notification))->getProperty('code')->getValue($notification);
+
+        $verification = $this->postJson('/api/v1/auth/verifier-code-reinitialisation', [
+            'code_otp' => $code,
+            'email' => $utilisateur->email,
+        ])->assertOk()
+            ->assertJsonPath('reset_autorise', true)
+            ->assertJsonStructure(['reset_token', 'expire_dans']);
+
+        $this->postJson('/api/v1/auth/reinitialiser-mot-de-passe', [
+            'reset_token' => $verification->json('reset_token'),
+            'email' => $utilisateur->email,
+            'password' => 'NouveauPassword123',
+            'password_confirmation' => 'NouveauPassword123',
+        ])->assertOk();
+
+        $this->assertTrue(Hash::check('NouveauPassword123', $utilisateur->fresh()->password));
+        $this->assertDatabaseMissing('password_reset_tokens', ['email' => $utilisateur->email]);
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    public function test_le_reset_est_refuse_si_le_code_na_pas_ete_verifie(): void
+    {
+        $utilisateur = $this->creerUtilisateur();
+
+        $this->postJson('/api/v1/auth/reinitialiser-mot-de-passe', [
+            'reset_token' => str_repeat('a', 64),
+            'email' => $utilisateur->email,
+            'password' => 'NouveauPassword123',
+            'password_confirmation' => 'NouveauPassword123',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('reset_token');
     }
 
     private function creerUtilisateur(): User

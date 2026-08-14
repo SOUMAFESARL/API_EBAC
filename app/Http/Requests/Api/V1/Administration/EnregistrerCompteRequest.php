@@ -21,7 +21,7 @@ class EnregistrerCompteRequest extends FormRequest
             'civilite_id' => ['sometimes', 'nullable', 'integer', 'exists:civilite,id'],
             'code' => ['prohibited'],
             'user_code' => ['prohibited'],
-            'user_id' => ['required', 'string', 'max:150'],
+            'user_id' => ['prohibited'],
             'nom' => ['required', 'string', 'max:150'],
             'prenoms' => ['required', 'string', 'max:150'],
             'photo' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],

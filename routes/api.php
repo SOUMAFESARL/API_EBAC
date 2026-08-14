@@ -22,6 +22,10 @@ Route::prefix('v1/auth')->name('api.v1.auth.')->group(function () {
         ->middleware('throttle:3,1')
         ->name('mot-de-passe-oublie');
 
+    Route::post('/verifier-code-reinitialisation', [AuthentificationController::class, 'verifierCodeReinitialisation'])
+        ->middleware('throttle:5,1')
+        ->name('verifier-code-reinitialisation');
+
     Route::post('/reinitialiser-mot-de-passe', [AuthentificationController::class, 'reinitialiserMotDePasse'])
         ->middleware('throttle:5,1')
         ->name('reinitialiser-mot-de-passe');

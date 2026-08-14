@@ -20,7 +20,6 @@ class CompteCodeAutomatiqueTest extends TestCase
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id, 'code' => 'USR-ADMIN']));
 
         $this->postJson('/api/v1/administration/comptes', [
-            'user_id' => 'user-002',
             'nom' => 'KOFFI',
             'prenoms' => 'Jean',
             'email' => 'jean.koffi@example.net',
@@ -28,6 +27,7 @@ class CompteCodeAutomatiqueTest extends TestCase
         ])->assertCreated()
             ->assertJsonPath('compte.code', 'USR-000001')
             ->assertJsonPath('compte.user_code', 'USR-ADMIN')
+            ->assertJsonPath('compte.user_id', '1')
             ->assertJsonPath('compte.created_by', 1);
     }
 
@@ -38,7 +38,6 @@ class CompteCodeAutomatiqueTest extends TestCase
 
         $this->postJson('/api/v1/administration/comptes', [
             'code' => 'CODE-MANUEL',
-            'user_id' => 'user-002',
             'nom' => 'KOFFI',
             'prenoms' => 'Jean',
             'email' => 'jean.koffi@example.net',

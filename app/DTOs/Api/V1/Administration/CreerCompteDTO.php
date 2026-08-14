@@ -37,7 +37,7 @@ final readonly class CreerCompteDTO
             matricule: $matricule,
             code: $donnees['code'],
             userCode: $administrateur->code,
-            userId: $donnees['user_id'],
+            userId: (string) $administrateur->id,
             nom: $donnees['nom'],
             prenoms: $donnees['prenoms'],
             email: $donnees['email'],
