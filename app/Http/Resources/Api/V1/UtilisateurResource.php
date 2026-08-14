@@ -39,7 +39,6 @@ class UtilisateurResource extends JsonResource
                 'id' => $this->role->id,
                 'code' => $this->role->code,
                 'libelle' => $this->role->libelle,
-                'portee' => $this->role->portee,
             ]),
             'civilite' => $this->whenLoaded('civilite', fn () => $this->civilite ? [
                 'id' => $this->civilite->id,

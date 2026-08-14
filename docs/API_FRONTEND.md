@@ -27,7 +27,23 @@ Authorization: Bearer {token}
 
 ## Catalogue complet des URL
 
+### Référentiel des tags
+
+| Tag | Description | Accès |
+|---|---|---|
+| `AUTH` | Connexion, OTP, mot de passe et déconnexion | Public ou authentifié selon la route |
+| `NAVIGATION` | Construction dynamique du sidebar | Utilisateur authentifié actif |
+| `COMPTES` | Administration des comptes utilisateurs | Administrateur |
+| `PROFIL` | Consultation et modification de son profil | Utilisateur authentifié actif |
+| `ROLES` | Administration des rôles | Administrateur |
+| `PERMISSIONS` | Administration des permissions | Administrateur |
+| `MENUS` | Administration des éléments du sidebar | Administrateur |
+
+Chaque endpoint ci-dessous indique son tag d’intégration. Le même tag peut être utilisé dans Swagger/OpenAPI, Postman ou le service API du frontend.
+
 ### Authentification
+
+**Tag : `AUTH`**
 
 | Méthode | URL complète |
 |---|---|
@@ -42,11 +58,15 @@ Authorization: Bearer {token}
 
 ### Navigation
 
+**Tag : `NAVIGATION`**
+
 | Méthode | URL complète |
 |---|---|
 | GET | `https://api-ebac.severinzran.ci/api/v1/navigation/sidebar` |
 
 ### Comptes
+
+**Tag : `COMPTES`**
 
 | Méthode | URL complète |
 |---|---|
@@ -61,6 +81,8 @@ Authorization: Bearer {token}
 
 ### Profil
 
+**Tag : `PROFIL`**
+
 | Méthode | URL complète |
 |---|---|
 | GET | `https://api-ebac.severinzran.ci/api/v1/administration/profil` |
@@ -69,6 +91,8 @@ Authorization: Bearer {token}
 | PATCH | `https://api-ebac.severinzran.ci/api/v1/administration/profil` |
 
 ### Rôles
+
+**Tag : `ROLES`**
 
 | Méthode | URL complète |
 |---|---|
@@ -82,6 +106,8 @@ Authorization: Bearer {token}
 
 ### Permissions
 
+**Tag : `PERMISSIONS`**
+
 | Méthode | URL complète |
 |---|---|
 | GET | `https://api-ebac.severinzran.ci/api/v1/administration/permissions` |
@@ -92,6 +118,8 @@ Authorization: Bearer {token}
 | DELETE | `https://api-ebac.severinzran.ci/api/v1/administration/permissions/{id}` |
 
 ### Menus
+
+**Tag : `MENUS`**
 
 | Méthode | URL complète |
 |---|---|
@@ -200,8 +228,7 @@ Réponse HTTP `200` :
     "role": {
       "id": 1,
       "code": "ADMIN",
-      "libelle": "Administrateur",
-      "portee": "Globale"
+      "libelle": "Administrateur"
     },
     "civilite": {
       "id": 1,
@@ -458,13 +485,13 @@ Création :
 
 ```json
 {
-  "code": "GESTIONNAIRE",
   "libelle": "Gestionnaire",
   "description": "Gestion des comptes",
-  "portee": "Agence",
   "permission_ids": [1, 2, 3]
 }
 ```
+
+Le frontend ne doit jamais envoyer `code`. L’API génère automatiquement un code unique au format `ROL-000001`, `ROL-000002`, etc. Ce code ne peut pas être modifié.
 
 Synchronisation des permissions :
 

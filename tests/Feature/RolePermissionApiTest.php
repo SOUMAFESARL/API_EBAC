@@ -24,10 +24,12 @@ class RolePermissionApiTest extends TestCase
         ])->assertCreated()->json('permission.id');
 
         $roleId = $this->postJson('/api/v1/administration/roles', [
-            'code' => 'GESTIONNAIRE',
             'libelle' => 'Gestionnaire',
             'permission_ids' => [$permissionId],
-        ])->assertCreated()->assertJsonPath('role.permissions.0.id', $permissionId)->json('role.id');
+        ])->assertCreated()
+            ->assertJsonPath('role.code', 'ROL-000001')
+            ->assertJsonPath('role.permissions.0.id', $permissionId)
+            ->json('role.id');
 
         $this->getJson("/api/v1/administration/roles/{$roleId}")->assertOk();
         $this->putJson("/api/v1/administration/roles/{$roleId}/permissions", [

@@ -21,7 +21,6 @@ class DatabaseSeeder extends Seeder
             [
                 'libelle' => 'Administrateur',
                 'description' => 'Administrateur de la plateforme',
-                'portee' => 'Globale',
             ],
         );
 

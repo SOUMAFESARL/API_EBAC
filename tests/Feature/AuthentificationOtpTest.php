@@ -174,7 +174,6 @@ class AuthentificationOtpTest extends TestCase
         $role = Role::query()->create([
             'code' => 'ADMIN',
             'libelle' => 'Administrateur',
-            'portee' => 'Globale',
         ]);
 
         return User::factory()->create([

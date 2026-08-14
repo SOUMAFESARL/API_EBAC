@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS roles (
     code VARCHAR(50) NOT NULL UNIQUE,
     libelle VARCHAR(100) NOT NULL,
     description TEXT NULL,
-    portee VARCHAR(255) NULL,
     created_by BIGINT UNSIGNED NULL,
     updated_by BIGINT UNSIGNED NULL,
     deleted_by BIGINT UNSIGNED NULL,

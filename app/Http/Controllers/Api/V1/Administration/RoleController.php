@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class RoleController extends Controller
 {
@@ -32,12 +32,16 @@ class RoleController extends Controller
         $permissionIds = $donnees['permission_ids'] ?? [];
         unset($donnees['permission_ids']);
 
-        $role = Role::query()->create([
-            ...$donnees,
-            'code' => strtoupper($donnees['code']),
-            'created_by' => $request->user()->id,
-        ]);
-        $this->syncPermissions($role, $permissionIds, $request->user()->id);
+        $role = DB::transaction(function () use ($donnees, $permissionIds, $request) {
+            $role = Role::query()->create([
+                ...$donnees,
+                'code' => $this->genererCode(),
+                'created_by' => $request->user()->id,
+            ]);
+            $this->syncPermissions($role, $permissionIds, $request->user()->id);
+
+            return $role;
+        });
 
         return response()->json([
             'message' => 'Rôle créé avec succès.',
@@ -56,9 +60,6 @@ class RoleController extends Controller
         $permissionIds = $donnees['permission_ids'] ?? null;
         unset($donnees['permission_ids']);
 
-        if (isset($donnees['code'])) {
-            $donnees['code'] = strtoupper($donnees['code']);
-        }
         $role->update([...$donnees, 'updated_by' => $request->user()->id]);
 
         if ($permissionIds !== null) {
@@ -103,10 +104,9 @@ class RoleController extends Controller
     private function valider(Request $request, ?Role $role = null): array
     {
         return $request->validate([
-            'code' => [$role ? 'sometimes' : 'required', 'string', 'max:30', Rule::unique('roles')->ignore($role)],
+            'code' => ['prohibited'],
             'libelle' => [$role ? 'sometimes' : 'required', 'string', 'max:80'],
             'description' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'portee' => ['sometimes', 'nullable', 'string', 'max:100'],
             'permission_ids' => ['sometimes', 'array'],
             'permission_ids.*' => ['integer', 'distinct', 'exists:permissions,id'],
         ]);
@@ -119,5 +119,25 @@ class RoleController extends Controller
             'created_by' => $userId,
             'updated_by' => $userId,
         ]);
+    }
+
+    private function genererCode(): string
+    {
+        $dernierCode = Role::withTrashed()
+            ->where('code', 'like', 'ROL-%')
+            ->lockForUpdate()
+            ->orderByDesc('id')
+            ->value('code');
+
+        $prochaineSequence = $dernierCode && preg_match('/^ROL-(\d+)$/', $dernierCode, $correspondances)
+            ? ((int) $correspondances[1]) + 1
+            : 1;
+
+        do {
+            $code = 'ROL-'.str_pad((string) $prochaineSequence, 6, '0', STR_PAD_LEFT);
+            $prochaineSequence++;
+        } while (Role::withTrashed()->where('code', $code)->exists());
+
+        return $code;
     }
 }

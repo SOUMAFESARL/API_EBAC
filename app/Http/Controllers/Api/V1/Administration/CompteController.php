@@ -24,7 +24,7 @@ class CompteController extends Controller
     {
         return response()->json([
             'roles' => Role::query()
-                ->select(['id', 'code', 'libelle', 'portee'])
+                ->select(['id', 'code', 'libelle'])
                 ->orderBy('libelle')
                 ->get(),
             'civilites' => Civilite::query()
@@ -109,7 +109,7 @@ class CompteController extends Controller
         return response()->json([
             'compte' => UtilisateurResource::make($compte->load(['role', 'civilite'])),
             'roles' => Role::query()
-                ->select(['id', 'code', 'libelle', 'portee'])
+                ->select(['id', 'code', 'libelle'])
                 ->orderBy('libelle')
                 ->get(),
             'civilites' => Civilite::query()

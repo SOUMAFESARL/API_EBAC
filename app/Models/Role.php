@@ -13,7 +13,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'code',
     'libelle',
     'description',
-    'portee',
     'created_by',
     'updated_by',
     'deleted_by',
