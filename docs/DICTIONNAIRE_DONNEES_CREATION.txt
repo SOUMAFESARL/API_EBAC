@@ -1,0 +1,448 @@
+================================================================================
+                DICTIONNAIRE DE DONNÉES — API EBAC
+       CRÉATION DES COMPTES, RÔLES, PERMISSIONS ET MENUS
+================================================================================
+
+Version API : v1
+URL de base : https://api-ebac.severinzran.ci/api/v1
+Format : JSON, sauf photo de compte en multipart/form-data
+Authentification : Authorization: Bearer {token}
+Accès : utilisateur actif avec la permission requise, ou rôle ADMIN
+
+LÉGENDE
+--------------------------------------------------------------------------------
+OUI       : champ obligatoire dans la requête frontend
+NON       : champ facultatif
+INTERDIT  : champ que le frontend ne doit pas envoyer
+API       : valeur calculée ou renseignée automatiquement par le backend
+FRONT     : valeur fournie par le frontend
+
+
+================================================================================
+1. CRÉATION D'UN COMPTE UTILISATEUR
+================================================================================
+
+Endpoint : POST /administration/comptes
+URL complète :
+https://api-ebac.severinzran.ci/api/v1/administration/comptes
+
+--------------------------------------------------------------------------------
+CHAMP : civilite_id
+Type : entier ou null
+Obligatoire : NON
+Source : FRONT
+Validation : doit exister dans civilite.id
+Description : identifiant de la civilité du nouveau compte.
+Exemple : 1
+--------------------------------------------------------------------------------
+CHAMP : nom
+Type : chaîne
+Obligatoire : OUI
+Source : FRONT
+Longueur maximale : 150 caractères
+Description : nom de famille du nouvel utilisateur.
+Exemple : KOFFI
+--------------------------------------------------------------------------------
+CHAMP : prenoms
+Type : chaîne
+Obligatoire : OUI
+Source : FRONT
+Longueur maximale : 150 caractères
+Description : prénoms du nouvel utilisateur.
+Exemple : Jean Marc
+--------------------------------------------------------------------------------
+CHAMP : email
+Type : chaîne, adresse e-mail
+Obligatoire : OUI
+Source : FRONT
+Longueur maximale : 150 caractères
+Validation : adresse valide et unique dans users.email
+Description : adresse utilisée pour la connexion, les OTP et notifications.
+Exemple : jean.koffi@exemple.ci
+--------------------------------------------------------------------------------
+CHAMP : id_role
+Type : entier
+Obligatoire : OUI
+Source : FRONT
+Validation : doit exister dans roles.id
+Description : rôle attribué au nouveau compte.
+Exemple : 2
+--------------------------------------------------------------------------------
+CHAMP : photo
+Type : fichier image ou null
+Obligatoire : NON
+Source : FRONT
+Formats : jpg, jpeg, png, webp
+Taille maximale : 2 Mo
+Description : photo de profil. Utiliser multipart/form-data.
+--------------------------------------------------------------------------------
+CHAMP : is_active
+Type : booléen
+Obligatoire : NON
+Source : FRONT
+Valeur par défaut : true
+Description : indique si le compte peut être utilisé.
+--------------------------------------------------------------------------------
+CHAMP : statut
+Type : chaîne
+Obligatoire : NON
+Source : FRONT
+Valeur par défaut : Actif
+Valeurs autorisées : Actif, Suspendu, Bloqué, Désactivé
+Description : statut métier du compte.
+--------------------------------------------------------------------------------
+CHAMP : deux_fa_active
+Type : booléen
+Obligatoire : NON
+Source : FRONT
+Valeur par défaut : false
+Description : indicateur d'activation du second facteur du compte.
+--------------------------------------------------------------------------------
+CHAMP : code
+Type : chaîne
+Obligatoire : INTERDIT
+Source : API
+Format : USR-000001
+Description : code unique et séquentiel du nouveau compte.
+--------------------------------------------------------------------------------
+CHAMP : user_code
+Type : chaîne
+Obligatoire : INTERDIT
+Source : API
+Description : code de l'utilisateur administrateur connecté qui crée le compte.
+--------------------------------------------------------------------------------
+CHAMP : user_id
+Type : chaîne contenant un ID
+Obligatoire : INTERDIT
+Source : API
+Description : ID de l'utilisateur administrateur connecté qui crée le compte.
+--------------------------------------------------------------------------------
+CHAMP : created_by
+Type : entier
+Obligatoire : INTERDIT
+Source : API
+Description : clé étrangère vers l'administrateur connecté qui crée le compte.
+--------------------------------------------------------------------------------
+CHAMP : matricule
+Type : chaîne
+Obligatoire : INTERDIT
+Source : API
+Format : EBAC-{NOM}-{PRENOM}-{ANNEE}-{SEQUENCE}
+Description : matricule unique généré automatiquement.
+--------------------------------------------------------------------------------
+CHAMP : password
+Type : chaîne hashée en base
+Obligatoire : INTERDIT lors de la création
+Source : API
+Description : mot de passe temporaire généré automatiquement et envoyé par mail.
+--------------------------------------------------------------------------------
+CHAMP : cree_le
+Type : date et heure
+Obligatoire : INTERDIT
+Source : BASE DE DONNÉES
+Description : date de création du compte.
+--------------------------------------------------------------------------------
+
+EXEMPLE DE REQUÊTE
+{
+  "civilite_id": 1,
+  "nom": "KOFFI",
+  "prenoms": "Jean Marc",
+  "email": "jean.koffi@exemple.ci",
+  "id_role": 2,
+  "is_active": true,
+  "statut": "Actif",
+  "deux_fa_active": false
+}
+
+
+================================================================================
+2. CRÉATION D'UN RÔLE
+================================================================================
+
+Endpoint : POST /administration/roles
+URL complète :
+https://api-ebac.severinzran.ci/api/v1/administration/roles
+
+--------------------------------------------------------------------------------
+CHAMP : libelle
+Type : chaîne
+Obligatoire : OUI
+Source : FRONT
+Longueur maximale : 80 caractères
+Description : nom lisible du rôle.
+Exemple : Gestionnaire
+--------------------------------------------------------------------------------
+CHAMP : description
+Type : chaîne ou null
+Obligatoire : NON
+Source : FRONT
+Longueur maximale : 255 caractères
+Description : description des responsabilités du rôle.
+--------------------------------------------------------------------------------
+CHAMP : permission_ids
+Type : tableau d'entiers
+Obligatoire : NON
+Source : FRONT
+Valeur par défaut : tableau vide
+Validation : chaque ID doit être distinct et exister dans permissions.id
+Description : permissions initialement affectées au rôle.
+Exemple : [1, 2, 3]
+--------------------------------------------------------------------------------
+CHAMP : code
+Type : chaîne
+Obligatoire : INTERDIT
+Source : API
+Format : ROL-000001
+Description : code unique et séquentiel généré automatiquement.
+Note : le rôle système ADMIN conserve le code ADMIN.
+--------------------------------------------------------------------------------
+CHAMP : created_by
+Type : entier
+Obligatoire : INTERDIT
+Source : API
+Description : ID de l'administrateur connecté qui crée le rôle.
+--------------------------------------------------------------------------------
+CHAMP : updated_by
+Type : entier ou null
+Obligatoire : INTERDIT
+Source : API
+Description : ID du dernier administrateur ayant modifié le rôle.
+--------------------------------------------------------------------------------
+CHAMP : deleted_by / deleted_at
+Type : entier / date-heure
+Obligatoire : INTERDIT
+Source : API
+Description : informations de suppression logique.
+--------------------------------------------------------------------------------
+
+EXEMPLE DE REQUÊTE
+{
+  "libelle": "Gestionnaire",
+  "description": "Gestion des comptes utilisateurs",
+  "permission_ids": [1, 2, 3]
+}
+
+
+================================================================================
+3. CRÉATION D'UNE PERMISSION
+================================================================================
+
+Endpoint : POST /administration/permissions
+URL complète :
+https://api-ebac.severinzran.ci/api/v1/administration/permissions
+
+--------------------------------------------------------------------------------
+CHAMP : code
+Type : chaîne
+Obligatoire : INTERDIT DANS LA REQUÊTE
+Source : API
+Longueur maximale : 30 caractères
+Validation : valeur unique dans permissions.code
+Génération : séquentielle automatique, format PER-000001
+Description : identifiant technique stable de la permission.
+Exemple : PER-000001
+--------------------------------------------------------------------------------
+CHAMP : libelle
+Type : chaîne
+Obligatoire : OUI
+Source : FRONT
+Longueur maximale : 120 caractères
+Description : nom lisible de la permission.
+Exemple : Voir les comptes
+--------------------------------------------------------------------------------
+CHAMP : description
+Type : chaîne ou null
+Obligatoire : NON
+Source : FRONT
+Longueur maximale : 255 caractères
+Description : détail de l'autorisation accordée.
+--------------------------------------------------------------------------------
+CHAMP : created_by
+Type : entier
+Obligatoire : INTERDIT
+Source : API
+Description : ID de l'administrateur connecté qui crée la permission.
+--------------------------------------------------------------------------------
+CHAMP : updated_by
+Type : entier ou null
+Obligatoire : INTERDIT
+Source : API
+Description : ID du dernier administrateur ayant modifié la permission.
+--------------------------------------------------------------------------------
+CHAMP : deleted_by / deleted_at
+Type : entier / date-heure
+Obligatoire : INTERDIT
+Source : API
+Description : informations de suppression logique.
+--------------------------------------------------------------------------------
+
+EXEMPLE DE REQUÊTE
+{
+  "libelle": "Voir les comptes",
+  "description": "Autorise la consultation des comptes utilisateurs"
+}
+
+
+================================================================================
+4. CRÉATION D'UN MENU
+================================================================================
+
+Endpoint : POST /administration/menus
+URL complète :
+https://api-ebac.severinzran.ci/api/v1/administration/menus
+
+--------------------------------------------------------------------------------
+CHAMP : id_parent
+Type : entier ou null
+Obligatoire : NON
+Source : FRONT
+Validation : doit exister dans menus.id
+Description : menu parent. Null pour un élément racine du sidebar.
+--------------------------------------------------------------------------------
+CHAMP : code
+Type : chaîne
+Obligatoire : INTERDIT DANS LA REQUÊTE
+Source : API
+Longueur maximale : 100 caractères
+Validation : valeur unique dans menus.code
+Génération : séquentielle automatique, format MEN-000001
+Description : identifiant technique stable du menu.
+Exemple : MEN-000001
+--------------------------------------------------------------------------------
+CHAMP : libelle
+Type : chaîne
+Obligatoire : OUI
+Source : FRONT
+Longueur maximale : 150 caractères
+Description : texte affiché dans le sidebar.
+Exemple : Étudiants
+--------------------------------------------------------------------------------
+CHAMP : description
+Type : chaîne ou null
+Obligatoire : NON
+Source : FRONT
+Longueur maximale : 255 caractères
+Description : description fonctionnelle du menu.
+--------------------------------------------------------------------------------
+CHAMP : route
+Type : chaîne ou null
+Obligatoire : NON
+Source : FRONT
+Longueur maximale : 180 caractères
+Description : route frontend ouverte lors du clic.
+Exemple : /scolarite/etudiants
+--------------------------------------------------------------------------------
+CHAMP : route_active
+Type : chaîne ou null
+Obligatoire : NON
+Source : FRONT
+Longueur maximale : 180 caractères
+Description : motif permettant au frontend de marquer le menu comme actif.
+Exemple : /scolarite/etudiants*
+--------------------------------------------------------------------------------
+CHAMP : icone
+Type : chaîne ou null
+Obligatoire : NON
+Source : FRONT
+Longueur maximale : 100 caractères
+Description : nom de l'icône utilisée par le frontend.
+Exemple : users
+--------------------------------------------------------------------------------
+CHAMP : groupe
+Type : chaîne ou null
+Obligatoire : NON
+Source : FRONT
+Longueur maximale : 100 caractères
+Description : groupe visuel du sidebar.
+Exemple : Scolarité
+--------------------------------------------------------------------------------
+CHAMP : ordre
+Type : entier non négatif
+Obligatoire : NON
+Source : FRONT
+Valeur par défaut : 0
+Valeur maximale : 65535
+Description : ordre d'affichage dans le sidebar.
+--------------------------------------------------------------------------------
+CHAMP : visible
+Type : booléen
+Obligatoire : NON
+Source : FRONT
+Valeur par défaut : true
+Description : contrôle l'affichage du menu dans le sidebar.
+--------------------------------------------------------------------------------
+CHAMP : actif
+Type : booléen
+Obligatoire : NON
+Source : FRONT
+Valeur par défaut : true
+Description : contrôle l'activation fonctionnelle du menu.
+--------------------------------------------------------------------------------
+CHAMP : permission_ids
+Type : tableau d'entiers
+Obligatoire : NON
+Source : FRONT
+Valeur par défaut : tableau vide
+Validation : chaque ID doit être distinct et exister dans permissions.id
+Description : permissions donnant accès à ce menu.
+Note : un menu sans permission est visible par tous les utilisateurs actifs.
+--------------------------------------------------------------------------------
+CHAMP : created_by
+Type : entier
+Obligatoire : INTERDIT
+Source : API
+Description : ID de l'administrateur connecté qui crée le menu.
+--------------------------------------------------------------------------------
+
+EXEMPLE DE REQUÊTE
+{
+  "id_parent": 1,
+  "code": "ETUDIANTS",
+  "libelle": "Étudiants",
+  "description": "Gestion des étudiants",
+  "route": "/scolarite/etudiants",
+  "route_active": "/scolarite/etudiants*",
+  "icone": "users",
+  "groupe": "Scolarité",
+  "ordre": 20,
+  "visible": true,
+  "actif": true,
+  "permission_ids": [1]
+}
+
+
+================================================================================
+5. RÈGLES TRANSVERSALES
+================================================================================
+
+1. Toutes les routes exigent :
+   Accept: application/json
+   Content-Type: application/json
+   Authorization: Bearer {token}
+
+2. Un utilisateur actif peut créer une ressource s'il possède la permission
+   correspondante : COMPTE_GERER, ROLE_GERER, PERMISSION_GERER ou MENU_GERER.
+   Le rôle ADMIN conserve automatiquement un accès total.
+
+3. Les erreurs de validation retournent HTTP 422 :
+   {
+     "message": "Message général",
+     "errors": {
+       "champ": ["Description de l'erreur"]
+     }
+   }
+
+4. Les créations réussies retournent HTTP 201.
+
+5. Les champs created_by, updated_by et deleted_by sont toujours gérés par
+   l'API à partir de l'utilisateur authentifié.
+
+6. Les codes automatiques ne doivent jamais être générés par le frontend.
+
+7. Les suppressions de comptes, rôles, permissions et menus sont soumises aux
+   règles métier et peuvent retourner HTTP 422 si la ressource est utilisée.
+
+================================================================================
+                         FIN DU DOCUMENT
+================================================================================

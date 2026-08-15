@@ -36,6 +36,12 @@ class Permission extends Model
             ->withPivot('permission_principale');
     }
 
+    public function actions(): BelongsToMany
+    {
+        return $this->belongsToMany(Action::class, 'permission_actions', 'id_permission', 'id_action')
+            ->withPivot('created_by');
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

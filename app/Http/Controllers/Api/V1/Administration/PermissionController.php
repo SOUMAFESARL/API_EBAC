@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Permission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class PermissionController extends Controller
 {
@@ -27,11 +27,11 @@ class PermissionController extends Controller
     public function store(Request $request): JsonResponse
     {
         $donnees = $this->valider($request);
-        $permission = Permission::query()->create([
+        $permission = DB::transaction(fn () => Permission::query()->create([
             ...$donnees,
-            'code' => strtoupper($donnees['code']),
+            'code' => $this->genererCode(),
             'created_by' => $request->user()->id,
-        ]);
+        ]));
 
         return response()->json([
             'message' => 'Permission créée avec succès.',
@@ -41,15 +41,12 @@ class PermissionController extends Controller
 
     public function show(Permission $permission): JsonResponse
     {
-        return response()->json(['permission' => $permission->load('roles')]);
+        return response()->json(['permission' => $permission->load('roles', 'actions')]);
     }
 
     public function update(Request $request, Permission $permission): JsonResponse
     {
         $donnees = $this->valider($request, $permission);
-        if (isset($donnees['code'])) {
-            $donnees['code'] = strtoupper($donnees['code']);
-        }
         $permission->update([...$donnees, 'updated_by' => $request->user()->id]);
 
         return response()->json([
@@ -72,12 +69,48 @@ class PermissionController extends Controller
         return response()->json(['message' => 'Permission supprimée avec succès.']);
     }
 
+    public function synchroniserActions(Request $request, Permission $permission): JsonResponse
+    {
+        $donnees = $request->validate([
+            'action_ids' => ['present', 'array'],
+            'action_ids.*' => ['integer', 'distinct', 'exists:actions,id'],
+        ]);
+        $permission->actions()->syncWithPivotValues($donnees['action_ids'], [
+            'created_by' => $request->user()->id,
+        ]);
+
+        return response()->json([
+            'message' => 'Actions de la permission mises à jour.',
+            'permission' => $permission->fresh()->load('actions'),
+        ]);
+    }
+
     private function valider(Request $request, ?Permission $permission = null): array
     {
         return $request->validate([
-            'code' => [$permission ? 'sometimes' : 'required', 'string', 'max:30', Rule::unique('permissions')->ignore($permission)],
+            'code' => ['prohibited'],
             'libelle' => [$permission ? 'sometimes' : 'required', 'string', 'max:120'],
             'description' => ['sometimes', 'nullable', 'string', 'max:255'],
         ]);
+    }
+
+    private function genererCode(): string
+    {
+        $dernierCode = Permission::withTrashed()
+            ->where('code', 'like', 'PER-%')
+            ->lockForUpdate()
+            ->orderByDesc('id')
+            ->value('code');
+
+        $sequence = $dernierCode && preg_match('/^PER-(\d+)$/', $dernierCode, $correspondances)
+            ? ((int) $correspondances[1]) + 1
+            : 1;
+
+        do {
+            $code = 'PER-'.str_pad((string) $sequence, 6, '0', STR_PAD_LEFT);
+            $sequence++;
+        } while (Permission::withTrashed()->where('code', $code)->exists());
+
+        return $code;
     }
 }

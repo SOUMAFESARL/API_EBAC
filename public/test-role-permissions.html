@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EBAC — Test rôles et permissions</title>
+  <style>
+    :root { --blue:#123b8f; --navy:#102a56; --sky:#eaf1ff; --ink:#1f2937; --muted:#64748b; --line:#dbe4f0; --ok:#16835f; --danger:#c43c4b; --white:#fff; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:linear-gradient(135deg,#f5f8fd 0%,#e8eff9 100%); color:var(--ink); font-family:Inter,Segoe UI,Arial,sans-serif; }
+    button,input,textarea,select { font:inherit; }
+    .shell { display:grid; grid-template-columns:280px 1fr; min-height:100vh; }
+    aside { background:var(--navy); color:#fff; padding:26px 22px; position:sticky; top:0; height:100vh; }
+    .brand { display:flex; gap:13px; align-items:center; padding-bottom:24px; border-bottom:1px solid rgba(255,255,255,.15); }
+    .brand img { width:60px; height:60px; border-radius:50%; object-fit:cover; background:#fff; }
+    .brand strong { display:block; font-size:18px; letter-spacing:.5px; }
+    .brand span { color:#bfdbfe; font-size:12px; }
+    nav { margin-top:24px; display:grid; gap:8px; }
+    nav button { border:0; padding:12px 14px; border-radius:10px; color:#dbeafe; background:transparent; text-align:left; cursor:pointer; font-weight:650; }
+    nav button:hover,nav button.active { color:#fff; background:rgba(255,255,255,.13); }
+    .status { margin-top:24px; padding:14px; border-radius:12px; background:rgba(255,255,255,.08); font-size:13px; line-height:1.5; }
+    .dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#f59e0b; margin-right:6px; }
+    .dot.ok { background:#34d399; }
+    main { padding:32px; max-width:1500px; width:100%; margin:auto; }
+    .topbar { display:flex; justify-content:space-between; gap:20px; align-items:flex-start; margin-bottom:24px; }
+    h1 { margin:0; color:var(--navy); font-size:28px; }
+    .subtitle { margin:7px 0 0; color:var(--muted); }
+    .card { background:#fff; border:1px solid var(--line); border-radius:16px; box-shadow:0 8px 24px rgba(16,42,86,.07); padding:22px; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+    .field { display:grid; gap:7px; margin-bottom:14px; }
+    label { font-size:13px; font-weight:750; color:#40526c; }
+    input,textarea,select { width:100%; border:1px solid #cbd7e6; border-radius:9px; padding:11px 12px; outline:none; background:#fbfdff; }
+    input:focus,textarea:focus,select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(18,59,143,.1); }
+    textarea { min-height:82px; resize:vertical; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .btn { border:0; border-radius:9px; padding:11px 16px; cursor:pointer; font-weight:750; background:var(--blue); color:#fff; }
+    .btn:hover { filter:brightness(1.08); }
+    .btn.secondary { color:var(--blue); background:var(--sky); }
+    .btn.danger { background:#fff0f2; color:var(--danger); }
+    .btn.small { padding:7px 10px; font-size:12px; }
+    .section { display:none; }
+    .section.active { display:block; }
+    .section-title { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; }
+    .section-title h2 { margin:0; color:var(--navy); font-size:20px; }
+    .table-wrap { overflow:auto; border:1px solid var(--line); border-radius:12px; }
+    table { width:100%; border-collapse:collapse; min-width:620px; }
+    th,td { padding:12px 14px; text-align:left; border-bottom:1px solid #e8eef6; font-size:13px; vertical-align:top; }
+    th { background:#f5f8fc; color:#48607f; font-size:12px; text-transform:uppercase; letter-spacing:.5px; }
+    tr:last-child td { border-bottom:0; }
+    .badge { display:inline-block; border-radius:999px; padding:4px 9px; background:var(--sky); color:var(--blue); font-size:11px; font-weight:800; margin:2px; }
+    .checks { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:9px; max-height:220px; overflow:auto; padding:4px; }
+    .check { display:flex; gap:9px; align-items:flex-start; border:1px solid var(--line); border-radius:9px; padding:10px; font-size:13px; }
+    .check input { width:auto; margin-top:2px; }
+    .console { background:#091a35; color:#dbeafe; min-height:170px; max-height:360px; overflow:auto; border-radius:12px; padding:14px; white-space:pre-wrap; font:12px/1.55 Consolas,monospace; }
+    .toast { position:fixed; right:22px; bottom:22px; padding:13px 17px; border-radius:10px; background:var(--ok); color:#fff; box-shadow:0 10px 30px rgba(0,0,0,.18); display:none; z-index:5; }
+    .toast.error { background:var(--danger); }
+    .hidden { display:none; }
+    .assignment { margin-top:20px; border-left:5px solid var(--blue); }
+    @media(max-width:900px){ .shell{grid-template-columns:1fr} aside{height:auto;position:static} nav{grid-template-columns:repeat(3,1fr)} main{padding:20px}.grid{grid-template-columns:1fr} }
+    @media(max-width:560px){ nav{grid-template-columns:1fr}.topbar{display:block}.card{padding:16px} }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand"><img src="/images/logo-ebac.jpg" alt="Logo EBAC"><div><strong>Administration EBAC</strong><span>Test rôles & permissions</span></div></div>
+    <nav>
+      <button class="active" data-section="connexion">Connexion API</button>
+      <button data-section="permissions">Permissions</button>
+      <button data-section="roles">Rôles</button>
+      <button data-section="menus">Menus</button>
+      <button data-section="actions">Actions</button>
+      <button data-section="console">Journal API</button>
+    </nav>
+    <div class="status"><span id="statusDot" class="dot"></span><strong id="statusText">Non connecté</strong><br><span id="statusUser">Aucun utilisateur</span></div>
+  </aside>
+  <main>
+    <div class="topbar"><div><h1>Console d’intégration</h1><p class="subtitle">Interface de test connectée aux API EBAC.</p></div><button class="btn danger" id="logoutBtn">Effacer la session</button></div>
+
+    <section id="connexion" class="section active">
+      <div class="grid">
+        <div class="card">
+          <div class="section-title"><h2>1. Configuration et connexion</h2></div>
+          <div class="field"><label>URL de base</label><input id="apiUrl" value="https://api-ebac.severinzran.ci/api/v1"></div>
+          <div class="field"><label>Adresse e-mail</label><input id="email" type="email" placeholder="admin@ebac.ci"></div>
+          <div class="field"><label>Mot de passe</label><input id="password" type="password"></div>
+          <div class="actions"><button class="btn" id="loginBtn">Envoyer l’OTP</button><button class="btn secondary" id="saveConfigBtn">Enregistrer l’URL</button></div>
+        </div>
+        <div class="card">
+          <div class="section-title"><h2>2. Confirmation OTP</h2></div>
+          <div class="field"><label>ID de tentative</label><input id="attemptId" type="number" placeholder="Retourné par la connexion"></div>
+          <div class="field"><label>Code OTP (6 chiffres)</label><input id="otp" inputmode="numeric" maxlength="6" placeholder="000000"></div>
+          <button class="btn" id="otpBtn">Confirmer et récupérer le token</button>
+          <div class="field" style="margin-top:18px"><label>Token Bearer (collage manuel possible)</label><textarea id="token" placeholder="1|..."></textarea></div>
+          <button class="btn secondary" id="saveTokenBtn">Utiliser ce token</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="permissions" class="section">
+      <div class="grid">
+        <form id="permissionForm" class="card">
+          <div class="section-title"><h2>Créer une permission</h2></div>
+          <p class="subtitle" style="margin-bottom:15px">Le code est généré automatiquement par l’API.</p>
+          <div class="field"><label>Libellé *</label><input id="permissionLabel" required placeholder="Voir les étudiants"></div>
+          <div class="field"><label>Description</label><textarea id="permissionDescription"></textarea></div>
+          <button class="btn" type="submit">Créer la permission</button>
+        </form>
+        <div class="card">
+          <div class="section-title"><h2>Permissions existantes</h2><button class="btn secondary small" data-refresh="permissions">Actualiser</button></div>
+          <div class="table-wrap"><table><thead><tr><th>ID</th><th>Code</th><th>Libellé</th><th>Action</th></tr></thead><tbody id="permissionRows"></tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="roles" class="section">
+      <div class="grid">
+        <form id="roleForm" class="card">
+          <div class="section-title"><h2>Créer un rôle</h2></div>
+          <p class="subtitle" style="margin-bottom:15px">Le code du rôle est généré automatiquement par l’API.</p>
+          <div class="field"><label>Libellé *</label><input id="roleLabel" required placeholder="Gestionnaire"></div>
+          <div class="field"><label>Description</label><textarea id="roleDescription"></textarea></div>
+          <div class="field"><label>Permissions attribuées</label><div id="permissionChecks" class="checks"></div></div>
+          <button class="btn" type="submit">Créer le rôle</button>
+        </form>
+        <div class="card">
+          <div class="section-title"><h2>Rôles existants</h2><button class="btn secondary small" data-refresh="roles">Actualiser</button></div>
+          <div class="table-wrap"><table><thead><tr><th>ID</th><th>Code</th><th>Libellé</th><th>Permissions</th><th>Action</th></tr></thead><tbody id="roleRows"></tbody></table></div>
+        </div>
+      </div>
+      <form id="assignmentForm" class="card assignment hidden">
+        <div class="section-title"><h2>Modifier les permissions de <span id="assignmentRoleName"></span></h2><button class="btn danger small" id="cancelAssignmentBtn" type="button">Annuler</button></div>
+        <input id="assignmentRoleId" type="hidden">
+        <div class="field"><label>Permissions attribuées</label><div id="assignmentChecks" class="checks"></div></div>
+        <button class="btn" type="submit">Enregistrer les permissions</button>
+      </form>
+    </section>
+
+    <section id="menus" class="section">
+      <div class="grid">
+        <form id="menuForm" class="card">
+          <div class="section-title"><h2>Créer un menu</h2></div>
+          <div class="grid">
+            <div class="field"><label>Libellé *</label><input id="menuLabel" required placeholder="Étudiants"></div>
+            <div class="field"><label>Code</label><input value="Généré automatiquement par l’API" disabled></div>
+          </div>
+          <div class="grid">
+            <div class="field"><label>Route</label><input id="menuRoute" placeholder="/etudiants"></div>
+            <div class="field"><label>Route active</label><input id="menuActiveRoute" placeholder="/etudiants/*"></div>
+          </div>
+          <div class="grid">
+            <div class="field"><label>Icône</label><input id="menuIcon" placeholder="users"></div>
+            <div class="field"><label>Groupe</label><input id="menuGroup" placeholder="Scolarité"></div>
+          </div>
+          <div class="grid">
+            <div class="field"><label>Menu parent</label><select id="menuParent"><option value="">Aucun (menu principal)</option></select></div>
+            <div class="field"><label>Ordre</label><input id="menuOrder" type="number" min="0" max="65535" value="0"></div>
+          </div>
+          <div class="field"><label>Description</label><textarea id="menuDescription"></textarea></div>
+          <div class="actions" style="margin-bottom:14px">
+            <label class="check"><input id="menuVisible" type="checkbox" checked><span>Visible dans le sidebar</span></label>
+            <label class="check"><input id="menuActive" type="checkbox" checked><span>Menu actif</span></label>
+          </div>
+          <div class="field"><label>Permissions nécessaires</label><div id="menuPermissionChecks" class="checks"></div></div>
+          <button class="btn" type="submit">Créer le menu</button>
+        </form>
+        <div class="card">
+          <div class="section-title"><h2>Menus existants</h2><button class="btn secondary small" data-refresh="menus">Actualiser</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Ordre</th><th>Menu</th><th>Route</th><th>Parent</th><th>Permissions</th><th>État</th><th>Action</th></tr></thead><tbody id="menuRows"></tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="actions" class="section">
+      <div class="grid">
+        <form id="actionForm" class="card">
+          <div class="section-title"><h2>Créer une action</h2></div>
+          <p class="subtitle" style="margin-bottom:15px">Le code est généré automatiquement par l’API.</p>
+          <div class="field"><label>Libellé *</label><input id="actionLabel" required placeholder="Valider"></div>
+          <div class="field"><label>Description</label><textarea id="actionDescription" placeholder="Valider un dossier"></textarea></div>
+          <label class="check" style="margin-bottom:14px"><input id="actionActive" type="checkbox" checked><span>Action active</span></label>
+          <button class="btn" type="submit">Créer l’action</button>
+        </form>
+        <div class="card">
+          <div class="section-title"><h2>Actions existantes</h2><button class="btn secondary small" data-refresh="actions">Actualiser</button></div>
+          <div class="table-wrap"><table><thead><tr><th>ID</th><th>Code</th><th>Libellé</th><th>État</th><th>Permissions</th><th>Action</th></tr></thead><tbody id="actionRows"></tbody></table></div>
+        </div>
+      </div>
+      <form id="permissionActionForm" class="card assignment">
+        <div class="section-title"><h2>Attribuer des actions à une permission</h2></div>
+        <div class="field"><label>Permission *</label><select id="actionPermission" required><option value="">Choisir une permission</option></select></div>
+        <div class="field"><label>Actions autorisées</label><div id="actionChecks" class="checks"></div></div>
+        <button class="btn" type="submit">Enregistrer les actions</button>
+      </form>
+    </section>
+
+    <section id="console" class="section"><div class="card"><div class="section-title"><h2>Journal des requêtes</h2><button id="clearLogBtn" class="btn secondary small">Effacer</button></div><div id="apiConsole" class="console">Prêt.</div></div></section>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const state = { permissions: [], roles: [], menus: [], actions: [] };
+  const savedUrl = localStorage.getItem('ebac_api_url');
+  const savedToken = sessionStorage.getItem('ebac_test_token');
+  if (savedUrl) $('apiUrl').value = savedUrl;
+  if (savedToken) $('token').value = savedToken;
+
+  function baseUrl(){ return $('apiUrl').value.trim().replace(/\/$/, ''); }
+  function token(){ return $('token').value.trim(); }
+  function log(label, value){ $('apiConsole').textContent = `[${new Date().toLocaleTimeString()}] ${label}\n${JSON.stringify(value, null, 2)}\n\n` + $('apiConsole').textContent; }
+  function toast(message, error=false){ const el=$('toast'); el.textContent=message; el.className='toast'+(error?' error':''); el.style.display='block'; setTimeout(()=>el.style.display='none',3200); }
+  function updateStatus(user=null){ const connected=!!token(); $('statusDot').classList.toggle('ok',connected); $('statusText').textContent=connected?'Connecté':'Non connecté'; $('statusUser').textContent=user ? `${user.prenoms} ${user.nom}` : (connected?'Token enregistré':'Aucun utilisateur'); }
+
+  async function api(path, options={}){
+    const headers = { Accept:'application/json', ...(options.body ? {'Content-Type':'application/json'} : {}), ...(token()?{Authorization:`Bearer ${token()}`}:{}) };
+    const response = await fetch(`${baseUrl()}${path}`, {...options, headers:{...headers,...options.headers}});
+    const data = await response.json().catch(()=>null);
+    log(`${options.method||'GET'} ${path} — HTTP ${response.status}`, data);
+    if(!response.ok){ const err=new Error(data?.message||`Erreur HTTP ${response.status}`); err.data=data; throw err; }
+    return data;
+  }
+
+  document.querySelectorAll('nav button').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('nav button,.section').forEach(el=>el.classList.remove('active'));
+    btn.classList.add('active'); $(btn.dataset.section).classList.add('active');
+    if(btn.dataset.section==='permissions') loadPermissions();
+    if(btn.dataset.section==='roles') Promise.all([loadPermissions(),loadRoles()]);
+    if(btn.dataset.section==='menus') Promise.all([loadPermissions(),loadMenus()]);
+    if(btn.dataset.section==='actions') Promise.all([loadPermissions(),loadActions()]);
+  }));
+
+  $('saveConfigBtn').onclick=()=>{ localStorage.setItem('ebac_api_url',baseUrl()); toast('URL enregistrée'); };
+  $('saveTokenBtn').onclick=()=>{ sessionStorage.setItem('ebac_test_token',token()); updateStatus(); toast('Token enregistré pour cette session'); };
+  $('logoutBtn').onclick=()=>{ sessionStorage.removeItem('ebac_test_token'); $('token').value=''; updateStatus(); toast('Session locale effacée'); };
+  $('clearLogBtn').onclick=()=>{ $('apiConsole').textContent='Journal effacé.'; };
+
+  $('loginBtn').onclick=async()=>{ try{ const data=await api('/auth/connexion',{method:'POST',body:JSON.stringify({email:$('email').value,password:$('password').value,nom_appareil:'Interface test rôles'} )}); $('attemptId').value=data.id_tentative||''; toast('OTP envoyé'); }catch(e){ toast(e.message,true); } };
+  $('otpBtn').onclick=async()=>{ try{ const data=await api('/auth/confirmer-otp',{method:'POST',body:JSON.stringify({id_tentative:Number($('attemptId').value),code_otp:$('otp').value})}); $('token').value=data.token; sessionStorage.setItem('ebac_test_token',data.token); updateStatus(data.utilisateur); toast('Connexion réussie'); }catch(e){ toast(e.message,true); } };
+
+  async function loadPermissions(){ try{ const data=await api('/administration/permissions?par_page=100'); state.permissions=data.data||[]; renderPermissions(); }catch(e){ toast(e.message,true); } }
+  function renderPermissions(){
+    $('permissionRows').innerHTML=state.permissions.map(p=>`<tr><td>${p.id}</td><td><span class="badge">${p.code}</span></td><td>${p.libelle}</td><td><button class="btn danger small" onclick="deletePermission(${p.id})">Supprimer</button></td></tr>`).join('')||'<tr><td colspan="4">Aucune permission.</td></tr>';
+    $('permissionChecks').innerHTML=state.permissions.map(p=>`<label class="check"><input type="checkbox" name="rolePermission" value="${p.id}"><span><strong>${p.code}</strong><br>${p.libelle}</span></label>`).join('')||'Créez d’abord une permission.';
+    $('menuPermissionChecks').innerHTML=state.permissions.map(p=>`<label class="check"><input type="checkbox" name="menuPermission" value="${p.id}"><span><strong>${p.code}</strong><br>${p.libelle}</span></label>`).join('')||'Créez d’abord une permission.';
+    const currentPermission=$('actionPermission').value;
+    $('actionPermission').innerHTML='<option value="">Choisir une permission</option>'+state.permissions.map(p=>`<option value="${p.id}">${p.libelle} (${p.code})</option>`).join('');
+    $('actionPermission').value=currentPermission;
+  }
+  $('permissionForm').onsubmit=async e=>{ e.preventDefault(); try{ await api('/administration/permissions',{method:'POST',body:JSON.stringify({libelle:$('permissionLabel').value,description:$('permissionDescription').value||null})}); e.target.reset(); await loadPermissions(); toast('Permission créée'); }catch(err){ toast(err.message,true); } };
+  window.deletePermission=async id=>{ if(!confirm('Supprimer cette permission ?'))return; try{ await api(`/administration/permissions/${id}`,{method:'DELETE'}); await loadPermissions(); toast('Permission supprimée'); }catch(e){ toast(e.message,true); } };
+
+  async function loadRoles(){ try{ const data=await api('/administration/roles?par_page=100'); state.roles=data.data||[]; $('roleRows').innerHTML=state.roles.map(r=>`<tr><td>${r.id}</td><td><span class="badge">${r.code}</span></td><td>${r.libelle}</td><td>${(r.permissions||[]).map(p=>`<span class="badge">${p.code}</span>`).join('')||'—'}</td><td><div class="actions"><button class="btn secondary small" onclick="editRolePermissions(${r.id})">Permissions</button><button class="btn danger small" onclick="deleteRole(${r.id})">Supprimer</button></div></td></tr>`).join('')||'<tr><td colspan="5">Aucun rôle.</td></tr>'; }catch(e){ toast(e.message,true); } }
+  $('roleForm').onsubmit=async e=>{ e.preventDefault(); const ids=[...document.querySelectorAll('[name=rolePermission]:checked')].map(x=>Number(x.value)); try{ await api('/administration/roles',{method:'POST',body:JSON.stringify({libelle:$('roleLabel').value,description:$('roleDescription').value||null,permission_ids:ids})}); e.target.reset(); await loadRoles(); toast('Rôle créé'); }catch(err){ toast(err.message,true); } };
+  window.deleteRole=async id=>{ if(!confirm('Supprimer ce rôle ?'))return; try{ await api(`/administration/roles/${id}`,{method:'DELETE'}); await loadRoles(); toast('Rôle supprimé'); }catch(e){ toast(e.message,true); } };
+  window.editRolePermissions=id=>{
+    const role=state.roles.find(item=>item.id===id);
+    if(!role)return;
+    const selected=new Set((role.permissions||[]).map(p=>p.id));
+    $('assignmentRoleId').value=role.id;
+    $('assignmentRoleName').textContent=`${role.libelle} (${role.code})`;
+    $('assignmentChecks').innerHTML=state.permissions.map(p=>`<label class="check"><input type="checkbox" name="assignedPermission" value="${p.id}" ${selected.has(p.id)?'checked':''}><span><strong>${p.code}</strong><br>${p.libelle}</span></label>`).join('')||'Aucune permission disponible.';
+    $('assignmentForm').classList.remove('hidden');
+    $('assignmentForm').scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  $('cancelAssignmentBtn').onclick=()=>$('assignmentForm').classList.add('hidden');
+  $('assignmentForm').onsubmit=async e=>{
+    e.preventDefault();
+    const roleId=Number($('assignmentRoleId').value);
+    const permissionIds=[...document.querySelectorAll('[name=assignedPermission]:checked')].map(x=>Number(x.value));
+    try{
+      await api(`/administration/roles/${roleId}/permissions`,{method:'PUT',body:JSON.stringify({permission_ids:permissionIds})});
+      $('assignmentForm').classList.add('hidden');
+      await loadRoles();
+      toast('Permissions du rôle mises à jour');
+    }catch(err){ toast(err.message,true); }
+  };
+
+  async function loadMenus(){
+    try{
+      const data=await api('/administration/menus');
+      state.menus=data.menus||[];
+      const names=new Map(state.menus.map(m=>[m.id,m.libelle]));
+      $('menuRows').innerHTML=state.menus.map(m=>`<tr><td>${m.ordre??0}</td><td><span class="badge">${m.code}</span><br>${m.libelle}</td><td>${m.route||'—'}</td><td>${m.id_parent ? (names.get(m.id_parent)||'#'+m.id_parent) : '—'}</td><td>${(m.permissions||[]).map(p=>`<span class="badge">${p.code}</span>`).join('')||'—'}</td><td>${m.actif?'Actif':'Inactif'} · ${m.visible?'Visible':'Masqué'}</td><td><button class="btn danger small" onclick="deleteMenu(${m.id})">Supprimer</button></td></tr>`).join('')||'<tr><td colspan="7">Aucun menu.</td></tr>';
+      $('menuParent').innerHTML='<option value="">Aucun (menu principal)</option>'+state.menus.map(m=>`<option value="${m.id}">${m.libelle} (${m.code})</option>`).join('');
+    }catch(e){ toast(e.message,true); }
+  }
+  $('menuForm').onsubmit=async e=>{
+    e.preventDefault();
+    const permissionIds=[...document.querySelectorAll('[name=menuPermission]:checked')].map(x=>Number(x.value));
+    const parent=$('menuParent').value;
+    const payload={
+      libelle:$('menuLabel').value,
+      description:$('menuDescription').value||null, route:$('menuRoute').value||null,
+      route_active:$('menuActiveRoute').value||null, icone:$('menuIcon').value||null,
+      groupe:$('menuGroup').value||null, ordre:Number($('menuOrder').value||0),
+      id_parent:parent?Number(parent):null, visible:$('menuVisible').checked,
+      actif:$('menuActive').checked, permission_ids:permissionIds
+    };
+    try{ await api('/administration/menus',{method:'POST',body:JSON.stringify(payload)}); e.target.reset(); $('menuVisible').checked=true; $('menuActive').checked=true; await loadMenus(); toast('Menu créé'); }catch(err){ toast(err.message,true); }
+  };
+  window.deleteMenu=async id=>{ if(!confirm('Supprimer ce menu ?'))return; try{ await api(`/administration/menus/${id}`,{method:'DELETE'}); await loadMenus(); toast('Menu supprimé'); }catch(e){ toast(e.message,true); } };
+
+  async function loadActions(){
+    try{
+      $('actionRows').innerHTML='<tr><td colspan="6">Chargement des actions…</td></tr>';
+      const data=await api('/administration/actions');
+      state.actions=data.actions||[];
+      $('actionRows').innerHTML=state.actions.map(a=>`<tr><td>${a.id}</td><td><span class="badge">${a.code}</span></td><td>${a.libelle}</td><td>${a.actif?'Active':'Inactive'}</td><td>${a.permissions_count??0}</td><td><button class="btn danger small" onclick="deleteAction(${a.id})">Supprimer</button></td></tr>`).join('')||'<tr><td colspan="6">Aucune action.</td></tr>';
+      $('actionChecks').innerHTML=state.actions.map(a=>`<label class="check"><input type="checkbox" name="permissionAction" value="${a.id}"><span><strong>${a.code}</strong><br>${a.libelle}</span></label>`).join('')||'Aucune action disponible.';
+    }catch(e){
+      $('actionRows').innerHTML=`<tr><td colspan="6"><strong>Impossible de charger les actions.</strong><br>${e.message}<br><small>Vérifiez le token, la permission ACTION_GERER et le déploiement de la migration.</small></td></tr>`;
+      $('actionChecks').innerHTML='Actions indisponibles : consultez le journal API.';
+      toast(e.message,true);
+    }
+  }
+  $('actionForm').onsubmit=async e=>{
+    e.preventDefault();
+    try{
+      await api('/administration/actions',{method:'POST',body:JSON.stringify({libelle:$('actionLabel').value,description:$('actionDescription').value||null,actif:$('actionActive').checked})});
+      e.target.reset(); $('actionActive').checked=true; await loadActions(); toast('Action créée');
+    }catch(err){ toast(err.message,true); }
+  };
+  window.deleteAction=async id=>{ if(!confirm('Supprimer cette action ?'))return; try{ await api(`/administration/actions/${id}`,{method:'DELETE'}); await loadActions(); toast('Action supprimée'); }catch(e){ toast(e.message,true); } };
+  $('actionPermission').onchange=async()=>{
+    document.querySelectorAll('[name=permissionAction]').forEach(input=>input.checked=false);
+    const permissionId=$('actionPermission').value;
+    if(!permissionId)return;
+    try{
+      const data=await api(`/administration/permissions/${permissionId}`);
+      const selected=new Set((data.permission?.actions||[]).map(a=>a.id));
+      document.querySelectorAll('[name=permissionAction]').forEach(input=>input.checked=selected.has(Number(input.value)));
+    }catch(e){ toast(e.message,true); }
+  };
+  $('permissionActionForm').onsubmit=async e=>{
+    e.preventDefault();
+    const permissionId=Number($('actionPermission').value);
+    if(!permissionId){ toast('Choisissez une permission',true); return; }
+    const actionIds=[...document.querySelectorAll('[name=permissionAction]:checked')].map(x=>Number(x.value));
+    try{ await api(`/administration/permissions/${permissionId}/actions`,{method:'PUT',body:JSON.stringify({action_ids:actionIds})}); await loadActions(); toast('Actions de la permission mises à jour'); }catch(err){ toast(err.message,true); }
+  };
+  document.querySelectorAll('[data-refresh]').forEach(b=>b.onclick=()=>({roles:loadRoles,menus:loadMenus,actions:loadActions,permissions:loadPermissions}[b.dataset.refresh]||loadPermissions)());
+  updateStatus();
+</script>
+</body>
+</html>

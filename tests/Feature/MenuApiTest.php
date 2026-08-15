@@ -18,23 +18,22 @@ class MenuApiTest extends TestCase
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
 
         $permissionId = $this->postJson('/api/v1/administration/permissions', [
-            'code' => 'ETUDIANT_VOIR',
             'libelle' => 'Voir les étudiants',
-        ])->assertCreated()->json('permission.id');
+        ])->assertCreated()
+            ->assertJsonPath('permission.code', 'PER-000001')
+            ->json('permission.id');
 
         $parentId = $this->postJson('/api/v1/administration/menus', [
-            'code' => 'SCOLARITE',
             'libelle' => 'Scolarité',
             'icone' => 'school',
             'groupe' => 'Scolarité',
             'ordre' => 10,
         ])->assertCreated()
-            ->assertJsonPath('menu.code', 'SCOLARITE')
+            ->assertJsonPath('menu.code', 'MEN-000001')
             ->json('menu.id');
 
         $menuId = $this->postJson('/api/v1/administration/menus', [
             'id_parent' => $parentId,
-            'code' => 'ETUDIANTS',
             'libelle' => 'Étudiants',
             'route' => '/scolarite/etudiants',
             'route_active' => '/scolarite/etudiants*',
@@ -44,6 +43,7 @@ class MenuApiTest extends TestCase
             'actif' => true,
             'permission_ids' => [$permissionId],
         ])->assertCreated()
+            ->assertJsonPath('menu.code', 'MEN-000002')
             ->assertJsonPath('menu.id_parent', $parentId)
             ->assertJsonPath('menu.permissions.0.id', $permissionId)
             ->json('menu.id');

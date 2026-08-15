@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Menu;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class MenuController extends Controller
@@ -22,12 +23,16 @@ class MenuController extends Controller
         $donnees = $this->valider($request);
         $permissionIds = $donnees['permission_ids'] ?? [];
         unset($donnees['permission_ids']);
-        $menu = Menu::query()->create([
-            ...$donnees,
-            'code' => strtoupper($donnees['code']),
-            'created_by' => $request->user()->id,
-        ]);
-        $menu->permissions()->sync($permissionIds);
+        $menu = DB::transaction(function () use ($donnees, $permissionIds, $request) {
+            $menu = Menu::query()->create([
+                ...$donnees,
+                'code' => $this->genererCode(),
+                'created_by' => $request->user()->id,
+            ]);
+            $menu->permissions()->sync($permissionIds);
+
+            return $menu;
+        });
 
         return response()->json([
             'message' => 'Menu créé avec succès.',
@@ -45,9 +50,6 @@ class MenuController extends Controller
         $donnees = $this->valider($request, $menu);
         $permissionIds = $donnees['permission_ids'] ?? null;
         unset($donnees['permission_ids']);
-        if (isset($donnees['code'])) {
-            $donnees['code'] = strtoupper($donnees['code']);
-        }
         $menu->update([...$donnees, 'updated_by' => $request->user()->id]);
         if ($permissionIds !== null) {
             $menu->permissions()->sync($permissionIds);
@@ -71,7 +73,7 @@ class MenuController extends Controller
     {
         return $request->validate([
             'id_parent' => ['sometimes', 'nullable', 'integer', 'exists:menus,id', Rule::notIn([$menu?->id])],
-            'code' => [$menu ? 'sometimes' : 'required', 'string', 'max:100', Rule::unique('menus')->ignore($menu)],
+            'code' => ['prohibited'],
             'libelle' => [$menu ? 'sometimes' : 'required', 'string', 'max:150'],
             'description' => ['sometimes', 'nullable', 'string', 'max:255'],
             'route' => ['sometimes', 'nullable', 'string', 'max:180'],
@@ -84,5 +86,25 @@ class MenuController extends Controller
             'permission_ids' => ['sometimes', 'array'],
             'permission_ids.*' => ['integer', 'distinct', 'exists:permissions,id'],
         ]);
+    }
+
+    private function genererCode(): string
+    {
+        $dernierCode = Menu::withTrashed()
+            ->where('code', 'like', 'MEN-%')
+            ->lockForUpdate()
+            ->orderByDesc('id')
+            ->value('code');
+
+        $sequence = $dernierCode && preg_match('/^MEN-(\d+)$/', $dernierCode, $correspondances)
+            ? ((int) $correspondances[1]) + 1
+            : 1;
+
+        do {
+            $code = 'MEN-'.str_pad((string) $sequence, 6, '0', STR_PAD_LEFT);
+            $sequence++;
+        } while (Menu::withTrashed()->where('code', $code)->exists());
+
+        return $code;
     }
 }

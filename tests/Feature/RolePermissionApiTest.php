@@ -19,9 +19,10 @@ class RolePermissionApiTest extends TestCase
         Sanctum::actingAs($admin);
 
         $permissionId = $this->postJson('/api/v1/administration/permissions', [
-            'code' => 'COMPTE_VOIR',
             'libelle' => 'Voir les comptes',
-        ])->assertCreated()->json('permission.id');
+        ])->assertCreated()
+            ->assertJsonPath('permission.code', 'PER-000001')
+            ->json('permission.id');
 
         $roleId = $this->postJson('/api/v1/administration/roles', [
             'libelle' => 'Gestionnaire',

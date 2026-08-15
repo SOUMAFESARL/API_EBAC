@@ -33,11 +33,11 @@ Authorization: Bearer {token}
 |---|---|---|
 | `AUTH` | Connexion, OTP, mot de passe et déconnexion | Public ou authentifié selon la route |
 | `NAVIGATION` | Construction dynamique du sidebar | Utilisateur authentifié actif |
-| `COMPTES` | Administration des comptes utilisateurs | Administrateur |
+| `COMPTES` | Administration des comptes utilisateurs | Permission `COMPTE_GERER` ou rôle `ADMIN` |
 | `PROFIL` | Consultation et modification de son profil | Utilisateur authentifié actif |
-| `ROLES` | Administration des rôles | Administrateur |
-| `PERMISSIONS` | Administration des permissions | Administrateur |
-| `MENUS` | Administration des éléments du sidebar | Administrateur |
+| `ROLES` | Administration des rôles | Permission `ROLE_GERER` ou rôle `ADMIN` |
+| `PERMISSIONS` | Administration des permissions | Permission `PERMISSION_GERER` ou rôle `ADMIN` |
+| `MENUS` | Administration des éléments du sidebar | Permission `MENU_GERER` ou rôle `ADMIN` |
 
 Chaque endpoint ci-dessous indique son tag d’intégration. Le même tag peut être utilisé dans Swagger/OpenAPI, Postman ou le service API du frontend.
 
@@ -369,7 +369,7 @@ Les menus sont filtrés selon les permissions du rôle. Le rôle `ADMIN` reçoit
 
 ## 6. Comptes utilisateurs
 
-Toutes les routes de cette section exigent un utilisateur actif avec le rôle `ADMIN`.
+Toutes les routes de cette section exigent la permission `COMPTE_GERER`. Le rôle `ADMIN` contourne automatiquement ce contrôle.
 
 ### 6.1 Liste
 
@@ -468,7 +468,7 @@ Pour changer le mot de passe, `mot_de_passe_actuel` est obligatoire.
 
 ## 8. Rôles
 
-Administrateur requis.
+Permission `ROLE_GERER` requise. Le rôle `ADMIN` dispose automatiquement de cet accès.
 
 | Méthode | Route | Action |
 |---|---|---|
@@ -503,7 +503,7 @@ Envoyer un tableau vide retire toutes les permissions. Le rôle `ADMIN` et un r�
 
 ## 9. Permissions
 
-Administrateur requis.
+Permission `PERMISSION_GERER` requise. Le rôle `ADMIN` dispose automatiquement de cet accès.
 
 | Méthode | Route | Action |
 |---|---|---|
@@ -515,17 +515,18 @@ Administrateur requis.
 
 ```json
 {
-  "code": "COMPTE_VOIR",
   "libelle": "Voir les comptes",
   "description": "Autorise la consultation des comptes"
 }
 ```
 
+Le frontend ne doit jamais envoyer `code`. L’API génère automatiquement un code unique au format `PER-000001`, `PER-000002`, etc. Ce code ne peut pas être modifié.
+
 Une permission encore attribuée à un rôle ne peut pas être supprimée.
 
 ## 10. Menus
 
-Administrateur requis.
+Permission `MENU_GERER` requise. Le rôle `ADMIN` dispose automatiquement de cet accès.
 
 | Méthode | Route | Action |
 |---|---|---|
@@ -538,7 +539,6 @@ Administrateur requis.
 ```json
 {
   "id_parent": 1,
-  "code": "ETUDIANTS",
   "libelle": "Étudiants",
   "description": "Gestion des étudiants",
   "route": "/administration/etudiants",
@@ -552,7 +552,44 @@ Administrateur requis.
 }
 ```
 
+Le frontend ne doit jamais envoyer `code`. L’API génère automatiquement un code unique au format `MEN-000001`, `MEN-000002`, etc. Ce code ne peut pas être modifié.
+
 `id_parent` peut être `null`. Un menu ne peut pas être son propre parent.
+
+## 11. Actions
+
+Permission `ACTION_GERER` requise. Le rôle `ADMIN` dispose automatiquement de cet accès.
+
+Les actions initiales sont : `AJOUTER`, `SUPPRIMER`, `MODIFIER`, `VOIR`, `IMPRIMER` et `TELECHARGER`.
+
+| Méthode | URL complète | Action |
+|---|---|---|
+| GET | `https://api-ebac.severinzran.ci/api/v1/administration/actions` | Lister les actions |
+| POST | `https://api-ebac.severinzran.ci/api/v1/administration/actions` | Créer une action |
+| GET | `https://api-ebac.severinzran.ci/api/v1/administration/actions/{id}` | Afficher une action |
+| PUT/PATCH | `https://api-ebac.severinzran.ci/api/v1/administration/actions/{id}` | Modifier une action |
+| DELETE | `https://api-ebac.severinzran.ci/api/v1/administration/actions/{id}` | Supprimer une action |
+| PUT | `https://api-ebac.severinzran.ci/api/v1/administration/permissions/{permission_id}/actions` | Remplacer les actions d’une permission |
+
+Création d’une action (le code est généré par l’API à partir du libellé) :
+
+```json
+{
+  "libelle": "Valider",
+  "description": "Valider un dossier",
+  "actif": true
+}
+```
+
+Attribution des actions à une permission :
+
+```json
+{
+  "action_ids": [1, 3, 4]
+}
+```
+
+Un tableau vide retire toutes les actions. Une action encore attribuée à une permission ne peut pas être supprimée.
 
 ## 11. Exemple client JavaScript
 
