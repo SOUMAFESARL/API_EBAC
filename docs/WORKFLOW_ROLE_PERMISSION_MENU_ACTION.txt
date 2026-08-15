@@ -149,13 +149,15 @@ POST https://api-ebac.severinzran.ci/api/v1/administration/roles
 
 Requête :
 {
+  "code": "GESTIONNAIRE_ETUDIANTS",
   "libelle": "Gestionnaire des étudiants",
   "description": "Gère les dossiers des étudiants",
+  "actif": true,
   "permission_ids": [10]
 }
 
-IMPORTANT : le frontend ne doit pas envoyer le champ "code".
-L'API génère automatiquement : ROL-000001, ROL-000002, etc.
+IMPORTANT : le frontend doit envoyer le champ "code".
+Le code est obligatoire, unique et converti automatiquement en majuscules.
 
 Pour remplacer les permissions d'un rôle existant :
 
@@ -167,6 +169,20 @@ Requête :
 }
 
 Un tableau vide retire toutes les permissions du rôle.
+
+Pour utiliser la matrice exacte Module / Actions :
+
+GET /administration/roles/matrice-autorisations
+GET /administration/roles/{role_id}/matrice-autorisations
+PUT /administration/roles/{role_id}/autorisations
+
+Requête :
+{
+  "autorisations": [
+    {"menu_id": 1, "action_ids": [1, 3, 4]},
+    {"menu_id": 2, "action_ids": [4]}
+  ]
+}
 
 
 ================================================================================
@@ -187,7 +203,8 @@ Requête pour un menu principal :
   "ordre": 10,
   "visible": true,
   "actif": true,
-  "permission_ids": [10]
+  "permission_ids": [10],
+  "action_ids": [1, 2, 3, 4]
 }
 
 IMPORTANT : le frontend ne doit pas envoyer le champ "code".
@@ -251,8 +268,8 @@ Menu        : Étudiants (MEN-000001)
 RÈGLES IMPORTANTES POUR LE FRONTEND
 ================================================================================
 
-1. Ne jamais envoyer "code" lors de la création ou modification d'un rôle,
-   d'une permission, d'un menu ou d'une nouvelle action.
+1. Envoyer "code" pour un rôle. Ne jamais l'envoyer pour une permission,
+   un menu ou une nouvelle action.
 2. Toujours envoyer le token Bearer sur les routes d'administration.
 3. Une synchronisation remplace toute l'ancienne liste.
 4. Envoyer un tableau vide pour retirer toutes les associations.

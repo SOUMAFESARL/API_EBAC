@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'code',
     'libelle',
     'description',
+    'actif',
     'created_by',
     'updated_by',
     'deleted_by',
@@ -22,6 +23,11 @@ class Role extends Model
     use SoftDeletes;
 
     public $timestamps = false;
+
+    protected function casts(): array
+    {
+        return ['actif' => 'boolean'];
+    }
 
     public function permissions(): BelongsToMany
     {
@@ -34,6 +40,12 @@ class Role extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class, 'id_role');
+    }
+
+    public function actionsParMenu(): BelongsToMany
+    {
+        return $this->belongsToMany(Action::class, 'role_menu_actions', 'id_role', 'id_action')
+            ->withPivot(['id_menu', 'created_by', 'created_at']);
     }
 
     public function creator(): BelongsTo

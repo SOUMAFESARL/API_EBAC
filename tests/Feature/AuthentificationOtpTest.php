@@ -192,6 +192,45 @@ class AuthentificationOtpTest extends TestCase
             ->assertJsonValidationErrors('reset_token');
     }
 
+    public function test_un_utilisateur_connecte_peut_modifier_son_mot_de_passe_s_il_le_decide(): void
+    {
+        Notification::fake();
+        $utilisateur = $this->creerUtilisateur();
+        $token = $utilisateur->createToken('web')->plainTextToken;
+
+        $this->withToken($token)
+            ->postJson('/api/v1/auth/modifier-mot-de-passe', [
+                'mot_de_passe_actuel' => 'Password123',
+                'password' => 'NouveauPassword456',
+                'password_confirmation' => 'NouveauPassword456',
+            ])->assertOk()
+            ->assertJsonPath('deconnexion_requise', false);
+
+        $utilisateur->refresh();
+        $this->assertFalse($utilisateur->prochaine_connexion_sans_otp);
+        $this->assertTrue(Hash::check('NouveauPassword456', $utilisateur->password));
+        $this->assertDatabaseCount('personal_access_tokens', 1);
+
+        $this->withToken($token)
+            ->getJson('/api/v1/auth/profil')
+            ->assertOk();
+
+        $this->withToken($token)
+            ->postJson('/api/v1/auth/deconnexion')
+            ->assertOk();
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+
+        $this->postJson('/api/v1/auth/connexion', [
+            'email' => $utilisateur->email,
+            'password' => 'NouveauPassword456',
+            'nom_appareil' => 'apres-initialisation',
+        ])->assertAccepted()
+            ->assertJsonPath('otp_requis', true)
+            ->assertJsonMissing(['token']);
+
+        Notification::assertSentTo($utilisateur, CodeOtpConnexionNotification::class);
+    }
+
     private function creerUtilisateur(): User
     {
         $role = Role::query()->create([

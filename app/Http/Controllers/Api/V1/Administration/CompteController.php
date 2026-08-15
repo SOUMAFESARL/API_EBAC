@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Support\Str;
 
 class CompteController extends Controller
@@ -76,7 +77,7 @@ class CompteController extends Controller
         }
 
         $compte = DB::transaction(function () use ($donnees, $motDePasseTemporaire, $administrateur) {
-            $matricule = $this->genererMatricule($donnees['nom'], $donnees['prenoms']);
+            $matricule = $this->genererMatricule();
             $donnees['code'] = $this->genererCode();
 
             $dto = CreerCompteDTO::fromArray(
@@ -101,6 +102,17 @@ class CompteController extends Controller
     {
         return response()->json([
             'compte' => UtilisateurResource::make($compte->load(['role', 'civilite'])),
+        ]);
+    }
+
+    public function photo(User $compte): BinaryFileResponse|JsonResponse
+    {
+        if (! $compte->photo || ! Storage::disk('public')->exists($compte->photo)) {
+            return response()->json(['message' => 'Photo introuvable.'], 404);
+        }
+
+        return response()->file(Storage::disk('public')->path($compte->photo), [
+            'Cache-Control' => 'public, max-age=86400',
         ]);
     }
 
@@ -165,25 +177,23 @@ class CompteController extends Controller
         ]);
     }
 
-    private function genererMatricule(string $nom, string $prenoms): string
+    private function genererMatricule(): string
     {
-        $nomNormalise = preg_replace('/[^A-Z]/', '', Str::upper(Str::ascii($nom))) ?: '';
-        $prenomNormalise = preg_replace('/[^A-Z]/', '', Str::upper(Str::ascii($prenoms))) ?: '';
-
-        $prefixeNom = str_pad(substr($nomNormalise, 0, 3), 3, 'X');
-        $prefixePrenom = str_pad(substr($prenomNormalise, 0, 2), 2, 'X');
-        $prefixe = sprintf('EBAC-%s-%s-%s-', $prefixeNom, $prefixePrenom, now()->year);
-
-        $dernierMatricule = User::withTrashed()
-            ->where('matricule', 'like', $prefixe.'%')
+        $annee = now()->year;
+        $matricules = User::withTrashed()
+            ->where('matricule', 'like', 'EBAC-%-'.$annee)
             ->lockForUpdate()
-            ->max('matricule');
+            ->pluck('matricule');
 
-        $prochaineSequence = $dernierMatricule
-            ? ((int) substr($dernierMatricule, -4)) + 1
-            : 1;
+        $derniereSequence = $matricules
+            ->map(function (?string $matricule) use ($annee): int {
+                return preg_match('/^EBAC-(\d{4})-'.$annee.'$/', (string) $matricule, $correspondances)
+                    ? (int) $correspondances[1]
+                    : 0;
+            })
+            ->max() ?? 0;
 
-        return $prefixe.str_pad((string) $prochaineSequence, 4, '0', STR_PAD_LEFT);
+        return sprintf('EBAC-%04d-%d', $derniereSequence + 1, $annee);
     }
 
     private function genererCode(): string

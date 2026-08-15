@@ -37,4 +37,9 @@ class Menu extends Model
         return $this->belongsToMany(Permission::class, 'menu_permissions', 'id_menu', 'id_permission')
             ->withPivot('permission_principale');
     }
+
+    public function actions(): BelongsToMany
+    {
+        return $this->belongsToMany(Action::class, 'menu_actions', 'id_menu', 'id_action');
+    }
 }

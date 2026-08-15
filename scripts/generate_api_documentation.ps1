@@ -134,7 +134,7 @@ $body.Add((Table @('Champ', 'Type', 'Obligatoire', 'Règle') @(
     @('deux_fa_active', 'boolean', 'Non', 'Valeur par défaut false')
 )))
 $body.Add((Paragraph 'Le client ne fournit ni password ni matricule. Le serveur génère un mot de passe temporaire de 16 caractères, puis le modèle le stocke sous forme de hash. Le mot de passe lisible est envoyé immédiatement à l’adresse email du membre.'))
-$body.Add((Paragraph 'Le matricule est généré une seule fois selon le format EBAC-NNN-PP-AAAA-0000. Exemple : EBAC-DUP-JE-2026-0001. Il conserve les trois premières lettres du nom, les deux premières lettres du prénom, l’année et une séquence unique sur quatre chiffres.'))
+$body.Add((Paragraph 'Le matricule est généré automatiquement selon le format EBAC-0000-AAAA. Exemple : EBAC-0001-2026. Il contient une séquence annuelle unique sur quatre chiffres suivie de l’année.'))
 $body.Add((Paragraph 'L’administrateur connecté est enregistré dans created_by, created_by_user_id et created_by_user_code. La création utilise CreerCompteDTO et une transaction de base de données.'))
 $body.Add((Paragraph 'Exemple JSON sans photo :'))
 $body.Add((Code-Paragraph '{'))

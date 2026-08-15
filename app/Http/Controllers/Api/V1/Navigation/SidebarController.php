@@ -7,6 +7,7 @@ use App\Models\Menu;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class SidebarController extends Controller
 {
@@ -14,6 +15,12 @@ class SidebarController extends Controller
     {
         $utilisateur = $request->user()->loadMissing('role.permissions');
         $estAdministrateur = $utilisateur->role?->code === 'ADMIN';
+        if (! $estAdministrateur && ! ($utilisateur->role?->actif ?? true)) {
+            return response()->json(['sidebar' => []]);
+        }
+        $actionsParMenu = $utilisateur->role
+            ? DB::table('role_menu_actions')->where('id_role', $utilisateur->role->id)->get()->groupBy('id_menu')
+            : collect();
         $permissionIds = $utilisateur->role?->permissions
             ->where('pivot.actif', true)
             ->pluck('id')
@@ -27,9 +34,11 @@ class SidebarController extends Controller
             ->orderBy('libelle')
             ->get();
 
+        $utiliseMatrice = $actionsParMenu->isNotEmpty();
         $menus = $tousLesMenus->filter(fn (Menu $menu) => $estAdministrateur
-                || $menu->permissions->isEmpty()
-                || $menu->permissions->pluck('id')->intersect($permissionIds)->isNotEmpty());
+                || ($utiliseMatrice && $actionsParMenu->has($menu->id))
+                || (! $utiliseMatrice && ($menu->permissions->isEmpty()
+                || $menu->permissions->pluck('id')->intersect($permissionIds)->isNotEmpty())));
 
         $idsAutorises = $menus->pluck('id')->all();
         foreach ($menus as $menu) {
@@ -46,16 +55,16 @@ class SidebarController extends Controller
         $menus = $tousLesMenus->whereIn('id', array_unique($idsAutorises));
 
         return response()->json([
-            'sidebar' => $this->construireArbre($menus),
+            'sidebar' => $this->construireArbre($menus, null, $actionsParMenu, $estAdministrateur),
         ]);
     }
 
-    private function construireArbre(Collection $menus, ?int $parentId = null): array
+    private function construireArbre(Collection $menus, ?int $parentId, Collection $actionsParMenu, bool $estAdministrateur): array
     {
         return $menus
             ->where('id_parent', $parentId)
-            ->map(function (Menu $menu) use ($menus) {
-                $enfants = $this->construireArbre($menus, $menu->id);
+            ->map(function (Menu $menu) use ($menus, $actionsParMenu, $estAdministrateur) {
+                $enfants = $this->construireArbre($menus, $menu->id, $actionsParMenu, $estAdministrateur);
 
                 return [
                     'id' => $menu->id,
@@ -66,6 +75,9 @@ class SidebarController extends Controller
                     'icone' => $menu->icone,
                     'groupe' => $menu->groupe,
                     'ordre' => $menu->ordre,
+                    'action_ids' => $estAdministrateur
+                        ? $menu->actions()->where('actif', true)->pluck('actions.id')->all()
+                        : ($actionsParMenu->get($menu->id)?->pluck('id_action')->values()->all() ?? []),
                     'enfants' => $enfants,
                 ];
             })

@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Api\V1\Administration;
 
 use App\Http\Controllers\Controller;
+use App\Models\Menu;
 use App\Models\Role;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class RoleController extends Controller
 {
@@ -15,6 +18,7 @@ class RoleController extends Controller
         $roles = Role::query()
             ->with('permissions')
             ->withCount('permissions')
+            ->withCount('actionsParMenu')
             ->when($request->string('recherche')->toString(), function ($query, string $recherche) {
                 $query->where(fn ($query) => $query
                     ->where('code', 'like', "%{$recherche}%")
@@ -30,15 +34,16 @@ class RoleController extends Controller
     {
         $donnees = $this->valider($request);
         $permissionIds = $donnees['permission_ids'] ?? [];
-        unset($donnees['permission_ids']);
+        $autorisations = $donnees['autorisations'] ?? [];
+        unset($donnees['permission_ids'], $donnees['autorisations']);
 
-        $role = DB::transaction(function () use ($donnees, $permissionIds, $request) {
+        $role = DB::transaction(function () use ($donnees, $permissionIds, $autorisations, $request) {
             $role = Role::query()->create([
                 ...$donnees,
-                'code' => $this->genererCode(),
                 'created_by' => $request->user()->id,
             ]);
             $this->syncPermissions($role, $permissionIds, $request->user()->id);
+            $this->syncAutorisations($role, $autorisations, $request->user()->id);
 
             return $role;
         });
@@ -46,29 +51,38 @@ class RoleController extends Controller
         return response()->json([
             'message' => 'Rôle créé avec succès.',
             'role' => $role->load('permissions'),
+            'autorisations' => $this->autorisationsDuRole($role),
         ], 201);
     }
 
     public function show(Role $role): JsonResponse
     {
-        return response()->json(['role' => $role->load('permissions')]);
+        return response()->json([
+            'role' => $role->load('permissions'),
+            'autorisations' => $this->autorisationsDuRole($role),
+        ]);
     }
 
     public function update(Request $request, Role $role): JsonResponse
     {
         $donnees = $this->valider($request, $role);
         $permissionIds = $donnees['permission_ids'] ?? null;
-        unset($donnees['permission_ids']);
+        $autorisations = $donnees['autorisations'] ?? null;
+        unset($donnees['permission_ids'], $donnees['autorisations']);
 
         $role->update([...$donnees, 'updated_by' => $request->user()->id]);
 
         if ($permissionIds !== null) {
             $this->syncPermissions($role, $permissionIds, $request->user()->id);
         }
+        if ($autorisations !== null) {
+            $this->syncAutorisations($role, $autorisations, $request->user()->id);
+        }
 
         return response()->json([
             'message' => 'Rôle modifié avec succès.',
             'role' => $role->fresh()->load('permissions'),
+            'autorisations' => $this->autorisationsDuRole($role),
         ]);
     }
 
@@ -101,14 +115,45 @@ class RoleController extends Controller
         ]);
     }
 
+    public function matriceAutorisations(): JsonResponse
+    {
+        return response()->json(['modules' => $this->construireMatrice()]);
+    }
+
+    public function matriceAutorisationsRole(Role $role): JsonResponse
+    {
+        return response()->json([
+            'role' => $role,
+            'modules' => $this->construireMatrice($role),
+        ]);
+    }
+
+    public function synchroniserAutorisations(Request $request, Role $role): JsonResponse
+    {
+        $donnees = $request->validate($this->reglesAutorisations(true));
+        $this->syncAutorisations($role, $donnees['autorisations'], $request->user()->id);
+
+        return response()->json([
+            'message' => 'Autorisations du rôle mises à jour.',
+            'role' => $role->fresh(),
+            'autorisations' => $this->autorisationsDuRole($role),
+        ]);
+    }
+
     private function valider(Request $request, ?Role $role = null): array
     {
+        if ($request->has('code')) {
+            $request->merge(['code' => strtoupper(trim((string) $request->input('code')))]);
+        }
+
         return $request->validate([
-            'code' => ['prohibited'],
+            'code' => [$role ? 'sometimes' : 'required', 'string', 'max:30', 'alpha_dash:ascii', Rule::unique('roles', 'code')->ignore($role)],
             'libelle' => [$role ? 'sometimes' : 'required', 'string', 'max:80'],
             'description' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'actif' => ['sometimes', 'boolean'],
             'permission_ids' => ['sometimes', 'array'],
             'permission_ids.*' => ['integer', 'distinct', 'exists:permissions,id'],
+            ...$this->reglesAutorisations(),
         ]);
     }
 
@@ -121,23 +166,96 @@ class RoleController extends Controller
         ]);
     }
 
-    private function genererCode(): string
+    private function reglesAutorisations(bool $obligatoire = false): array
     {
-        $dernierCode = Role::withTrashed()
-            ->where('code', 'like', 'ROL-%')
-            ->lockForUpdate()
-            ->orderByDesc('id')
-            ->value('code');
-
-        $prochaineSequence = $dernierCode && preg_match('/^ROL-(\d+)$/', $dernierCode, $correspondances)
-            ? ((int) $correspondances[1]) + 1
-            : 1;
-
-        do {
-            $code = 'ROL-'.str_pad((string) $prochaineSequence, 6, '0', STR_PAD_LEFT);
-            $prochaineSequence++;
-        } while (Role::withTrashed()->where('code', $code)->exists());
-
-        return $code;
+        return [
+            'autorisations' => [$obligatoire ? 'present' : 'sometimes', 'array'],
+            'autorisations.*.menu_id' => ['required', 'integer', 'distinct', 'exists:menus,id'],
+            'autorisations.*.action_ids' => ['present', 'array'],
+            'autorisations.*.action_ids.*' => ['integer', 'distinct', 'exists:actions,id'],
+        ];
     }
+
+    private function syncAutorisations(Role $role, array $autorisations, int $userId): void
+    {
+        $lignes = [];
+        foreach ($autorisations as $index => $autorisation) {
+            $actionsDisponibles = DB::table('menu_actions')
+                ->where('id_menu', $autorisation['menu_id'])
+                ->pluck('id_action')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+            $actionsInvalides = array_diff($autorisation['action_ids'], $actionsDisponibles);
+            if ($actionsInvalides !== []) {
+                throw ValidationException::withMessages([
+                    "autorisations.{$index}.action_ids" => ['Une ou plusieurs actions ne sont pas disponibles pour ce menu.'],
+                ]);
+            }
+            foreach ($autorisation['action_ids'] as $actionId) {
+                $lignes[] = [
+                    'id_role' => $role->id,
+                    'id_menu' => $autorisation['menu_id'],
+                    'id_action' => $actionId,
+                    'created_by' => $userId,
+                    'created_at' => now(),
+                ];
+            }
+        }
+
+        DB::transaction(function () use ($role, $lignes) {
+            DB::table('role_menu_actions')->where('id_role', $role->id)->delete();
+            if ($lignes !== []) {
+                DB::table('role_menu_actions')->insert($lignes);
+            }
+        });
+    }
+
+    private function construireMatrice(?Role $role = null): array
+    {
+        $selection = $role
+            ? DB::table('role_menu_actions')->where('id_role', $role->id)->get()->groupBy('id_menu')
+            : collect();
+
+        return Menu::query()
+            ->with(['actions' => fn ($query) => $query->where('actif', true)->orderBy('libelle')])
+            ->where('actif', true)
+            ->orderBy('ordre')
+            ->orderBy('libelle')
+            ->get()
+            ->map(fn (Menu $menu) => [
+                'menu_id' => $menu->id,
+                'code' => $menu->code,
+                'libelle' => $menu->libelle,
+                'groupe' => $menu->groupe,
+                'actions' => $menu->actions->map(fn ($action) => [
+                    'id' => $action->id,
+                    'code' => $action->code,
+                    'libelle' => $action->libelle,
+                    'selectionnee' => $selection->get($menu->id)?->contains('id_action', $action->id) ?? false,
+                ])->values(),
+            ])->values()->all();
+    }
+
+    private function autorisationsDuRole(Role $role): array
+    {
+        return DB::table('role_menu_actions as rma')
+            ->join('menus as m', 'm.id', '=', 'rma.id_menu')
+            ->join('actions as a', 'a.id', '=', 'rma.id_action')
+            ->where('rma.id_role', $role->id)
+            ->orderBy('m.ordre')
+            ->orderBy('a.libelle')
+            ->get(['m.id as menu_id', 'm.code as menu_code', 'm.libelle as menu_libelle', 'a.id as action_id', 'a.code as action_code', 'a.libelle as action_libelle'])
+            ->groupBy('menu_id')
+            ->map(fn ($lignes) => [
+                'menu_id' => $lignes->first()->menu_id,
+                'menu_code' => $lignes->first()->menu_code,
+                'menu_libelle' => $lignes->first()->menu_libelle,
+                'actions' => $lignes->map(fn ($ligne) => [
+                    'id' => $ligne->action_id,
+                    'code' => $ligne->action_code,
+                    'libelle' => $ligne->action_libelle,
+                ])->values(),
+            ])->values()->all();
+    }
+
 }

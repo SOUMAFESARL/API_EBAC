@@ -4,7 +4,6 @@ namespace App\Http\Resources\Api\V1;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class UtilisateurResource extends JsonResource
 {
@@ -23,7 +22,9 @@ class UtilisateurResource extends JsonResource
             'nom' => $this->nom,
             'prenoms' => $this->prenoms,
             'photo' => $this->photo,
-            'photo_url' => $this->photo ? Storage::disk('public')->url($this->photo) : null,
+            'photo_url' => $this->photo
+                ? route('api.v1.utilisateurs.photo', ['compte' => $this->id])
+                : null,
             'email' => $this->email,
             'id_role' => $this->id_role,
             'is_active' => $this->is_active,

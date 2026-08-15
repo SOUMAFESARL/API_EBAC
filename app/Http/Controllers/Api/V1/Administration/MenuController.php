@@ -14,7 +14,7 @@ class MenuController extends Controller
     public function index(): JsonResponse
     {
         return response()->json([
-            'menus' => Menu::query()->with('permissions:id,code,libelle')->orderBy('ordre')->get(),
+            'menus' => Menu::query()->with(['permissions:id,code,libelle', 'actions:id,code,libelle,actif'])->orderBy('ordre')->get(),
         ]);
     }
 
@@ -22,42 +22,48 @@ class MenuController extends Controller
     {
         $donnees = $this->valider($request);
         $permissionIds = $donnees['permission_ids'] ?? [];
-        unset($donnees['permission_ids']);
-        $menu = DB::transaction(function () use ($donnees, $permissionIds, $request) {
+        $actionIds = $donnees['action_ids'] ?? [];
+        unset($donnees['permission_ids'], $donnees['action_ids']);
+        $menu = DB::transaction(function () use ($donnees, $permissionIds, $actionIds, $request) {
             $menu = Menu::query()->create([
                 ...$donnees,
                 'code' => $this->genererCode(),
                 'created_by' => $request->user()->id,
             ]);
             $menu->permissions()->sync($permissionIds);
+            $menu->actions()->sync($actionIds);
 
             return $menu;
         });
 
         return response()->json([
             'message' => 'Menu créé avec succès.',
-            'menu' => $menu->load('permissions'),
+            'menu' => $menu->load('permissions', 'actions'),
         ], 201);
     }
 
     public function show(Menu $menu): JsonResponse
     {
-        return response()->json(['menu' => $menu->load('permissions', 'enfants')]);
+        return response()->json(['menu' => $menu->load('permissions', 'actions', 'enfants')]);
     }
 
     public function update(Request $request, Menu $menu): JsonResponse
     {
         $donnees = $this->valider($request, $menu);
         $permissionIds = $donnees['permission_ids'] ?? null;
-        unset($donnees['permission_ids']);
+        $actionIds = $donnees['action_ids'] ?? null;
+        unset($donnees['permission_ids'], $donnees['action_ids']);
         $menu->update([...$donnees, 'updated_by' => $request->user()->id]);
         if ($permissionIds !== null) {
             $menu->permissions()->sync($permissionIds);
         }
+        if ($actionIds !== null) {
+            $menu->actions()->sync($actionIds);
+        }
 
         return response()->json([
             'message' => 'Menu modifié avec succès.',
-            'menu' => $menu->fresh()->load('permissions'),
+            'menu' => $menu->fresh()->load('permissions', 'actions'),
         ]);
     }
 
@@ -85,6 +91,8 @@ class MenuController extends Controller
             'actif' => ['sometimes', 'boolean'],
             'permission_ids' => ['sometimes', 'array'],
             'permission_ids.*' => ['integer', 'distinct', 'exists:permissions,id'],
+            'action_ids' => ['sometimes', 'array'],
+            'action_ids.*' => ['integer', 'distinct', 'exists:actions,id'],
         ]);
     }
 

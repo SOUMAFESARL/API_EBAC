@@ -1,7 +1,7 @@
 <?php
 
 $source = __DIR__.'/../docs/DICTIONNAIRE_COMPLET_API_EBAC.md';
-$target = __DIR__.'/../docs/DICTIONNAIRE_COMPLET_API_EBAC.docx';
+$target = $argv[1] ?? __DIR__.'/../docs/DICTIONNAIRE_COMPLET_API_EBAC.docx';
 $markdown = file_get_contents($source);
 
 if ($markdown === false) {

@@ -144,6 +144,27 @@ class AuthentificationController extends Controller
         ]);
     }
 
+    public function modifierMotDePasse(Request $request): JsonResponse
+    {
+        $utilisateur = $request->user();
+
+        $donnees = $request->validate([
+            'mot_de_passe_actuel' => ['required', 'string', 'current_password'],
+            'password' => ['required', 'confirmed', 'different:mot_de_passe_actuel', PasswordRule::min(8)->letters()->mixedCase()->numbers()],
+        ]);
+
+        $utilisateur->forceFill([
+            'password' => $donnees['password'],
+            'prochaine_connexion_sans_otp' => false,
+            'tentatives_echouees' => 0,
+        ])->save();
+
+        return response()->json([
+            'message' => 'Votre mot de passe a été modifié avec succès. Votre session reste active.',
+            'deconnexion_requise' => false,
+        ]);
+    }
+
     public function connexion(Request $request): JsonResponse
     {
         $identifiants = ConnexionDTO::fromArray($request->validate([

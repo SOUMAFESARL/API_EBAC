@@ -32,6 +32,9 @@ Route::prefix('v1/auth')->name('api.v1.auth.')->group(function () {
         ->name('reinitialiser-mot-de-passe');
 
     Route::middleware(['auth:sanctum', 'compte.actif'])->group(function () {
+        Route::post('/modifier-mot-de-passe', [AuthentificationController::class, 'modifierMotDePasse'])
+            ->middleware('throttle:5,1')
+            ->name('modifier-mot-de-passe');
         Route::get('/profil', [AuthentificationController::class, 'profil'])->name('profil');
         Route::post('/deconnexion', [AuthentificationController::class, 'deconnexion'])->name('deconnexion');
         Route::post('/deconnexion-globale', [AuthentificationController::class, 'deconnexionGlobale'])
@@ -42,6 +45,9 @@ Route::prefix('v1/auth')->name('api.v1.auth.')->group(function () {
 Route::get('v1/navigation/sidebar', SidebarController::class)
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->name('api.v1.navigation.sidebar');
+
+Route::get('v1/utilisateurs/{compte}/photo', [CompteController::class, 'photo'])
+    ->name('api.v1.utilisateurs.photo');
 
 Route::prefix('v1/administration/comptes')
     ->name('api.v1.administration.comptes.')
@@ -54,6 +60,7 @@ Route::prefix('v1/administration/comptes')
         Route::get('/{compte}/edit', [CompteController::class, 'edit'])->name('edit');
         Route::put('/{compte}', [CompteController::class, 'update'])->name('update');
         Route::patch('/{compte}', [CompteController::class, 'update'])->name('patch');
+        Route::post('/{compte}', [CompteController::class, 'update'])->name('update-multipart');
         Route::delete('/{compte}', [CompteController::class, 'destroy'])->name('destroy');
     });
 
@@ -62,12 +69,22 @@ Route::prefix('v1/administration/profil')->name('api.v1.administration.profil.')
     Route::get('/edit', [ProfilController::class, 'edit'])->name('edit');
     Route::put('/', [ProfilController::class, 'update'])->name('update');
     Route::patch('/', [ProfilController::class, 'update'])->name('patch');
+    Route::post('/', [ProfilController::class, 'update'])->name('update-multipart');
 });
 
 Route::prefix('v1/administration')
     ->name('api.v1.administration.')
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->group(function () {
+        Route::get('roles/matrice-autorisations', [RoleController::class, 'matriceAutorisations'])
+            ->middleware('permission:ROLE_GERER')
+            ->name('roles.matrice-autorisations');
+        Route::get('roles/{role}/matrice-autorisations', [RoleController::class, 'matriceAutorisationsRole'])
+            ->middleware('permission:ROLE_GERER')
+            ->name('roles.matrice-autorisations.show');
+        Route::put('roles/{role}/autorisations', [RoleController::class, 'synchroniserAutorisations'])
+            ->middleware('permission:ROLE_GERER')
+            ->name('roles.autorisations.update');
         Route::apiResource('roles', RoleController::class)->middleware('permission:ROLE_GERER');
         Route::put('roles/{role}/permissions', [RoleController::class, 'synchroniserPermissions'])
             ->middleware('permission:ROLE_GERER')

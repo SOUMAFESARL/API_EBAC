@@ -52,6 +52,7 @@ Chaque endpoint ci-dessous indique son tag d’intégration. Le même tag peut �
 | POST | `https://api-ebac.severinzran.ci/api/v1/auth/mot-de-passe-oublie` |
 | POST | `https://api-ebac.severinzran.ci/api/v1/auth/verifier-code-reinitialisation` |
 | POST | `https://api-ebac.severinzran.ci/api/v1/auth/reinitialiser-mot-de-passe` |
+| POST | `https://api-ebac.severinzran.ci/api/v1/auth/modifier-mot-de-passe` |
 | GET | `https://api-ebac.severinzran.ci/api/v1/auth/profil` |
 | POST | `https://api-ebac.severinzran.ci/api/v1/auth/deconnexion` |
 | POST | `https://api-ebac.severinzran.ci/api/v1/auth/deconnexion-globale` |
@@ -242,7 +243,34 @@ Réponse HTTP `200` :
 
 Stocker `token` puis l’envoyer dans `Authorization: Bearer {token}`. Un OTP expiré, incorrect, déjà consommé ou bloqué retourne `422`.
 
-### 3.3 Profil authentifié
+### 3.3 Modifier volontairement son mot de passe
+
+Un utilisateur déjà connecté peut décider de modifier son mot de passe depuis ses paramètres. Ce changement n’est pas imposé à la première connexion.
+
+`POST /auth/modifier-mot-de-passe`
+
+```json
+{
+  "mot_de_passe_actuel": "PasswordActuel123",
+  "password": "NouveauPassword456",
+  "password_confirmation": "NouveauPassword456"
+}
+```
+
+Réponse `200` :
+
+```json
+{
+  "message": "Votre mot de passe a été modifié avec succès. Votre session reste active.",
+  "deconnexion_requise": false
+}
+```
+
+La session et les tokens restent actifs. L’utilisateur décide lui-même quand appeler `/auth/deconnexion`. Après cette déconnexion volontaire, sa prochaine connexion exige l’OTP normalement.
+
+La connexion unique sans OTP concerne uniquement le parcours « mot de passe oublié » après une réinitialisation réussie.
+
+### 3.4 Profil authentifié
 
 `GET /auth/profil` — authentification requise.
 
@@ -252,7 +280,7 @@ Stocker `token` puis l’envoyer dans `Authorization: Bearer {token}`. Un OTP ex
 }
 ```
 
-### 3.4 Déconnexion de l’appareil
+### 3.5 Déconnexion de l’appareil
 
 `POST /auth/deconnexion` — authentification requise, corps vide.
 
@@ -262,7 +290,7 @@ Supprime uniquement le token courant.
 { "message": "Déconnexion réussie." }
 ```
 
-### 3.5 Déconnexion globale
+### 3.6 Déconnexion globale
 
 `POST /auth/deconnexion-globale` — authentification requise, corps vide.
 
@@ -410,7 +438,9 @@ Retourne `roles`, `civilites`, `statuts` et `valeurs_par_defaut`.
 }
 ```
 
-Champs requis : `nom`, `prenoms`, `email`, `id_role`.
+Champs requis : `civilite_id`, `nom`, `prenoms`, `email`, `id_role`.
+
+`civilite_id` doit être un entier correspondant à une civilité existante. Il ne peut pas être `null` lors de la création.
 
 Valeurs de `statut` : `Actif`, `Suspendu`, `Bloqué`, `Désactivé`.
 
@@ -420,9 +450,10 @@ Ne jamais envoyer `code`, `user_code` ou `user_id` :
 - `user_code` reçoit le code de l’administrateur créateur ;
 - `user_id` reçoit l’ID de l’administrateur créateur ;
 - `created_by` reçoit l’ID de l’administrateur créateur ;
-- le matricule et le mot de passe temporaire sont générés automatiquement.
+- le matricule au format `EBAC-0000-ANNEE` (exemple : `EBAC-0001-2026`) et le mot de passe temporaire sont générés automatiquement.
 
 Pour envoyer une photo, utiliser `multipart/form-data`. Formats : JPG, JPEG, PNG, WEBP ; maximum 2 Mo.
+La réponse contient `photo_url`, une URL absolue directement affichable par le frontend.
 
 Réponse HTTP `201` :
 
@@ -442,10 +473,13 @@ Réponse HTTP `201` :
 
 - `PUT /administration/comptes/{id}`
 - `PATCH /administration/comptes/{id}`
+- `POST /administration/comptes/{id}` — utiliser cette méthode pour modifier avec une photo en `multipart/form-data`.
 
 Tous les champs sont facultatifs. Champs acceptés : `civilite_id`, `nom`, `prenoms`, `email`, `photo`, `password`, `password_confirmation`, `id_role`, `is_active`, `statut`, `deux_fa_active`.
 
 `code`, `user_code` et `user_id` sont interdits. Pour supprimer une photo existante, envoyer `photo: null`.
+
+Pour la photo du profil connecté, envoyer également le formulaire en `POST multipart/form-data` vers `/administration/profil`.
 
 ### 6.6 Supprimer
 
@@ -478,6 +512,9 @@ Permission `ROLE_GERER` requise. Le rôle `ADMIN` dispose automatiquement de cet
 | PUT/PATCH | `/administration/roles/{id}` | Modifier |
 | DELETE | `/administration/roles/{id}` | Supprimer |
 | PUT | `/administration/roles/{id}/permissions` | Remplacer les permissions |
+| GET | `/administration/roles/matrice-autorisations` | Matrice menus × actions disponible |
+| GET | `/administration/roles/{id}/matrice-autorisations` | Matrice avec cases du rôle cochées |
+| PUT | `/administration/roles/{id}/autorisations` | Remplacer les cases cochées |
 
 Liste : query params `recherche`, `par_page`, `page`.
 
@@ -485,13 +522,19 @@ Création :
 
 ```json
 {
+  "code": "GESTIONNAIRE",
   "libelle": "Gestionnaire",
   "description": "Gestion des comptes",
-  "permission_ids": [1, 2, 3]
+  "actif": true,
+  "permission_ids": [1, 2, 3],
+  "autorisations": [
+    {"menu_id": 1, "action_ids": [1, 3, 4]},
+    {"menu_id": 2, "action_ids": [4]}
+  ]
 }
 ```
 
-Le frontend ne doit jamais envoyer `code`. L’API génère automatiquement un code unique au format `ROL-000001`, `ROL-000002`, etc. Ce code ne peut pas être modifié.
+Le frontend doit envoyer `code`. Il est obligatoire, limité à 30 caractères, composé de lettres ASCII, chiffres, tirets ou underscores, et doit être unique. L’API le convertit automatiquement en majuscules.
 
 Synchronisation des permissions :
 
@@ -500,6 +543,17 @@ Synchronisation des permissions :
 ```
 
 Envoyer un tableau vide retire toutes les permissions. Le rôle `ADMIN` et un rôle encore attribué à des comptes ne peuvent pas être supprimés.
+
+La matrice reproduit l’écran « Module / Actions ». Chaque action envoyée doit d’abord être déclarée comme disponible sur le menu avec `action_ids` lors de la création ou modification du menu.
+
+```json
+{
+  "autorisations": [
+    {"menu_id": 1, "action_ids": [1, 2, 3]},
+    {"menu_id": 2, "action_ids": [4]}
+  ]
+}
+```
 
 ## 9. Permissions
 
@@ -548,7 +602,8 @@ Permission `MENU_GERER` requise. Le rôle `ADMIN` dispose automatiquement de cet
   "ordre": 50,
   "visible": true,
   "actif": true,
-  "permission_ids": [1]
+  "permission_ids": [1],
+  "action_ids": [1, 2, 3, 4]
 }
 ```
 

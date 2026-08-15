@@ -20,7 +20,7 @@ class ConnexionResource extends JsonResource
             'token' => $this->resource['token'],
             'token_type' => 'Bearer',
             'otp_requis' => $this->resource['otp_requis'] ?? false,
-            'redirect_to' => '/dashboard/index',
+            'redirect_to' => $this->resource['redirect_to'] ?? '/dashboard/index',
             'utilisateur' => UtilisateurResource::make($this->resource['utilisateur']),
         ];
     }

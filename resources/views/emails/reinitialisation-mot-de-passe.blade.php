@@ -30,6 +30,7 @@
                         </td>
                     </tr>
                     <tr>
+
                         <td style="padding:0 40px 34px;">
                             <div style="padding:15px 17px;background:#fff7ed;border-left:4px solid #f97316;border-radius:6px;color:#9a3412;font-size:14px;line-height:1.6;">
                                 Ce lien expirera dans <strong>{{ $expiration }} minutes</strong>. Si vous n’êtes pas à l’origine de cette demande, ignorez simplement cet e-mail.

@@ -27,7 +27,7 @@ Erreur de validation standard :
 }
 ```
 
-Les codes `USR-*`, `ROL-*`, `PER-*` et `MEN-*` sont générés par l’API. Le frontend ne doit jamais les envoyer.
+Les codes `USR-*`, `PER-*` et `MEN-*` sont générés par l’API. Le code du rôle est obligatoirement saisi par le frontend.
 
 ## 2. Dictionnaire des objets
 
@@ -37,7 +37,7 @@ Les codes `USR-*`, `ROL-*`, `PER-*` et `MEN-*` sont générés par l’API. Le f
 |---|---|---:|---|---|
 | `id` | entier | non | API | Identifiant du compte |
 | `civilite_id` | entier | oui | Front | Référence à la civilité |
-| `matricule` | chaîne | oui | API | Matricule interne |
+| `matricule` | chaîne | oui | API | Matricule automatique au format `EBAC-0000-ANNEE`, par exemple `EBAC-0001-2026` |
 | `code` | chaîne | non | API | Code automatique du nouveau compte |
 | `user_code` | chaîne | oui | API | Code de l’utilisateur créateur |
 | `user_id` | entier | oui | API | ID de l’utilisateur créateur |
@@ -61,10 +61,12 @@ Les codes `USR-*`, `ROL-*`, `PER-*` et `MEN-*` sont générés par l’API. Le f
 | Champ | Type | Source | Description |
 |---|---|---|---|
 | `id` | entier | API | Identifiant |
-| `code` | chaîne | API | Automatique : `ROL-000001` |
+| `code` | chaîne(30) | Front | Obligatoire, unique, normalisé en majuscules |
 | `libelle` | chaîne(80) | Front | Nom du rôle |
 | `description` | chaîne(255) | Front | Description facultative |
+| `actif` | booléen | Front | Active ou désactive le rôle |
 | `permissions` | tableau | Front/API | Permissions associées |
+| `autorisations` | tableau | Front/API | Couples `menu_id` et `action_ids` cochés |
 | `permissions_count` | entier | API | Nombre de permissions |
 
 ### 2.3 Permission
@@ -108,9 +110,20 @@ Actions initiales : `AJOUTER`, `SUPPRIMER`, `MODIFIER`, `VOIR`, `IMPRIMER`, `TEL
 | `visible` | booléen | Front | Visible dans le sidebar |
 | `actif` | booléen | Front | Menu actif |
 | `permissions` | tableau | Front/API | Permissions nécessaires |
+| `actions` | tableau | Front/API | Actions proposées pour ce module |
 | `enfants` | tableau | API | Sous-menus |
 
-### 2.6 Pagination
+### 2.6 Tables de liaison des autorisations
+
+| Table | Clé | Description |
+|---|---|---|
+| `role_permissions` | `id_role + id_permission` | Permissions métier attribuées au rôle |
+| `permission_actions` | `id_permission + id_action` | Actions rattachées à une permission |
+| `menu_permissions` | `id_menu + id_permission` | Permissions donnant accès au menu |
+| `menu_actions` | `id_menu + id_action` | Actions disponibles dans la ligne du module |
+| `role_menu_actions` | `id_role + id_menu + id_action` | Cases cochées de la matrice du rôle |
+
+### 2.7 Pagination
 
 ```json
 {
@@ -186,6 +199,20 @@ Réponse `200` :
 ### GET `/auth/profil`
 
 Protégé. Réponse `200` : `{"utilisateur": {…objet Utilisateur…}}`.
+
+### POST `/auth/modifier-mot-de-passe`
+
+Protégé. Appelé volontairement par un utilisateur connecté.
+
+```json
+{"mot_de_passe_actuel":"PasswordActuel123","password":"NouveauPassword456","password_confirmation":"NouveauPassword456"}
+```
+
+Réponse `200` : `{"message":"Votre mot de passe a été modifié avec succès. Votre session reste active.","deconnexion_requise":false}`.
+
+Le nouveau mot de passe doit différer du mot de passe actuel. La session reste active et l’utilisateur choisit lui-même quand se déconnecter. Sa connexion suivante exige l’OTP.
+
+Après une réinitialisation via « mot de passe oublié », et uniquement dans ce cas, la première connexion est autorisée sans OTP une seule fois.
 
 ### POST `/auth/deconnexion`
 
@@ -275,7 +302,7 @@ Utiliser `multipart/form-data` si `photo` est présente.
 
 | Champ | Règle |
 |---|---|
-| `civilite_id` | facultatif, existe dans `civilite` |
+| `civilite_id` | obligatoire, entier, existe dans `civilite.id` |
 | `nom`, `prenoms` | obligatoires, chaîne, max 150 |
 | `email` | obligatoire, email unique, max 150 |
 | `id_role` | obligatoire, rôle existant |
@@ -335,13 +362,13 @@ Query : `recherche`, `par_page`, `page`. Réponse `200` : pagination avec rôles
 ### POST `/administration/roles`
 
 ```json
-{"libelle":"Gestionnaire","description":"Gestion des étudiants","permission_ids":[1,2]}
+{"code":"GESTIONNAIRE","libelle":"Gestionnaire","description":"Gestion des étudiants","actif":true,"permission_ids":[1,2],"autorisations":[{"menu_id":1,"action_ids":[1,3,4]}]}
 ```
 
 Réponse `201` :
 
 ```json
-{"message":"Rôle créé avec succès.","role":{"id":2,"code":"ROL-000001","libelle":"Gestionnaire","description":"Gestion des étudiants","permissions":[{"id":1,"code":"PER-000001","libelle":"Étudiants"}]}}
+{"message":"Rôle créé avec succès.","role":{"id":2,"code":"GESTIONNAIRE","libelle":"Gestionnaire","description":"Gestion des étudiants","permissions":[{"id":1,"code":"PER-000001","libelle":"Étudiants"}]}}
 ```
 
 ### GET `/administration/roles/{id}`
@@ -350,7 +377,7 @@ Réponse `200` : `{"role":{…rôle avec permissions…}}`.
 
 ### PUT/PATCH `/administration/roles/{id}`
 
-Champs : `libelle`, `description`, `permission_ids`. `code` interdit.
+Champs : `code`, `libelle`, `description`, `permission_ids`. À la création, `code` est obligatoire, unique, limité à 30 caractères et converti en majuscules.
 Réponse `200` : `{"message":"Rôle modifié avec succès.","role":{…}}`.
 
 ### PUT `/administration/roles/{id}/permissions`
@@ -360,6 +387,22 @@ Réponse `200` : `{"message":"Rôle modifié avec succès.","role":{…}}`.
 ```
 
 Réponse `200` : `{"message":"Permissions du rôle mises à jour.","role":{…rôle avec permissions…}}`.
+
+### GET `/administration/roles/matrice-autorisations`
+
+Réponse `200` : `{"modules":[{"menu_id":1,"code":"MEN-000001","libelle":"Étudiants","actions":[{"id":1,"code":"VOIR","libelle":"Voir","selectionnee":false}]}]}`.
+
+### GET `/administration/roles/{id}/matrice-autorisations`
+
+Même matrice avec `selectionnee: true` pour les cases déjà attribuées au rôle.
+
+### PUT `/administration/roles/{id}/autorisations`
+
+```json
+{"autorisations":[{"menu_id":1,"action_ids":[1,3,4]},{"menu_id":2,"action_ids":[4]}]}
+```
+
+Cette requête remplace toute la matrice du rôle.
 
 ### DELETE `/administration/roles/{id}`
 
@@ -459,7 +502,8 @@ Réponse `200` : `{"menus":[{…menu avec permissions…}]}`.
   "ordre": 10,
   "visible": true,
   "actif": true,
-  "permission_ids": [1]
+  "permission_ids": [1],
+  "action_ids": [1, 2, 3, 4]
 }
 ```
 
@@ -508,6 +552,7 @@ Protégé. Retourne uniquement les menus actifs et visibles autorisés par le r�
 |---|---|
 | POST | `/auth/connexion` |
 | POST | `/auth/confirmer-otp` |
+| POST | `/auth/modifier-mot-de-passe` |
 | POST | `/auth/mot-de-passe-oublie` |
 | POST | `/auth/verifier-code-reinitialisation` |
 | POST | `/auth/reinitialiser-mot-de-passe` |
@@ -524,6 +569,9 @@ Protégé. Retourne uniquement les menus actifs et visibles autorisés par le r�
 | GET, POST | `/administration/roles` |
 | GET, PUT, PATCH, DELETE | `/administration/roles/{id}` |
 | PUT | `/administration/roles/{id}/permissions` |
+| GET | `/administration/roles/matrice-autorisations` |
+| GET | `/administration/roles/{id}/matrice-autorisations` |
+| PUT | `/administration/roles/{id}/autorisations` |
 | GET, POST | `/administration/permissions` |
 | GET, PUT, PATCH, DELETE | `/administration/permissions/{id}` |
 | PUT | `/administration/permissions/{id}/actions` |

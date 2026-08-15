@@ -25,10 +25,11 @@ class RolePermissionApiTest extends TestCase
             ->json('permission.id');
 
         $roleId = $this->postJson('/api/v1/administration/roles', [
+            'code' => 'GESTIONNAIRE',
             'libelle' => 'Gestionnaire',
             'permission_ids' => [$permissionId],
         ])->assertCreated()
-            ->assertJsonPath('role.code', 'ROL-000001')
+            ->assertJsonPath('role.code', 'GESTIONNAIRE')
             ->assertJsonPath('role.permissions.0.id', $permissionId)
             ->json('role.id');
 
@@ -69,5 +70,26 @@ class RolePermissionApiTest extends TestCase
         ])->assertOk()
             ->assertJsonPath('permission.code', 'PER-000001')
             ->assertJsonPath('permission.libelle', 'Exporter la liste des étudiants');
+    }
+
+    public function test_le_code_du_role_est_saisi_par_le_frontend_normalise_et_unique(): void
+    {
+        $adminRole = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $adminRole->id]));
+
+        $this->postJson('/api/v1/administration/roles', [
+            'libelle' => 'Sans code',
+        ])->assertUnprocessable()->assertJsonValidationErrors('code');
+
+        $this->postJson('/api/v1/administration/roles', [
+            'code' => 'gestionnaire-etudiants',
+            'libelle' => 'Gestionnaire étudiants',
+        ])->assertCreated()
+            ->assertJsonPath('role.code', 'GESTIONNAIRE-ETUDIANTS');
+
+        $this->postJson('/api/v1/administration/roles', [
+            'code' => 'GESTIONNAIRE-ETUDIANTS',
+            'libelle' => 'Doublon',
+        ])->assertUnprocessable()->assertJsonValidationErrors('code');
     }
 }

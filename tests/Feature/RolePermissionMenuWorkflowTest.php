@@ -31,11 +31,12 @@ class RolePermissionMenuWorkflowTest extends TestCase
             ->json('permission.id');
 
         $roleId = $this->postJson('/api/v1/administration/roles', [
+            'code' => 'GESTIONNAIRE_ETUDIANTS',
             'libelle' => 'Gestionnaire des étudiants',
             'description' => 'Gère les informations des étudiants.',
             'permission_ids' => [$permissionId],
         ])->assertCreated()
-            ->assertJsonPath('role.code', 'ROL-000001')
+            ->assertJsonPath('role.code', 'GESTIONNAIRE_ETUDIANTS')
             ->assertJsonPath('role.permissions.0.id', $permissionId)
             ->json('role.id');
 

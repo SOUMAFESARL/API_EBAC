@@ -117,7 +117,7 @@
       <div class="grid">
         <form id="roleForm" class="card">
           <div class="section-title"><h2>Créer un rôle</h2></div>
-          <p class="subtitle" style="margin-bottom:15px">Le code du rôle est généré automatiquement par l’API.</p>
+          <div class="field"><label>Code *</label><input id="roleCode" required maxlength="30" placeholder="GESTIONNAIRE"></div>
           <div class="field"><label>Libellé *</label><input id="roleLabel" required placeholder="Gestionnaire"></div>
           <div class="field"><label>Description</label><textarea id="roleDescription"></textarea></div>
           <div class="field"><label>Permissions attribuées</label><div id="permissionChecks" class="checks"></div></div>
@@ -252,7 +252,7 @@
   window.deletePermission=async id=>{ if(!confirm('Supprimer cette permission ?'))return; try{ await api(`/administration/permissions/${id}`,{method:'DELETE'}); await loadPermissions(); toast('Permission supprimée'); }catch(e){ toast(e.message,true); } };
 
   async function loadRoles(){ try{ const data=await api('/administration/roles?par_page=100'); state.roles=data.data||[]; $('roleRows').innerHTML=state.roles.map(r=>`<tr><td>${r.id}</td><td><span class="badge">${r.code}</span></td><td>${r.libelle}</td><td>${(r.permissions||[]).map(p=>`<span class="badge">${p.code}</span>`).join('')||'—'}</td><td><div class="actions"><button class="btn secondary small" onclick="editRolePermissions(${r.id})">Permissions</button><button class="btn danger small" onclick="deleteRole(${r.id})">Supprimer</button></div></td></tr>`).join('')||'<tr><td colspan="5">Aucun rôle.</td></tr>'; }catch(e){ toast(e.message,true); } }
-  $('roleForm').onsubmit=async e=>{ e.preventDefault(); const ids=[...document.querySelectorAll('[name=rolePermission]:checked')].map(x=>Number(x.value)); try{ await api('/administration/roles',{method:'POST',body:JSON.stringify({libelle:$('roleLabel').value,description:$('roleDescription').value||null,permission_ids:ids})}); e.target.reset(); await loadRoles(); toast('Rôle créé'); }catch(err){ toast(err.message,true); } };
+  $('roleForm').onsubmit=async e=>{ e.preventDefault(); const ids=[...document.querySelectorAll('[name=rolePermission]:checked')].map(x=>Number(x.value)); try{ await api('/administration/roles',{method:'POST',body:JSON.stringify({code:$('roleCode').value,libelle:$('roleLabel').value,description:$('roleDescription').value||null,permission_ids:ids})}); e.target.reset(); await loadRoles(); toast('Rôle créé'); }catch(err){ toast(err.message,true); } };
   window.deleteRole=async id=>{ if(!confirm('Supprimer ce rôle ?'))return; try{ await api(`/administration/roles/${id}`,{method:'DELETE'}); await loadRoles(); toast('Rôle supprimé'); }catch(e){ toast(e.message,true); } };
   window.editRolePermissions=id=>{
     const role=state.roles.find(item=>item.id===id);

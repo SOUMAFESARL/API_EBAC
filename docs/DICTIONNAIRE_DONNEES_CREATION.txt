@@ -28,11 +28,11 @@ https://api-ebac.severinzran.ci/api/v1/administration/comptes
 
 --------------------------------------------------------------------------------
 CHAMP : civilite_id
-Type : entier ou null
-Obligatoire : NON
+Type : entier
+Obligatoire : OUI
 Source : FRONT
 Validation : doit exister dans civilite.id
-Description : identifiant de la civilité du nouveau compte.
+Description : identifiant obligatoire de la civilité du nouveau compte.
 Exemple : 1
 --------------------------------------------------------------------------------
 CHAMP : nom
@@ -127,7 +127,7 @@ CHAMP : matricule
 Type : chaîne
 Obligatoire : INTERDIT
 Source : API
-Format : EBAC-{NOM}-{PRENOM}-{ANNEE}-{SEQUENCE}
+Format : EBAC-{SEQUENCE_SUR_4_CHIFFRES}-{ANNEE} (exemple : EBAC-0001-2026)
 Description : matricule unique généré automatiquement.
 --------------------------------------------------------------------------------
 CHAMP : password
@@ -189,12 +189,31 @@ Validation : chaque ID doit être distinct et exister dans permissions.id
 Description : permissions initialement affectées au rôle.
 Exemple : [1, 2, 3]
 --------------------------------------------------------------------------------
+CHAMP : actif
+Type : booléen
+Obligatoire : NON
+Source : FRONT
+Valeur par défaut : true
+Description : active ou désactive le rôle et ses autorisations.
+--------------------------------------------------------------------------------
+CHAMP : autorisations
+Type : tableau d'objets
+Obligatoire : NON
+Source : FRONT
+Structure : [{"menu_id": 1, "action_ids": [1, 2, 3]}]
+Validation : menu existant, actions existantes et disponibles sur le menu
+Description : cases Module / Actions cochées pour le rôle.
+--------------------------------------------------------------------------------
 CHAMP : code
 Type : chaîne
-Obligatoire : INTERDIT
-Source : API
-Format : ROL-000001
-Description : code unique et séquentiel généré automatiquement.
+Obligatoire : OUI
+Source : FRONT
+Longueur maximale : 30 caractères
+Format : lettres ASCII, chiffres, tirets et underscores
+Transformation : conversion automatique en majuscules
+Validation : valeur unique dans roles.code
+Description : code fonctionnel unique choisi lors de la création du rôle.
+Exemple : GESTIONNAIRE_ETUDIANTS
 Note : le rôle système ADMIN conserve le code ADMIN.
 --------------------------------------------------------------------------------
 CHAMP : created_by
@@ -218,9 +237,14 @@ Description : informations de suppression logique.
 
 EXEMPLE DE REQUÊTE
 {
+  "code": "GESTIONNAIRE",
   "libelle": "Gestionnaire",
   "description": "Gestion des comptes utilisateurs",
-  "permission_ids": [1, 2, 3]
+  "actif": true,
+  "permission_ids": [1, 2, 3],
+  "autorisations": [
+    {"menu_id": 1, "action_ids": [1, 3, 4]}
+  ]
 }
 
 
@@ -388,6 +412,15 @@ Validation : chaque ID doit être distinct et exister dans permissions.id
 Description : permissions donnant accès à ce menu.
 Note : un menu sans permission est visible par tous les utilisateurs actifs.
 --------------------------------------------------------------------------------
+CHAMP : action_ids
+Type : tableau d'entiers
+Obligatoire : NON
+Source : FRONT
+Valeur par défaut : tableau vide
+Validation : chaque ID doit être distinct et exister dans actions.id
+Description : actions proposées dans la matrice pour ce module/menu.
+Exemple : [1, 2, 3, 4]
+--------------------------------------------------------------------------------
 CHAMP : created_by
 Type : entier
 Obligatoire : INTERDIT
@@ -398,7 +431,6 @@ Description : ID de l'administrateur connecté qui crée le menu.
 EXEMPLE DE REQUÊTE
 {
   "id_parent": 1,
-  "code": "ETUDIANTS",
   "libelle": "Étudiants",
   "description": "Gestion des étudiants",
   "route": "/scolarite/etudiants",
@@ -408,12 +440,73 @@ EXEMPLE DE REQUÊTE
   "ordre": 20,
   "visible": true,
   "actif": true,
-  "permission_ids": [1]
+  "permission_ids": [1],
+  "action_ids": [1, 2, 3, 4]
 }
 
 
 ================================================================================
-5. RÈGLES TRANSVERSALES
+5. ACTIONS ET MATRICE DES AUTORISATIONS
+================================================================================
+
+TABLE : actions
+Description : catalogue global des actions disponibles.
+Actions initiales : AJOUTER, SUPPRIMER, MODIFIER, VOIR, IMPRIMER, TELECHARGER.
+
+--------------------------------------------------------------------------------
+CHAMP : id
+Type : entier
+Source : API
+Description : identifiant de l'action.
+--------------------------------------------------------------------------------
+CHAMP : code
+Type : chaîne de 30 caractères maximum
+Source : API
+Description : code technique unique généré à partir du libellé.
+--------------------------------------------------------------------------------
+CHAMP : libelle
+Type : chaîne de 120 caractères maximum
+Source : FRONT
+Obligatoire : OUI lors de la création
+--------------------------------------------------------------------------------
+CHAMP : description
+Type : chaîne de 255 caractères maximum ou null
+Source : FRONT
+Obligatoire : NON
+--------------------------------------------------------------------------------
+CHAMP : actif
+Type : booléen
+Source : FRONT
+Valeur par défaut : true
+--------------------------------------------------------------------------------
+
+TABLE : menu_actions
+Clé primaire : id_menu + id_action
+Description : définit les actions disponibles pour chaque module/menu.
+
+TABLE : role_menu_actions
+Clé primaire : id_role + id_menu + id_action
+Description : enregistre chaque case cochée de la matrice d'un rôle.
+Champs : id_role, id_menu, id_action, created_by, created_at.
+
+Endpoints :
+GET /administration/roles/matrice-autorisations
+GET /administration/roles/{role_id}/matrice-autorisations
+PUT /administration/roles/{role_id}/autorisations
+
+Requête de synchronisation :
+{
+  "autorisations": [
+    {"menu_id": 1, "action_ids": [1, 3, 4]},
+    {"menu_id": 2, "action_ids": [4]}
+  ]
+}
+
+Un tableau vide supprime toutes les autorisations du rôle.
+
+
+================================================================================
+6. RÈGLES TRANSVERSALES
 ================================================================================
 
 1. Toutes les routes exigent :
@@ -438,10 +531,30 @@ EXEMPLE DE REQUÊTE
 5. Les champs created_by, updated_by et deleted_by sont toujours gérés par
    l'API à partir de l'utilisateur authentifié.
 
-6. Les codes automatiques ne doivent jamais être générés par le frontend.
+6. Les codes des comptes, permissions, menus et actions ne doivent jamais être
+   générés par le frontend. Le code du rôle est saisi par le frontend.
 
 7. Les suppressions de comptes, rôles, permissions et menus sont soumises aux
    règles métier et peuvent retourner HTTP 422 si la ressource est utilisée.
+
+8. Le changement de mot de passe n'est pas imposé à la première connexion.
+   Un utilisateur connecté peut décider de le modifier en appelant :
+   POST /auth/modifier-mot-de-passe
+
+   Requête :
+   {
+     "mot_de_passe_actuel": "PasswordActuel123",
+     "password": "NouveauPassword456",
+     "password_confirmation": "NouveauPassword456"
+   }
+
+   L'utilisateur choisit lui-même s'il souhaite le modifier. Sa session et ses
+   tokens restent actifs. Il décide lui-même quand se déconnecter. Sa connexion
+   suivante demande un OTP.
+
+9. Après le parcours mot de passe oublié et une réinitialisation réussie,
+   la première connexion est sans OTP une seule fois. Les connexions suivantes
+   demandent de nouveau un OTP.
 
 ================================================================================
                          FIN DU DOCUMENT

@@ -23,6 +23,10 @@ class VerifierPermission
             return $next($request);
         }
 
+        if (! ($utilisateur->role?->actif ?? true)) {
+            return response()->json(['message' => 'Votre rôle est inactif.'], 403);
+        }
+
         $permissionsActives = $utilisateur->role?->permissions
             ->filter(fn ($permission) => (bool) $permission->pivot->actif)
             ->pluck('code')
