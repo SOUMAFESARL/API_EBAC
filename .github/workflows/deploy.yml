@@ -1,0 +1,93 @@
+name: Tests et déploiement EBAC
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-ebac
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests Laravel
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl, pdo_sqlite, sqlite3, zip, gd
+          coverage: none
+
+      - name: Mettre Composer en cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Installer les dépendances
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Préparer Laravel
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Exécuter les tests
+        run: php artisan test
+
+  deploy:
+    name: Déployer sur cPanel par FTP
+    runs-on: ubuntu-latest
+    needs: tests
+    environment: production
+
+    steps:
+      - name: Récupérer le code validé
+        uses: actions/checkout@v4
+
+      - name: Installer PHP pour la version de production
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl, pdo_mysql, zip, gd
+          coverage: none
+
+      - name: Installer les dépendances de production
+        run: composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Envoyer les fichiers vers cPanel
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: 21
+          local-dir: ./
+          server-dir: ${{ secrets.FTP_REMOTE_PATH }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/.env
+            **/.env.*
+            **/node_modules/**
+            **/tests/**
+            **/storage/**
+            **/bootstrap/cache/**
+            **/docs/**
+            **/scripts/**
+            **/public.zip
+            **/~$*
