@@ -66,4 +66,16 @@ class MenuApiTest extends TestCase
         $this->deleteJson("/api/v1/administration/menus/{$menuId}")->assertOk();
         $this->assertSoftDeleted('menus', ['id' => $menuId]);
     }
+
+    public function test_le_frontend_ne_peut_pas_imposer_le_code_d_un_menu(): void
+    {
+        $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+
+        $this->postJson('/api/v1/administration/menus', [
+            'code' => 'CODE_FRONTEND',
+            'libelle' => 'Menu interdit',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('code');
+    }
 }

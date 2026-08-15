@@ -1,0 +1,274 @@
+================================================================================
+WORKFLOW EBAC : RÔLES, PERMISSIONS, MENUS ET ACTIONS
+================================================================================
+
+URL DE BASE PRODUCTION
+https://api-ebac.severinzran.ci/api/v1
+
+Toutes les routes d'administration nécessitent :
+Authorization: Bearer {token}
+Accept: application/json
+Content-Type: application/json
+
+Ordre recommandé :
+1. Connexion et confirmation OTP
+2. Récupération des actions
+3. Création d'une permission
+4. Attribution des actions à la permission
+5. Création d'un rôle avec ses permissions
+6. Création d'un menu avec ses permissions
+7. Récupération du sidebar de l'utilisateur
+
+
+================================================================================
+ÉTAPE 1 — CONNEXION ET RÉCUPÉRATION DU TOKEN
+================================================================================
+
+1.1 Demander le code OTP
+
+POST https://api-ebac.severinzran.ci/api/v1/auth/connexion
+
+Requête :
+{
+  "email": "administrateur@ebac.ci",
+  "password": "mot-de-passe",
+  "nom_appareil": "Frontend EBAC"
+}
+
+Réponse HTTP 202 :
+{
+  "message": "Un code OTP a été envoyé à votre adresse e-mail.",
+  "otp_requis": true,
+  "id_tentative": 15,
+  "expire_dans": 600
+}
+
+1.2 Confirmer le code OTP
+
+POST https://api-ebac.severinzran.ci/api/v1/auth/confirmer-otp
+
+Requête :
+{
+  "id_tentative": 15,
+  "code_otp": "123456"
+}
+
+Récupérer la valeur "token" de la réponse et l'envoyer dans toutes les requêtes
+suivantes :
+Authorization: Bearer {token}
+
+
+================================================================================
+ÉTAPE 2 — RÉCUPÉRER LES ACTIONS DISPONIBLES
+================================================================================
+
+GET https://api-ebac.severinzran.ci/api/v1/administration/actions
+
+Actions initiales :
+- AJOUTER
+- SUPPRIMER
+- MODIFIER
+- VOIR
+- IMPRIMER
+- TELECHARGER
+
+Exemple de réponse :
+{
+  "actions": [
+    {
+      "id": 1,
+      "code": "AJOUTER",
+      "libelle": "Ajouter",
+      "actif": true,
+      "permissions_count": 0
+    }
+  ]
+}
+
+Conserver les identifiants des actions à attribuer à la permission.
+
+
+================================================================================
+ÉTAPE 3 — CRÉER UNE PERMISSION
+================================================================================
+
+POST https://api-ebac.severinzran.ci/api/v1/administration/permissions
+
+Requête :
+{
+  "libelle": "Gestion des étudiants",
+  "description": "Autorise la gestion du module des étudiants"
+}
+
+IMPORTANT : le frontend ne doit pas envoyer le champ "code".
+L'API génère automatiquement : PER-000001, PER-000002, etc.
+
+Exemple de réponse HTTP 201 :
+{
+  "message": "Permission créée avec succès.",
+  "permission": {
+    "id": 10,
+    "code": "PER-000001",
+    "libelle": "Gestion des étudiants",
+    "description": "Autorise la gestion du module des étudiants"
+  }
+}
+
+Conserver permission.id.
+
+
+================================================================================
+ÉTAPE 4 — ATTRIBUER LES ACTIONS À LA PERMISSION
+================================================================================
+
+PUT https://api-ebac.severinzran.ci/api/v1/administration/permissions/{permission_id}/actions
+
+Exemple :
+PUT https://api-ebac.severinzran.ci/api/v1/administration/permissions/10/actions
+
+Requête :
+{
+  "action_ids": [1, 3, 4, 5, 6]
+}
+
+Cette requête remplace la liste complète des actions de la permission.
+Un tableau vide retire toutes les actions :
+{
+  "action_ids": []
+}
+
+Pour relire les actions d'une permission :
+GET https://api-ebac.severinzran.ci/api/v1/administration/permissions/{permission_id}
+
+
+================================================================================
+ÉTAPE 5 — CRÉER UN RÔLE ET LUI ATTRIBUER LES PERMISSIONS
+================================================================================
+
+POST https://api-ebac.severinzran.ci/api/v1/administration/roles
+
+Requête :
+{
+  "libelle": "Gestionnaire des étudiants",
+  "description": "Gère les dossiers des étudiants",
+  "permission_ids": [10]
+}
+
+IMPORTANT : le frontend ne doit pas envoyer le champ "code".
+L'API génère automatiquement : ROL-000001, ROL-000002, etc.
+
+Pour remplacer les permissions d'un rôle existant :
+
+PUT https://api-ebac.severinzran.ci/api/v1/administration/roles/{role_id}/permissions
+
+Requête :
+{
+  "permission_ids": [10, 11, 12]
+}
+
+Un tableau vide retire toutes les permissions du rôle.
+
+
+================================================================================
+ÉTAPE 6 — CRÉER UN MENU ET LUI ATTRIBUER LES PERMISSIONS
+================================================================================
+
+POST https://api-ebac.severinzran.ci/api/v1/administration/menus
+
+Requête pour un menu principal :
+{
+  "id_parent": null,
+  "libelle": "Étudiants",
+  "description": "Gestion des étudiants",
+  "route": "/etudiants",
+  "route_active": "/etudiants*",
+  "icone": "users",
+  "groupe": "Scolarité",
+  "ordre": 10,
+  "visible": true,
+  "actif": true,
+  "permission_ids": [10]
+}
+
+IMPORTANT : le frontend ne doit pas envoyer le champ "code".
+L'API génère automatiquement : MEN-000001, MEN-000002, etc.
+
+Pour créer un sous-menu, renseigner l'identifiant du menu parent :
+{
+  "id_parent": 1,
+  "libelle": "Liste des étudiants",
+  "route": "/etudiants/liste",
+  "ordre": 20,
+  "visible": true,
+  "actif": true,
+  "permission_ids": [10]
+}
+
+Pour modifier un menu et ses permissions :
+
+PATCH https://api-ebac.severinzran.ci/api/v1/administration/menus/{menu_id}
+
+{
+  "libelle": "Gestion des étudiants",
+  "permission_ids": [10, 11]
+}
+
+
+================================================================================
+ÉTAPE 7 — AFFICHER LE SIDEBAR DE L'UTILISATEUR CONNECTÉ
+================================================================================
+
+GET https://api-ebac.severinzran.ci/api/v1/navigation/sidebar
+
+Le serveur retourne uniquement les menus :
+- actifs ;
+- visibles ;
+- autorisés par les permissions du rôle connecté.
+
+Le frontend utilise la réponse pour construire automatiquement le sidebar.
+
+
+================================================================================
+RÉSUMÉ DES RELATIONS
+================================================================================
+
+UTILISATEUR
+  └── possède un RÔLE
+        └── possède plusieurs PERMISSIONS
+              ├── possèdent plusieurs ACTIONS
+              └── donnent accès à plusieurs MENUS
+
+Exemple :
+
+Utilisateur : Jean Dupont
+Rôle        : Gestionnaire des étudiants
+Permission  : Gestion des étudiants (PER-000001)
+Actions     : AJOUTER, MODIFIER, VOIR, IMPRIMER
+Menu        : Étudiants (MEN-000001)
+
+
+================================================================================
+RÈGLES IMPORTANTES POUR LE FRONTEND
+================================================================================
+
+1. Ne jamais envoyer "code" lors de la création ou modification d'un rôle,
+   d'une permission, d'un menu ou d'une nouvelle action.
+2. Toujours envoyer le token Bearer sur les routes d'administration.
+3. Une synchronisation remplace toute l'ancienne liste.
+4. Envoyer un tableau vide pour retirer toutes les associations.
+5. Utiliser les identifiants numériques dans permission_ids et action_ids.
+6. Une réponse HTTP 401 indique un token absent ou invalide.
+7. Une réponse HTTP 403 indique une permission insuffisante.
+8. Une réponse HTTP 422 indique une erreur de validation.
+9. Le rôle ADMIN dispose d'un accès total.
+
+
+================================================================================
+URL DE L'INTERFACE HTML DE TEST
+================================================================================
+
+Local :
+http://127.0.0.1:8000/test-role-permissions.html
+
+Après déploiement :
+https://api-ebac.severinzran.ci/test-role-permissions.html

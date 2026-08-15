@@ -46,4 +46,47 @@ class ActionApiTest extends TestCase
             ]);
         }
     }
+
+    public function test_un_administrateur_peut_creer_modifier_afficher_et_supprimer_une_action(): void
+    {
+        $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+
+        $actionId = $this->postJson('/api/v1/administration/actions', [
+            'libelle' => 'Archiver un dossier',
+            'description' => 'Place un dossier dans les archives.',
+            'actif' => true,
+        ])->assertCreated()
+            ->assertJsonPath('action.code', 'ARCHIVER_UN_DOSSIER')
+            ->assertJsonPath('action.actif', true)
+            ->json('action.id');
+
+        $this->getJson("/api/v1/administration/actions/{$actionId}")
+            ->assertOk()
+            ->assertJsonPath('action.libelle', 'Archiver un dossier');
+
+        $this->patchJson("/api/v1/administration/actions/{$actionId}", [
+            'libelle' => 'Archiver',
+            'description' => 'Archive définitivement le dossier.',
+            'actif' => false,
+        ])->assertOk()
+            ->assertJsonPath('action.code', 'ARCHIVER_UN_DOSSIER')
+            ->assertJsonPath('action.libelle', 'Archiver')
+            ->assertJsonPath('action.actif', false);
+
+        $this->deleteJson("/api/v1/administration/actions/{$actionId}")->assertOk();
+        $this->assertSoftDeleted('actions', ['id' => $actionId]);
+    }
+
+    public function test_le_frontend_ne_peut_pas_imposer_le_code_d_une_action(): void
+    {
+        $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+
+        $this->postJson('/api/v1/administration/actions', [
+            'code' => 'CODE_FRONTEND',
+            'libelle' => 'Action interdite',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('code');
+    }
 }

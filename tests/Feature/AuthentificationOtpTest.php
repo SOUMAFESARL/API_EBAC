@@ -152,8 +152,31 @@ class AuthentificationOtpTest extends TestCase
         ])->assertOk();
 
         $this->assertTrue(Hash::check('NouveauPassword123', $utilisateur->fresh()->password));
+        $this->assertTrue($utilisateur->fresh()->prochaine_connexion_sans_otp);
         $this->assertDatabaseMissing('password_reset_tokens', ['email' => $utilisateur->email]);
         $this->assertDatabaseCount('personal_access_tokens', 0);
+
+        $this->postJson('/api/v1/auth/connexion', [
+            'email' => $utilisateur->email,
+            'password' => 'NouveauPassword123',
+            'nom_appareil' => 'premiere-connexion-apres-reset',
+        ])->assertOk()
+            ->assertJsonPath('otp_requis', false)
+            ->assertJsonStructure(['token', 'token_type', 'utilisateur']);
+
+        $this->assertFalse($utilisateur->fresh()->prochaine_connexion_sans_otp);
+        $this->assertDatabaseCount('personal_access_tokens', 1);
+        Notification::assertNotSentTo($utilisateur, CodeOtpConnexionNotification::class);
+
+        $this->postJson('/api/v1/auth/connexion', [
+            'email' => $utilisateur->email,
+            'password' => 'NouveauPassword123',
+            'nom_appareil' => 'deuxieme-connexion-apres-reset',
+        ])->assertAccepted()
+            ->assertJsonPath('otp_requis', true)
+            ->assertJsonMissing(['token']);
+
+        Notification::assertSentTo($utilisateur, CodeOtpConnexionNotification::class);
     }
 
     public function test_le_reset_est_refuse_si_le_code_na_pas_ete_verifie(): void

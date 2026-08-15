@@ -134,6 +134,7 @@ class AuthentificationController extends Controller
         $utilisateur->forceFill([
             'password' => $donnees['password'],
             'tentatives_echouees' => 0,
+            'prochaine_connexion_sans_otp' => true,
         ])->save();
         $utilisateur->tokens()->delete();
         DB::table('password_reset_tokens')->where('email', $utilisateur->email)->delete();
@@ -170,6 +171,32 @@ class AuthentificationController extends Controller
             return response()->json([
                 'message' => 'Ce compte est inactif ou ne peut pas se connecter.',
             ], 403);
+        }
+
+        $connexionSansOtp = DB::transaction(function () use ($utilisateur): bool {
+            $utilisateurVerrouille = User::query()->lockForUpdate()->findOrFail($utilisateur->id);
+
+            if (! $utilisateurVerrouille->prochaine_connexion_sans_otp) {
+                return false;
+            }
+
+            $utilisateurVerrouille->forceFill([
+                'prochaine_connexion_sans_otp' => false,
+                'tentatives_echouees' => 0,
+                'derniere_connexion' => now(),
+            ])->save();
+
+            return true;
+        });
+
+        if ($connexionSansOtp) {
+            $jeton = $utilisateur->createToken($identifiants->nomAppareil)->plainTextToken;
+
+            return ConnexionResource::make([
+                'token' => $jeton,
+                'utilisateur' => $utilisateur->fresh()->load(['role', 'civilite']),
+                'otp_requis' => false,
+            ])->response();
         }
 
         $code = (string) random_int(100000, 999999);

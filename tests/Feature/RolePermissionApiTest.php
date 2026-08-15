@@ -47,4 +47,27 @@ class RolePermissionApiTest extends TestCase
 
         $this->getJson('/api/v1/administration/roles')->assertForbidden();
     }
+
+    public function test_le_code_d_une_permission_est_genere_par_l_api_et_ne_peut_pas_etre_impose(): void
+    {
+        $adminRole = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $adminRole->id]));
+
+        $this->postJson('/api/v1/administration/permissions', [
+            'code' => 'CODE_FRONTEND',
+            'libelle' => 'Permission interdite',
+        ])->assertUnprocessable()->assertJsonValidationErrors('code');
+
+        $permissionId = $this->postJson('/api/v1/administration/permissions', [
+            'libelle' => 'Exporter les étudiants',
+        ])->assertCreated()
+            ->assertJsonPath('permission.code', 'PER-000001')
+            ->json('permission.id');
+
+        $this->patchJson("/api/v1/administration/permissions/{$permissionId}", [
+            'libelle' => 'Exporter la liste des étudiants',
+        ])->assertOk()
+            ->assertJsonPath('permission.code', 'PER-000001')
+            ->assertJsonPath('permission.libelle', 'Exporter la liste des étudiants');
+    }
 }
