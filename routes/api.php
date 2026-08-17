@@ -76,6 +76,15 @@ Route::prefix('v1/administration')
     ->name('api.v1.administration.')
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->group(function () {
+        Route::get('roles/catalogue-droits', [RoleController::class, 'catalogueDroits'])
+            ->middleware('permission:ROLE_GERER')
+            ->name('roles.catalogue-droits');
+        Route::get('roles/{role}/droits', [RoleController::class, 'droitsDuRole'])
+            ->middleware('permission:ROLE_GERER')
+            ->name('roles.droits.show');
+        Route::patch('roles/{role}/droits/{permission}', [RoleController::class, 'modifierDroit'])
+            ->middleware('permission:ROLE_GERER')
+            ->name('roles.droits.update');
         Route::get('roles/matrice-autorisations', [RoleController::class, 'matriceAutorisations'])
             ->middleware('permission:ROLE_GERER')
             ->name('roles.matrice-autorisations');

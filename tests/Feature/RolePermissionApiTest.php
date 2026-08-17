@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -91,5 +92,49 @@ class RolePermissionApiTest extends TestCase
             'code' => 'GESTIONNAIRE-ETUDIANTS',
             'libelle' => 'Doublon',
         ])->assertUnprocessable()->assertJsonValidationErrors('code');
+    }
+
+    public function test_une_case_a_cocher_enregistre_immediatement_le_droit_du_role(): void
+    {
+        $adminRole = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        $gestionnaire = Role::query()->create([
+            'code' => 'GESTIONNAIRE',
+            'libelle' => 'Gestionnaire',
+            'description' => 'Gestion des opérations',
+        ]);
+        $permission = Permission::query()->create([
+            'code' => 'COMPTE_GERER',
+            'libelle' => 'Gérer les comptes',
+            'description' => 'Gérer les comptes',
+        ]);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $adminRole->id]));
+
+        $this->getJson('/api/v1/administration/roles/catalogue-droits')
+            ->assertOk()
+            ->assertJsonPath('nombre_roles', 2)
+            ->assertJsonPath('nombre_droits', 1);
+
+        $url = "/api/v1/administration/roles/{$gestionnaire->id}/droits/{$permission->id}";
+        $this->patchJson($url, ['accordee' => true])
+            ->assertOk()
+            ->assertJsonPath('accordee', true);
+        $this->assertDatabaseHas('role_permissions', [
+            'id_role' => $gestionnaire->id,
+            'id_permission' => $permission->id,
+            'actif' => true,
+        ]);
+
+        $this->getJson("/api/v1/administration/roles/{$gestionnaire->id}/droits")
+            ->assertOk()
+            ->assertJsonPath('droits.0.accordee', true);
+
+        $this->patchJson($url, ['accordee' => false])
+            ->assertOk()
+            ->assertJsonPath('accordee', false);
+        $this->assertDatabaseHas('role_permissions', [
+            'id_role' => $gestionnaire->id,
+            'id_permission' => $permission->id,
+            'actif' => false,
+        ]);
     }
 }

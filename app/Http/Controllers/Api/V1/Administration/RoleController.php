@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Administration;
 
 use App\Http\Controllers\Controller;
 use App\Models\Menu;
+use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -112,6 +113,81 @@ class RoleController extends Controller
         return response()->json([
             'message' => 'Permissions du rôle mises à jour.',
             'role' => $role->fresh()->load('permissions'),
+        ]);
+    }
+
+    public function catalogueDroits(): JsonResponse
+    {
+        $permissions = Permission::query()
+            ->orderBy('libelle')
+            ->get(['id', 'code', 'libelle', 'description']);
+
+        $roles = Role::query()
+            ->where('actif', true)
+            ->with(['permissions:id,code,libelle,description'])
+            ->orderBy('libelle')
+            ->get()
+            ->map(fn (Role $role) => $this->formaterRoleEtDroits($role, $permissions));
+
+        return response()->json([
+            'nombre_roles' => $roles->count(),
+            'nombre_droits' => $permissions->count(),
+            'roles' => $roles,
+        ]);
+    }
+
+    public function droitsDuRole(Role $role): JsonResponse
+    {
+        $permissions = Permission::query()
+            ->orderBy('libelle')
+            ->get(['id', 'code', 'libelle', 'description']);
+
+        return response()->json($this->formaterRoleEtDroits(
+            $role->load('permissions'),
+            $permissions,
+        ));
+    }
+
+    public function modifierDroit(Request $request, Role $role, Permission $permission): JsonResponse
+    {
+        $donnees = $request->validate([
+            'accordee' => ['required', 'boolean'],
+        ]);
+        $accordee = (bool) $donnees['accordee'];
+        $utilisateurId = $request->user()->id;
+
+        DB::transaction(function () use ($role, $permission, $accordee, $utilisateurId) {
+            $existe = DB::table('role_permissions')
+                ->where('id_role', $role->id)
+                ->where('id_permission', $permission->id)
+                ->exists();
+
+            if ($existe) {
+                DB::table('role_permissions')
+                    ->where('id_role', $role->id)
+                    ->where('id_permission', $permission->id)
+                    ->update([
+                        'actif' => $accordee,
+                        'updated_by' => $utilisateurId,
+                        'deleted_by' => null,
+                        'deleted_at' => null,
+                    ]);
+            } else {
+                DB::table('role_permissions')->insert([
+                    'id_role' => $role->id,
+                    'id_permission' => $permission->id,
+                    'actif' => $accordee,
+                    'created_by' => $utilisateurId,
+                    'updated_by' => $utilisateurId,
+                ]);
+            }
+        });
+
+        return response()->json([
+            'message' => $accordee ? 'Droit accordé au rôle.' : 'Droit retiré du rôle.',
+            'role_id' => $role->id,
+            'permission_id' => $permission->id,
+            'accordee' => $accordee,
         ]);
     }
 
@@ -256,6 +332,30 @@ class RoleController extends Controller
                     'libelle' => $ligne->action_libelle,
                 ])->values(),
             ])->values()->all();
+    }
+
+    private function formaterRoleEtDroits(Role $role, $permissions): array
+    {
+        $permissionsDuRole = $role->permissions->keyBy('id');
+
+        return [
+            'id' => $role->id,
+            'code' => $role->code,
+            'libelle' => $role->libelle,
+            'description' => $role->description,
+            'actif' => $role->actif,
+            'droits' => $permissions->map(function (Permission $permission) use ($permissionsDuRole) {
+                $permissionDuRole = $permissionsDuRole->get($permission->id);
+
+                return [
+                    'id' => $permission->id,
+                    'code' => $permission->code,
+                    'libelle' => $permission->libelle,
+                    'description' => $permission->description,
+                    'accordee' => (bool) ($permissionDuRole?->pivot?->actif ?? false),
+                ];
+            })->values(),
+        ];
     }
 
 }
