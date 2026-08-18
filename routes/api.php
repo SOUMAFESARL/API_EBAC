@@ -7,7 +7,9 @@ use App\Http\Controllers\Api\V1\Administration\PermissionController;
 use App\Http\Controllers\Api\V1\Administration\ProfilController;
 use App\Http\Controllers\Api\V1\Administration\RoleController;
 use App\Http\Controllers\Api\V1\Auth\AuthentificationController;
+use App\Http\Controllers\Api\V1\Eglise\EgliseController;
 use App\Http\Controllers\Api\V1\Navigation\SidebarController;
+use App\Http\Controllers\Api\V1\Parametre\NiveauController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/auth')->name('api.v1.auth.')->group(function () {
@@ -48,6 +50,17 @@ Route::get('v1/navigation/sidebar', SidebarController::class)
 
 Route::get('v1/utilisateurs/{compte}/photo', [CompteController::class, 'photo'])
     ->name('api.v1.utilisateurs.photo');
+
+Route::prefix('v1/parametres')
+    ->name('api.v1.parametres.')
+    ->middleware(['auth:sanctum', 'compte.actif'])
+    ->group(function () {
+        Route::apiResource('niveaux', NiveauController::class);
+    });
+
+Route::apiResource('v1/eglises', EgliseController::class)
+    ->names('api.v1.eglises')
+    ->middleware(['auth:sanctum', 'compte.actif']);
 
 Route::prefix('v1/administration/comptes')
     ->name('api.v1.administration.comptes.')
