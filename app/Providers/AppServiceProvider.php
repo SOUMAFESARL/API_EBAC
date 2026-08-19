@@ -11,7 +11,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        config()->set('l5-swagger.defaults.generate_always', true);
     }
 
     /**
