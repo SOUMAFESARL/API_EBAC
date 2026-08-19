@@ -177,7 +177,7 @@
                 ]
             }
         },
-        "/eglises/{eglise}": {
+        "/eglises/{id}": {
             "get": {
                 "tags": [
                     "Églises"
@@ -186,11 +186,14 @@
                 "operationId": "afficherEglise",
                 "parameters": [
                     {
-                        "name": "eglise",
+                        "name": "id",
                         "in": "path",
+                        "description": "ID numérique de l’église",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1,
+                            "minimum": 1
                         }
                     }
                 ],
@@ -230,6 +233,85 @@
                     }
                 ]
             },
+            "put": {
+                "tags": [
+                    "Églises"
+                ],
+                "summary": "Modifier une église",
+                "operationId": "remplacerEglise",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID numérique de l’église",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EglisePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Église modifiée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Église modifiée avec succès."
+                                        },
+                                        "eglise": {
+                                            "$ref": "#/components/schemas/Eglise"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurAuthentification"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Église introuvable"
+                    },
+                    "422": {
+                        "description": "Erreur de validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
             "delete": {
                 "tags": [
                     "Églises"
@@ -238,11 +320,14 @@
                 "operationId": "supprimerEglise",
                 "parameters": [
                     {
-                        "name": "eglise",
+                        "name": "id",
                         "in": "path",
+                        "description": "ID numérique de l’église",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1,
+                            "minimum": 1
                         }
                     }
                 ],
@@ -291,11 +376,14 @@
                 "operationId": "modifierEglise",
                 "parameters": [
                     {
-                        "name": "eglise",
+                        "name": "id",
                         "in": "path",
+                        "description": "ID numérique de l’église",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1,
+                            "minimum": 1
                         }
                     }
                 ],
@@ -468,7 +556,7 @@
                 ]
             }
         },
-        "/parametres/niveaux/{niveau}": {
+        "/parametres/niveaux/{id}": {
             "get": {
                 "tags": [
                     "Niveaux"
@@ -477,11 +565,14 @@
                 "operationId": "afficherNiveau",
                 "parameters": [
                     {
-                        "name": "niveau",
+                        "name": "id",
                         "in": "path",
+                        "description": "ID numérique du niveau",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1,
+                            "minimum": 1
                         }
                     }
                 ],
@@ -521,6 +612,85 @@
                     }
                 ]
             },
+            "put": {
+                "tags": [
+                    "Niveaux"
+                ],
+                "summary": "Modifier un niveau",
+                "operationId": "remplacerNiveau",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID numérique du niveau",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NiveauPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Niveau modifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Niveau modifié avec succès."
+                                        },
+                                        "niveau": {
+                                            "$ref": "#/components/schemas/Niveau"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurAuthentification"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Niveau introuvable"
+                    },
+                    "422": {
+                        "description": "Erreur de validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
             "delete": {
                 "tags": [
                     "Niveaux"
@@ -530,11 +700,14 @@
                 "operationId": "supprimerNiveau",
                 "parameters": [
                     {
-                        "name": "niveau",
+                        "name": "id",
                         "in": "path",
+                        "description": "ID numérique du niveau",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1,
+                            "minimum": 1
                         }
                     }
                 ],
@@ -599,11 +772,14 @@
                 "operationId": "modifierNiveau",
                 "parameters": [
                     {
-                        "name": "niveau",
+                        "name": "id",
                         "in": "path",
+                        "description": "ID numérique du niveau",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1,
+                            "minimum": 1
                         }
                     }
                 ],

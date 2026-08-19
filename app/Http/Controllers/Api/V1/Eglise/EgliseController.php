@@ -94,12 +94,12 @@ class EgliseController extends Controller
     }
 
     #[OA\Get(
-        path: '/eglises/{eglise}',
+        path: '/eglises/{id}',
         operationId: 'afficherEglise',
         summary: 'Afficher une église',
         security: [['sanctum' => []]],
         tags: ['Églises'],
-        parameters: [new OA\Parameter(name: 'eglise', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique de l’église', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
         responses: [
             new OA\Response(response: 200, description: 'Église trouvée', content: new OA\JsonContent(type: 'object', properties: [
                 new OA\Property(property: 'eglise', ref: '#/components/schemas/Eglise'),
@@ -108,18 +108,20 @@ class EgliseController extends Controller
             new OA\Response(response: 404, description: 'Église introuvable'),
         ],
     )]
-    public function show(Eglise $eglise): JsonResponse
+    public function show(int $id): JsonResponse
     {
+        $eglise = Eglise::query()->findOrFail($id);
+
         return response()->json(['eglise' => $eglise->load('compte')]);
     }
 
     #[OA\Patch(
-        path: '/eglises/{eglise}',
+        path: '/eglises/{id}',
         operationId: 'modifierEglise',
         summary: 'Modifier partiellement une église',
         security: [['sanctum' => []]],
         tags: ['Églises'],
-        parameters: [new OA\Parameter(name: 'eglise', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique de l’église', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/EglisePayload')),
         responses: [
             new OA\Response(response: 200, description: 'Église modifiée', content: new OA\JsonContent(type: 'object', properties: [
@@ -131,8 +133,27 @@ class EgliseController extends Controller
             new OA\Response(response: 422, description: 'Erreur de validation', content: new OA\JsonContent(ref: '#/components/schemas/ErreurValidation')),
         ],
     )]
-    public function update(ModifierEgliseRequest $request, Eglise $eglise): JsonResponse
+    #[OA\Put(
+        path: '/eglises/{id}',
+        operationId: 'remplacerEglise',
+        summary: 'Modifier une église',
+        security: [['sanctum' => []]],
+        tags: ['Églises'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique de l’église', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/EglisePayload')),
+        responses: [
+            new OA\Response(response: 200, description: 'Église modifiée', content: new OA\JsonContent(type: 'object', properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Église modifiée avec succès.'),
+                new OA\Property(property: 'eglise', ref: '#/components/schemas/Eglise'),
+            ])),
+            new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
+            new OA\Response(response: 404, description: 'Église introuvable'),
+            new OA\Response(response: 422, description: 'Erreur de validation', content: new OA\JsonContent(ref: '#/components/schemas/ErreurValidation')),
+        ],
+    )]
+    public function update(ModifierEgliseRequest $request, int $id): JsonResponse
     {
+        $eglise = Eglise::query()->findOrFail($id);
         $donnees = $request->validated();
 
         if (array_key_exists('user_id', $donnees)) {
@@ -148,12 +169,12 @@ class EgliseController extends Controller
     }
 
     #[OA\Delete(
-        path: '/eglises/{eglise}',
+        path: '/eglises/{id}',
         operationId: 'supprimerEglise',
         summary: 'Supprimer logiquement une église',
         security: [['sanctum' => []]],
         tags: ['Églises'],
-        parameters: [new OA\Parameter(name: 'eglise', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique de l’église', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
         responses: [
             new OA\Response(response: 200, description: 'Église supprimée', content: new OA\JsonContent(type: 'object', properties: [
                 new OA\Property(property: 'message', type: 'string', example: 'Église supprimée avec succès.'),
@@ -162,8 +183,9 @@ class EgliseController extends Controller
             new OA\Response(response: 404, description: 'Église introuvable'),
         ],
     )]
-    public function destroy(Request $request, Eglise $eglise): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
+        $eglise = Eglise::query()->findOrFail($id);
         $eglise->update(['deleted_by' => $request->user()->id]);
         $eglise->delete();
 

@@ -17,7 +17,7 @@ class ModifierNiveauRequest extends FormRequest
      */
     public function rules(): array
     {
-        $niveau = $this->route('niveau');
+        $niveau = $this->route('id');
 
         return [
             'libelle' => ['sometimes', 'required', 'string', 'max:100'],

@@ -55,11 +55,13 @@ Route::prefix('v1/parametres')
     ->name('api.v1.parametres.')
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->group(function () {
-        Route::apiResource('niveaux', NiveauController::class);
+        Route::apiResource('niveaux', NiveauController::class)
+            ->parameters(['niveaux' => 'id']);
     });
 
 Route::apiResource('v1/eglises', EgliseController::class)
     ->names('api.v1.eglises')
+    ->parameters(['eglises' => 'id'])
     ->middleware(['auth:sanctum', 'compte.actif']);
 
 Route::prefix('v1/administration/comptes')

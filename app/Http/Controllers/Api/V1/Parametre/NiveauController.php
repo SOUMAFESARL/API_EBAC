@@ -66,12 +66,12 @@ class NiveauController extends Controller
     }
 
     #[OA\Get(
-        path: '/parametres/niveaux/{niveau}',
+        path: '/parametres/niveaux/{id}',
         operationId: 'afficherNiveau',
         summary: 'Afficher un niveau',
         security: [['sanctum' => []]],
         tags: ['Niveaux'],
-        parameters: [new OA\Parameter(name: 'niveau', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique du niveau', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
         responses: [
             new OA\Response(response: 200, description: 'Niveau trouvé', content: new OA\JsonContent(type: 'object', properties: [
                 new OA\Property(property: 'niveau', ref: '#/components/schemas/Niveau'),
@@ -80,18 +80,20 @@ class NiveauController extends Controller
             new OA\Response(response: 404, description: 'Niveau introuvable'),
         ],
     )]
-    public function show(Niveau $niveau): JsonResponse
+    public function show(int $id): JsonResponse
     {
+        $niveau = Niveau::query()->findOrFail($id);
+
         return response()->json(['niveau' => $niveau]);
     }
 
     #[OA\Patch(
-        path: '/parametres/niveaux/{niveau}',
+        path: '/parametres/niveaux/{id}',
         operationId: 'modifierNiveau',
         summary: 'Modifier partiellement un niveau',
         security: [['sanctum' => []]],
         tags: ['Niveaux'],
-        parameters: [new OA\Parameter(name: 'niveau', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique du niveau', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/NiveauPayload')),
         responses: [
             new OA\Response(response: 200, description: 'Niveau modifié', content: new OA\JsonContent(type: 'object', properties: [
@@ -103,8 +105,27 @@ class NiveauController extends Controller
             new OA\Response(response: 422, description: 'Erreur de validation', content: new OA\JsonContent(ref: '#/components/schemas/ErreurValidation')),
         ],
     )]
-    public function update(ModifierNiveauRequest $request, Niveau $niveau): JsonResponse
+    #[OA\Put(
+        path: '/parametres/niveaux/{id}',
+        operationId: 'remplacerNiveau',
+        summary: 'Modifier un niveau',
+        security: [['sanctum' => []]],
+        tags: ['Niveaux'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique du niveau', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/NiveauPayload')),
+        responses: [
+            new OA\Response(response: 200, description: 'Niveau modifié', content: new OA\JsonContent(type: 'object', properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Niveau modifié avec succès.'),
+                new OA\Property(property: 'niveau', ref: '#/components/schemas/Niveau'),
+            ])),
+            new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
+            new OA\Response(response: 404, description: 'Niveau introuvable'),
+            new OA\Response(response: 422, description: 'Erreur de validation', content: new OA\JsonContent(ref: '#/components/schemas/ErreurValidation')),
+        ],
+    )]
+    public function update(ModifierNiveauRequest $request, int $id): JsonResponse
     {
+        $niveau = Niveau::query()->findOrFail($id);
         $niveau->update([
             ...$request->validated(),
             'updated_by' => $request->user()->id,
@@ -117,13 +138,13 @@ class NiveauController extends Controller
     }
 
     #[OA\Delete(
-        path: '/parametres/niveaux/{niveau}',
+        path: '/parametres/niveaux/{id}',
         operationId: 'supprimerNiveau',
         summary: 'Supprimer logiquement un niveau',
         description: 'La suppression est refusée si une promotion utilise le niveau.',
         security: [['sanctum' => []]],
         tags: ['Niveaux'],
-        parameters: [new OA\Parameter(name: 'niveau', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique du niveau', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
         responses: [
             new OA\Response(response: 200, description: 'Niveau supprimé', content: new OA\JsonContent(type: 'object', properties: [
                 new OA\Property(property: 'message', type: 'string', example: 'Niveau supprimé avec succès.'),
@@ -135,8 +156,9 @@ class NiveauController extends Controller
             ])),
         ],
     )]
-    public function destroy(ModifierNiveauRequest $request, Niveau $niveau): JsonResponse
+    public function destroy(ModifierNiveauRequest $request, int $id): JsonResponse
     {
+        $niveau = Niveau::query()->findOrFail($id);
         if (DB::table('promotions')->where('id_niveau', $niveau->id)->exists()) {
             return response()->json([
                 'message' => 'Ce niveau est utilisé par une promotion et ne peut pas être supprimé.',

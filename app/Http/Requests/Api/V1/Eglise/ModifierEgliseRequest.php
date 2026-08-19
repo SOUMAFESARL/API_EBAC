@@ -11,7 +11,7 @@ class ModifierEgliseRequest extends CreerEgliseRequest
         $regles = $this->regles(true);
         $regles['sigle'] = [
             'sometimes', 'nullable', 'string', 'max:30',
-            Rule::unique('eglises', 'sigle')->ignore($this->route('eglise')),
+            Rule::unique('eglises', 'sigle')->ignore($this->route('id')),
         ];
 
         return $regles;

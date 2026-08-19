@@ -17,9 +17,10 @@ class EgliseSwaggerTest extends TestCase
         $this->assertSame('API EBAC — Églises et niveaux', $documentation['info']['title']);
         $this->assertArrayHasKey('get', $documentation['paths']['/eglises']);
         $this->assertArrayHasKey('post', $documentation['paths']['/eglises']);
-        $this->assertArrayHasKey('get', $documentation['paths']['/eglises/{eglise}']);
-        $this->assertArrayHasKey('patch', $documentation['paths']['/eglises/{eglise}']);
-        $this->assertArrayHasKey('delete', $documentation['paths']['/eglises/{eglise}']);
+        $this->assertArrayHasKey('get', $documentation['paths']['/eglises/{id}']);
+        $this->assertArrayHasKey('put', $documentation['paths']['/eglises/{id}']);
+        $this->assertArrayHasKey('patch', $documentation['paths']['/eglises/{id}']);
+        $this->assertArrayHasKey('delete', $documentation['paths']['/eglises/{id}']);
         $this->assertSame('http', $documentation['components']['securitySchemes']['sanctum']['type']);
         $this->assertSame('bearer', $documentation['components']['securitySchemes']['sanctum']['scheme']);
     }
@@ -34,9 +35,10 @@ class EgliseSwaggerTest extends TestCase
 
         $this->assertArrayHasKey('get', $documentation['paths']['/parametres/niveaux']);
         $this->assertArrayHasKey('post', $documentation['paths']['/parametres/niveaux']);
-        $this->assertArrayHasKey('get', $documentation['paths']['/parametres/niveaux/{niveau}']);
-        $this->assertArrayHasKey('patch', $documentation['paths']['/parametres/niveaux/{niveau}']);
-        $this->assertArrayHasKey('delete', $documentation['paths']['/parametres/niveaux/{niveau}']);
+        $this->assertArrayHasKey('get', $documentation['paths']['/parametres/niveaux/{id}']);
+        $this->assertArrayHasKey('put', $documentation['paths']['/parametres/niveaux/{id}']);
+        $this->assertArrayHasKey('patch', $documentation['paths']['/parametres/niveaux/{id}']);
+        $this->assertArrayHasKey('delete', $documentation['paths']['/parametres/niveaux/{id}']);
         $this->assertArrayHasKey('Niveau', $documentation['components']['schemas']);
         $this->assertArrayHasKey('NiveauPayload', $documentation['components']['schemas']);
     }

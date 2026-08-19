@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\Civilite;
 use App\Models\Role;
 use App\Models\User;
+use App\Notifications\CompteCreeNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
@@ -35,6 +37,56 @@ class CompteCodeAutomatiqueTest extends TestCase
             ->assertJsonPath('compte.user_code', 'USR-ADMIN')
             ->assertJsonPath('compte.user_id', '1')
             ->assertJsonPath('compte.created_by', 1);
+    }
+
+    public function test_le_compte_eglise_recoit_son_mot_de_passe_temporaire_par_email(): void
+    {
+        Notification::fake();
+
+        $roleAdministrateur = Role::query()->create([
+            'code' => 'ADMIN',
+            'libelle' => 'Administrateur',
+        ]);
+        $roleEglise = Role::query()->create([
+            'code' => 'EGLISE',
+            'libelle' => 'Église',
+        ]);
+        $administrateur = User::factory()->create([
+            'id_role' => $roleAdministrateur->id,
+            'code' => 'USR-ADMIN',
+        ]);
+        $civilite = Civilite::query()->create([
+            'code' => 'EGL',
+            'name' => 'Église',
+        ]);
+        Sanctum::actingAs($administrateur);
+
+        $compteId = $this->postJson('/api/v1/administration/comptes', [
+            'civilite_id' => $civilite->id,
+            'nom' => 'Église Cité de la Grâce',
+            'prenoms' => 'Compte',
+            'email' => 'contact.eglise@example.net',
+            'id_role' => $roleEglise->id,
+        ])->assertCreated()
+            ->assertJsonPath('message', 'Compte créé avec succès. Le mot de passe temporaire a été envoyé par email.')
+            ->assertJsonPath('compte.email', 'contact.eglise@example.net')
+            ->assertJsonPath('compte.role.code', 'EGLISE')
+            ->json('compte.id');
+
+        $compteEglise = User::query()->findOrFail($compteId);
+
+        Notification::assertSentTo(
+            $compteEglise,
+            CompteCreeNotification::class,
+            function (CompteCreeNotification $notification) use ($compteEglise): bool {
+                $message = $notification->toMail($compteEglise);
+                $motDePasseEnvoye = $message->viewData['motDePasseTemporaire'] ?? null;
+
+                return is_string($motDePasseEnvoye)
+                    && strlen($motDePasseEnvoye) === 16
+                    && Hash::check($motDePasseEnvoye, $compteEglise->password);
+            },
+        );
     }
 
     public function test_un_code_fourni_par_le_client_est_refuse(): void
