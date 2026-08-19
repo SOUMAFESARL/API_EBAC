@@ -316,7 +316,7 @@ Réponse `201` :
 ```json
 {
   "message": "Compte créé avec succès. Les identifiants temporaires ont été envoyés par e-mail.",
-  "utilisateur": {"id": 12, "code": "USR-000012", "user_id": 1, "user_code": "USR-ADMIN", "nom": "Zran", "prenoms": "Severin", "email": "severin@ebac.ci"}
+  "compte": {"id": 12, "matricule": "EBAC-0001-2026", "code": "USR-000012", "user_id": 1, "user_code": "USR-ADMIN", "nom": "Zran", "prenoms": "Severin", "email": "severin@ebac.ci", "photo_url": "https://api-ebac.severinzran.ci/api/v1/utilisateurs/12/photo"}
 }
 ```
 
@@ -328,10 +328,15 @@ Réponse `200` : `{"utilisateur": {…objet Utilisateur avec rôle et civilité�
 
 Réponse `200` : utilisateur, rôles, civilités et statuts disponibles.
 
-### PUT/PATCH `/administration/comptes/{id}`
+### PUT/PATCH/POST `/administration/comptes/{id}`
 
 Champs de création facultatifs, plus `password` (min 8) et `password_confirmation`.
-Réponse `200` : `{"message":"Compte modifié avec succès.","utilisateur":{…}}`.
+Pour remplacer une photo, utiliser obligatoirement `POST multipart/form-data` avec le champ fichier `photo`. Cette méthode évite la limitation PHP sur les fichiers envoyés directement en PUT/PATCH.
+Réponse `200` : `{"message":"Compte modifié avec succès.","compte":{…}}`.
+
+### GET `/utilisateurs/{id}/photo`
+
+URL publique retournant directement le fichier image. Cette URL est fournie dans `photo_url` et ne dépend pas d’un lien symbolique `public/storage` sur cPanel. Réponse `404` si aucune photo n’existe.
 
 ### DELETE `/administration/comptes/{id}`
 
@@ -348,9 +353,10 @@ Réponse `200` : `{"utilisateur": {…}}`.
 
 Réponse `200` : utilisateur et civilités disponibles.
 
-### PUT/PATCH `/administration/profil`
+### PUT/PATCH/POST `/administration/profil`
 
 Champs : `civilite_id`, `nom`, `prenoms`, `email`, `photo`, `mot_de_passe_actuel`, `password`, `password_confirmation`. Le mot de passe actuel est obligatoire si un nouveau mot de passe est envoyé.
+Pour modifier la photo, utiliser `POST multipart/form-data`.
 Réponse `200` : `{"message":"Profil modifié avec succès.","utilisateur":{…}}`.
 
 ## 7. Rôles — permission `ROLE_GERER`
@@ -387,6 +393,55 @@ Réponse `200` : `{"message":"Rôle modifié avec succès.","role":{…}}`.
 ```
 
 Réponse `200` : `{"message":"Permissions du rôle mises à jour.","role":{…rôle avec permissions…}}`.
+
+### GET `/administration/roles/catalogue-droits`
+
+Endpoint principal de l’écran « Rôles & droits ». Il retourne tous les rôles actifs sous forme d’onglets et le catalogue complet des permissions avec l’état de chaque case.
+
+```json
+{
+  "nombre_roles": 2,
+  "nombre_droits": 4,
+  "roles": [
+    {
+      "id": 2,
+      "code": "GESTIONNAIRE",
+      "libelle": "Gestionnaire",
+      "description": "Gestion des opérations",
+      "actif": true,
+      "droits": [
+        {
+          "id": 1,
+          "code": "COMPTE_GERER",
+          "libelle": "Gérer les comptes",
+          "description": "Gérer les comptes",
+          "accordee": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+### GET `/administration/roles/{id}/droits`
+
+Retourne un rôle et tout le catalogue de droits. `accordee` indique si la case doit être cochée.
+
+### PATCH `/administration/roles/{role_id}/droits/{permission_id}`
+
+Cette requête est envoyée immédiatement lorsque l’utilisateur coche ou décoche une case.
+
+```json
+{"accordee":true}
+```
+
+Réponse `200` :
+
+```json
+{"message":"Droit accordé au rôle.","role_id":2,"permission_id":1,"accordee":true}
+```
+
+Pour retirer le droit, envoyer `{"accordee":false}`. La modification est enregistrée immédiatement et utilisée dès la prochaine requête API protégée de l’utilisateur concerné.
 
 ### GET `/administration/roles/matrice-autorisations`
 
@@ -562,13 +617,17 @@ Protégé. Retourne uniquement les menus actifs et visibles autorisés par le r�
 | GET | `/navigation/sidebar` |
 | GET, POST | `/administration/comptes` |
 | GET | `/administration/comptes/create` |
-| GET, PUT, PATCH, DELETE | `/administration/comptes/{id}` |
+| GET, PUT, PATCH, POST, DELETE | `/administration/comptes/{id}` |
 | GET | `/administration/comptes/{id}/edit` |
-| GET, PUT, PATCH | `/administration/profil` |
+| GET | `/utilisateurs/{id}/photo` |
+| GET, PUT, PATCH, POST | `/administration/profil` |
 | GET | `/administration/profil/edit` |
 | GET, POST | `/administration/roles` |
 | GET, PUT, PATCH, DELETE | `/administration/roles/{id}` |
 | PUT | `/administration/roles/{id}/permissions` |
+| GET | `/administration/roles/catalogue-droits` |
+| GET | `/administration/roles/{id}/droits` |
+| PATCH | `/administration/roles/{role_id}/droits/{permission_id}` |
 | GET | `/administration/roles/matrice-autorisations` |
 | GET | `/administration/roles/{id}/matrice-autorisations` |
 | PUT | `/administration/roles/{id}/autorisations` |
@@ -589,3 +648,29 @@ Protégé. Retourne uniquement les menus actifs et visibles autorisés par le r�
 - Ne jamais stocker le mot de passe ou l’OTP dans le navigateur.
 - Conserver le token dans un stockage adapté au niveau de sécurité du frontend.
 - Toujours traiter les réponses `401`, `403`, `422` et `429`.
+
+## 14. Workflow rôles, permissions, menus et actions
+
+1. Créer les actions métier (`VOIR`, `AJOUTER`, `MODIFIER`, `SUPPRIMER`, `IMPRIMER`, `TELECHARGER`) avec `POST /administration/actions`. Le code est généré par l’API.
+2. Créer une permission avec `POST /administration/permissions`. Son code est généré par l’API et ses actions peuvent être associées avec `action_ids`.
+3. Créer un menu avec `POST /administration/menus`, puis associer les permissions et actions avec `permission_ids` et `action_ids`. Le code menu est généré par l’API.
+4. Créer le rôle avec `POST /administration/roles`. Le champ `code` du rôle est saisi par le frontend.
+5. Charger la matrice avec `GET /administration/roles/matrice-autorisations`.
+6. Enregistrer les cases cochées avec `PUT /administration/roles/{id}/autorisations`.
+7. Affecter le rôle à un utilisateur avec `id_role` lors de la création ou de la modification du compte.
+8. Après connexion, charger `GET /navigation/sidebar`. Seuls les menus et actions autorisés sont retournés.
+
+## 15. Déploiement automatique cPanel
+
+Le workflow `.github/workflows/deploy.yml` s’exécute à chaque push sur `main`. Il lance tous les tests, installe les dépendances de production puis transfère l’application par FTP vers cPanel.
+
+Secrets GitHub requis :
+
+| Secret | Exemple |
+|---|---|
+| `FTP_HOST` | `ftp.severinzran.ci` |
+| `FTP_USERNAME` | utilisateur FTP cPanel |
+| `FTP_PASSWORD` | mot de passe FTP cPanel |
+| `FTP_REMOTE_PATH` | `/api-ebac.severinzran.ci/` |
+
+Le fichier `.env`, les tests, le dossier `storage` et les fichiers temporaires ne sont pas transférés. Après une migration ajoutée au projet, exécuter `php artisan migrate --force` depuis le terminal cPanel si l’hébergement ne fournit pas de mécanisme automatique pour cette commande.

@@ -167,19 +167,34 @@ CREATE TABLE IF NOT EXISTS configurations_smtp (
 
 CREATE TABLE IF NOT EXISTS eglises (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE,
+    code VARCHAR(30) NOT NULL UNIQUE,
     nom VARCHAR(180) NOT NULL,
-    responsable VARCHAR(180) NULL,
-    email VARCHAR(150) NULL,
-    telephone VARCHAR(30) NULL,
+    denomination VARCHAR(180) NULL,
     adresse VARCHAR(255) NULL,
-    ville VARCHAR(100) NULL,
-    statut VARCHAR(30) NOT NULL DEFAULT 'Active',
-    id_compte BIGINT UNSIGNED NULL,
+    region VARCHAR(120) NULL,
+    district VARCHAR(120) NULL,
+    ville_commune VARCHAR(120) NOT NULL,
+    telephone VARCHAR(30) NULL,
+    email VARCHAR(150) NULL,
+    statut ENUM('Active', 'Suspendue', 'Archivée') NOT NULL DEFAULT 'Active',
+    capacite_max_stagiaires SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    representants JSON NULL,
+    observations TEXT NULL,
+    user_id BIGINT UNSIGNED NULL,
+    user_code VARCHAR(150) NULL COMMENT 'Copie de users.code du compte Église associé',
+    created_by BIGINT UNSIGNED NULL,
+    updated_by BIGINT UNSIGNED NULL,
+    deleted_by BIGINT UNSIGNED NULL,
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
     deleted_at TIMESTAMP NULL,
-    CONSTRAINT fk_eglises_compte FOREIGN KEY (id_compte) REFERENCES users(id) ON DELETE SET NULL
+    INDEX idx_eglises_statut_ville (statut, ville_commune),
+    INDEX idx_eglises_nom (nom),
+    INDEX idx_eglises_user_code (user_code),
+    CONSTRAINT fk_eglises_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_eglises_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_eglises_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_eglises_deleted_by FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS annees_academiques (
@@ -235,7 +250,7 @@ CREATE TABLE IF NOT EXISTS promotions (
 
 CREATE TABLE IF NOT EXISTS etudiants (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    id_user BIGINT UNSIGNED NULL UNIQUE,
+    user_id BIGINT UNSIGNED NULL UNIQUE,
     matricule VARCHAR(50) NOT NULL UNIQUE,
     nom VARCHAR(150) NOT NULL,
     prenoms VARCHAR(150) NOT NULL,
@@ -246,7 +261,7 @@ CREATE TABLE IF NOT EXISTS etudiants (
     email VARCHAR(150) NULL,
     telephone VARCHAR(30) NULL,
     adresse VARCHAR(255) NULL,
-    id_eglise BIGINT UNSIGNED NULL,
+    eglise_id BIGINT UNSIGNED NULL,
     date_inscription DATE NOT NULL,
     statut VARCHAR(50) NOT NULL DEFAULT 'En formation',
     created_at TIMESTAMP NULL,
