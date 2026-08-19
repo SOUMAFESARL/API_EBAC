@@ -24,6 +24,7 @@ class CreerEgliseRequest extends FormRequest
 
         return [
             'code' => ['prohibited'],
+            'user_id' => ['prohibited'],
             'user_code' => ['prohibited'],
             'created_by' => ['prohibited'],
             'updated_by' => ['prohibited'],
@@ -48,7 +49,6 @@ class CreerEgliseRequest extends FormRequest
             'representants.*.telephone' => ['sometimes', 'nullable', 'string', 'max:30'],
             'representants.*.email' => ['sometimes', 'nullable', 'email', 'max:150'],
             'observations' => ['sometimes', 'nullable', 'string'],
-            'user_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
         ];
     }
 }

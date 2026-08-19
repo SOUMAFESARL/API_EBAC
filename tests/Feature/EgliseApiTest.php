@@ -27,7 +27,6 @@ class EgliseApiTest extends TestCase
     public function test_un_utilisateur_authentifie_peut_creer_une_eglise(): void
     {
         $administrateur = $this->authentifierAdministrateur();
-        $compteEglise = User::factory()->create(['id_role' => $administrateur->id_role, 'code' => 'USR-EGLISE']);
 
         $this->postJson('/api/v1/eglises', [
             'nom' => 'Église Cité de la Grâce',
@@ -37,7 +36,6 @@ class EgliseApiTest extends TestCase
             'telephone' => '+2250102030405',
             'email' => 'eglise@example.test',
             'capacite_max_stagiaires' => 25,
-            'user_id' => $compteEglise->id,
             'representants' => [
                 ['nom' => 'Kouassi', 'prenoms' => 'Jean', 'fonction' => 'Secrétaire'],
                 ['nom' => 'Yao', 'prenoms' => 'Marie', 'fonction' => 'Trésorière'],
@@ -46,15 +44,16 @@ class EgliseApiTest extends TestCase
             ->assertJsonPath('message', 'Église créée avec succès.')
             ->assertJsonPath('eglise.code', 'EGL-000001')
             ->assertJsonPath('eglise.sigle', 'ECG')
-            ->assertJsonPath('eglise.user_code', 'USR-EGLISE')
+            ->assertJsonPath('eglise.user_id', $administrateur->id)
+            ->assertJsonPath('eglise.user_code', $administrateur->code)
             ->assertJsonPath('eglise.created_by', $administrateur->id)
             ->assertJsonCount(2, 'eglise.representants');
 
         $this->assertDatabaseHas('eglises', [
             'code' => 'EGL-000001',
             'nom' => 'Église Cité de la Grâce',
-            'user_id' => $compteEglise->id,
-            'user_code' => 'USR-EGLISE',
+            'user_id' => $administrateur->id,
+            'user_code' => $administrateur->code,
             'created_by' => $administrateur->id,
         ]);
     }
@@ -106,12 +105,13 @@ class EgliseApiTest extends TestCase
 
         $this->postJson('/api/v1/eglises', [
             'code' => 'CODE-CHOISI',
+            'user_id' => 999,
             'user_code' => 'CODE-CHOISI',
             'created_by' => 999,
             'nom' => 'Église Test',
             'ville_commune' => 'Abidjan',
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['code', 'user_code', 'created_by']);
+            ->assertJsonValidationErrors(['code', 'user_id', 'user_code', 'created_by']);
     }
 
     public function test_le_crud_des_eglises_exige_une_authentification(): void
@@ -175,37 +175,29 @@ class EgliseApiTest extends TestCase
         $this->assertSame('EGL-000002', $deuxiemeCode);
     }
 
-    public function test_la_modification_synchronise_le_code_du_compte_associe(): void
+    public function test_user_id_et_user_code_restent_ceux_du_createur(): void
     {
         $administrateur = $this->authentifierAdministrateur();
-        $premierCompte = User::factory()->create([
-            'id_role' => $administrateur->id_role,
-            'code' => 'USR-EGL-001',
-        ]);
-        $secondCompte = User::factory()->create([
-            'id_role' => $administrateur->id_role,
-            'code' => 'USR-EGL-002',
-        ]);
 
         $egliseId = $this->postJson('/api/v1/eglises', [
             'nom' => 'Église Test',
             'ville_commune' => 'Abidjan',
-            'user_id' => $premierCompte->id,
         ])->assertCreated()
-            ->assertJsonPath('eglise.user_code', 'USR-EGL-001')
+            ->assertJsonPath('eglise.user_id', $administrateur->id)
+            ->assertJsonPath('eglise.user_code', $administrateur->code)
             ->json('eglise.id');
 
         $this->patchJson("/api/v1/eglises/{$egliseId}", [
-            'user_id' => $secondCompte->id,
-        ])->assertOk()
-            ->assertJsonPath('eglise.user_id', $secondCompte->id)
-            ->assertJsonPath('eglise.user_code', 'USR-EGL-002');
+            'user_id' => 999,
+            'user_code' => 'CODE-INTERDIT',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['user_id', 'user_code']);
 
-        $this->patchJson("/api/v1/eglises/{$egliseId}", [
-            'user_id' => null,
-        ])->assertOk()
-            ->assertJsonPath('eglise.user_id', null)
-            ->assertJsonPath('eglise.user_code', null);
+        $this->assertDatabaseHas('eglises', [
+            'id' => $egliseId,
+            'user_id' => $administrateur->id,
+            'user_code' => $administrateur->code,
+        ]);
     }
 
     public function test_les_champs_techniques_sont_aussi_proteges_lors_de_la_modification(): void

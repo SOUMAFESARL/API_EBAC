@@ -977,11 +977,6 @@
                         "type": "string",
                         "example": "Église partenaire depuis 2026.",
                         "nullable": true
-                    },
-                    "user_id": {
-                        "type": "integer",
-                        "example": 42,
-                        "nullable": true
                     }
                 },
                 "type": "object"
@@ -1065,14 +1060,16 @@
                         "nullable": true
                     },
                     "user_id": {
+                        "description": "ID de l’utilisateur connecté ayant créé l’église",
                         "type": "integer",
-                        "nullable": true
+                        "readOnly": true,
+                        "example": 1
                     },
                     "user_code": {
+                        "description": "Code de l’utilisateur connecté ayant créé l’église",
                         "type": "string",
                         "readOnly": true,
-                        "example": "USR-000042",
-                        "nullable": true
+                        "example": "USR-ADMIN"
                     },
                     "created_by": {
                         "type": "integer",

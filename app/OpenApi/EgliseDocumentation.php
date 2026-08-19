@@ -49,7 +49,6 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'capacite_max_stagiaires', type: 'integer', minimum: 0, maximum: 65535, default: 0, example: 25),
         new OA\Property(property: 'representants', type: 'array', nullable: true, items: new OA\Items(ref: '#/components/schemas/RepresentantEglise')),
         new OA\Property(property: 'observations', type: 'string', nullable: true, example: 'Église partenaire depuis 2026.'),
-        new OA\Property(property: 'user_id', type: 'integer', nullable: true, example: 42),
     ],
 )]
 #[OA\Schema(
@@ -72,8 +71,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'capacite_max_stagiaires', type: 'integer', example: 25),
         new OA\Property(property: 'representants', type: 'array', nullable: true, items: new OA\Items(ref: '#/components/schemas/RepresentantEglise')),
         new OA\Property(property: 'observations', type: 'string', nullable: true),
-        new OA\Property(property: 'user_id', type: 'integer', nullable: true),
-        new OA\Property(property: 'user_code', type: 'string', nullable: true, readOnly: true, example: 'USR-000042'),
+        new OA\Property(property: 'user_id', type: 'integer', readOnly: true, description: 'ID de l’utilisateur connecté ayant créé l’église', example: 1),
+        new OA\Property(property: 'user_code', type: 'string', readOnly: true, description: 'Code de l’utilisateur connecté ayant créé l’église', example: 'USR-ADMIN'),
         new OA\Property(property: 'created_by', type: 'integer', nullable: true, readOnly: true),
         new OA\Property(property: 'updated_by', type: 'integer', nullable: true, readOnly: true),
         new OA\Property(property: 'deleted_by', type: 'integer', nullable: true, readOnly: true),

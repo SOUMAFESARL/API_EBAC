@@ -53,8 +53,8 @@ Un compte inactif ou suspendu reçoit une réponse `403` :
 | `capacite_max_stagiaires` | entier | Nombre maximal de stagiaires, `0` par défaut |
 | `representants` | tableau ou `null` | Liste des représentants de l’église |
 | `observations` | chaîne ou `null` | Observations internes |
-| `user_id` | entier ou `null` | Identifiant du compte associé à l’église |
-| `user_code` | chaîne ou `null` | Copie automatique du code du compte associé |
+| `user_id` | entier | Identifiant de l’utilisateur connecté ayant créé l’église |
+| `user_code` | chaîne | Code de l’utilisateur connecté ayant créé l’église |
 | `created_by` | entier ou `null` | Utilisateur ayant créé l’église |
 | `updated_by` | entier ou `null` | Dernier utilisateur ayant modifié l’église |
 | `deleted_by` | entier ou `null` | Utilisateur ayant supprimé l’église |
@@ -62,7 +62,7 @@ Un compte inactif ou suspendu reçoit une réponse `403` :
 | `updated_at` | date ISO 8601 | Date de dernière modification |
 | `deleted_at` | date ISO 8601 ou `null` | Date de suppression logique |
 
-Les champs `code`, `user_code`, `created_by`, `updated_by` et `deleted_by` sont contrôlés exclusivement par l’API. Le frontend ne doit jamais les envoyer.
+Les champs `code`, `user_id`, `user_code`, `created_by`, `updated_by` et `deleted_by` sont contrôlés exclusivement par l’API. Le frontend ne doit jamais les envoyer.
 
 ## Structure d’un représentant
 
@@ -128,8 +128,7 @@ POST /api/v1/eglises
       "email": "jean.kouassi@example.com"
     }
   ],
-  "observations": "Église partenaire depuis 2026.",
-  "user_id": 42
+  "observations": "Église partenaire depuis 2026."
 }
 ```
 
@@ -140,7 +139,7 @@ Champs obligatoires :
 
 Tous les autres champs sont facultatifs. Lorsque `statut` est omis, sa valeur est `Active`. Lorsque `capacite_max_stagiaires` est omis, sa valeur est `0`.
 
-`user_id` est facultatif. Lorsqu’il est fourni, il doit correspondre à un compte existant. L’API copie automatiquement le champ `code` de ce compte dans `user_code`.
+L’API renseigne automatiquement `user_id` et `user_code` avec l’identifiant et le code de l’utilisateur connecté.
 
 ### Réponse `201 Created`
 
@@ -172,8 +171,8 @@ Tous les autres champs sont facultatifs. Lorsque `statut` est omis, sa valeur es
       }
     ],
     "observations": "Église partenaire depuis 2026.",
-    "user_id": 42,
-    "user_code": "USR-000042",
+    "user_id": 5,
+    "user_code": "USR-ADMIN",
     "created_by": 5,
     "updated_by": null,
     "deleted_by": null,
@@ -274,8 +273,8 @@ Les résultats sont triés par nom dans l’ordre alphabétique. Les églises su
       "capacite_max_stagiaires": 25,
       "representants": [],
       "observations": null,
-      "user_id": 42,
-      "user_code": "USR-000042",
+      "user_id": 5,
+      "user_code": "USR-ADMIN",
       "created_by": 5,
       "updated_by": null,
       "deleted_by": null,
@@ -330,7 +329,7 @@ GET /api/v1/eglises/1
 
 ### Réponse `200 OK`
 
-La propriété `compte` contient le compte associé lorsque `user_id` est renseigné.
+La propriété `compte` contient le compte de l’utilisateur qui a créé l’église.
 
 ```json
 {
@@ -344,8 +343,8 @@ La propriété `compte` contient le compte associé lorsque `user_id` est rensei
     "statut": "Active",
     "capacite_max_stagiaires": 25,
     "representants": [],
-    "user_id": 42,
-    "user_code": "USR-000042",
+    "user_id": 5,
+    "user_code": "USR-ADMIN",
     "created_by": 5,
     "updated_by": null,
     "deleted_by": null,
@@ -410,8 +409,8 @@ PATCH /api/v1/eglises/{id}
     "telephone": "+2250708091011",
     "statut": "Suspendue",
     "capacite_max_stagiaires": 30,
-    "user_id": 42,
-    "user_code": "USR-000042",
+    "user_id": 5,
+    "user_code": "USR-ADMIN",
     "created_by": 5,
     "updated_by": 8,
     "deleted_by": null,
@@ -421,16 +420,6 @@ PATCH /api/v1/eglises/{id}
   }
 }
 ```
-
-Pour dissocier le compte utilisateur de l’église :
-
-```json
-{
-  "user_id": null
-}
-```
-
-L’API place alors automatiquement `user_code` à `null`.
 
 Pour remplacer toute la liste des représentants :
 
@@ -496,7 +485,7 @@ Une seconde suppression du même identifiant retourne `404`.
 | `statut` | `Active`, `Suspendue` ou `Archivée` |
 | `capacite_max_stagiaires` | entier compris entre 0 et 65535 |
 | `representants` | tableau ou `null` |
-| `user_id` | identifiant d’un compte existant ou `null` |
+| `user_id` | interdit dans la requête, alimenté avec l’utilisateur connecté |
 
 ## Exemple JavaScript avec `fetch`
 

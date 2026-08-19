@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Eglise\CreerEgliseRequest;
 use App\Http\Requests\Api\V1\Eglise\ModifierEgliseRequest;
 use App\Models\Eglise;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -84,7 +83,8 @@ class EgliseController extends Controller
 
         $eglise = DB::transaction(function () use ($donnees, $administrateur) {
             $donnees['code'] = $this->genererCode();
-            $donnees['user_code'] = $this->codeDuCompte($donnees['user_id'] ?? null);
+            $donnees['user_id'] = $administrateur->id;
+            $donnees['user_code'] = $administrateur->code;
             $donnees['created_by'] = $administrateur->id;
 
             return Eglise::query()->create($donnees);
@@ -156,10 +156,6 @@ class EgliseController extends Controller
         $eglise = Eglise::query()->findOrFail($id);
         $donnees = $request->validated();
 
-        if (array_key_exists('user_id', $donnees)) {
-            $donnees['user_code'] = $this->codeDuCompte($donnees['user_id']);
-        }
-
         $eglise->update([...$donnees, 'updated_by' => $request->user()->id]);
 
         return response()->json([
@@ -190,11 +186,6 @@ class EgliseController extends Controller
         $eglise->delete();
 
         return response()->json(['message' => 'Église supprimée avec succès.']);
-    }
-
-    private function codeDuCompte(?int $userId): ?string
-    {
-        return $userId ? User::query()->whereKey($userId)->value('code') : null;
     }
 
     private function genererCode(): string
