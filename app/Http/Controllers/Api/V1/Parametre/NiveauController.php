@@ -8,9 +8,23 @@ use App\Http\Requests\Api\V1\Parametre\ModifierNiveauRequest;
 use App\Models\Niveau;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use OpenApi\Attributes as OA;
 
 class NiveauController extends Controller
 {
+    #[OA\Get(
+        path: '/parametres/niveaux',
+        operationId: 'listerNiveaux',
+        summary: 'Lister les niveaux par rang',
+        security: [['sanctum' => []]],
+        tags: ['Niveaux'],
+        responses: [
+            new OA\Response(response: 200, description: 'Liste des niveaux', content: new OA\JsonContent(type: 'object', properties: [
+                new OA\Property(property: 'niveaux', type: 'array', items: new OA\Items(ref: '#/components/schemas/Niveau')),
+            ])),
+            new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
+        ],
+    )]
     public function index(): JsonResponse
     {
         return response()->json([
@@ -18,6 +32,23 @@ class NiveauController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/parametres/niveaux',
+        operationId: 'creerNiveau',
+        summary: 'Créer un niveau',
+        description: 'user_id, user_code et created_by proviennent automatiquement de l’utilisateur connecté.',
+        security: [['sanctum' => []]],
+        tags: ['Niveaux'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/NiveauPayload')),
+        responses: [
+            new OA\Response(response: 201, description: 'Niveau créé', content: new OA\JsonContent(type: 'object', properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Niveau créé avec succès.'),
+                new OA\Property(property: 'niveau', ref: '#/components/schemas/Niveau'),
+            ])),
+            new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
+            new OA\Response(response: 422, description: 'Code ou rang invalide/déjà utilisé', content: new OA\JsonContent(ref: '#/components/schemas/ErreurValidation')),
+        ],
+    )]
     public function store(CreerNiveauRequest $request): JsonResponse
     {
         $utilisateur = $request->user();
@@ -34,11 +65,44 @@ class NiveauController extends Controller
         ], 201);
     }
 
+    #[OA\Get(
+        path: '/parametres/niveaux/{niveau}',
+        operationId: 'afficherNiveau',
+        summary: 'Afficher un niveau',
+        security: [['sanctum' => []]],
+        tags: ['Niveaux'],
+        parameters: [new OA\Parameter(name: 'niveau', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Niveau trouvé', content: new OA\JsonContent(type: 'object', properties: [
+                new OA\Property(property: 'niveau', ref: '#/components/schemas/Niveau'),
+            ])),
+            new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
+            new OA\Response(response: 404, description: 'Niveau introuvable'),
+        ],
+    )]
     public function show(Niveau $niveau): JsonResponse
     {
         return response()->json(['niveau' => $niveau]);
     }
 
+    #[OA\Patch(
+        path: '/parametres/niveaux/{niveau}',
+        operationId: 'modifierNiveau',
+        summary: 'Modifier partiellement un niveau',
+        security: [['sanctum' => []]],
+        tags: ['Niveaux'],
+        parameters: [new OA\Parameter(name: 'niveau', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/NiveauPayload')),
+        responses: [
+            new OA\Response(response: 200, description: 'Niveau modifié', content: new OA\JsonContent(type: 'object', properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Niveau modifié avec succès.'),
+                new OA\Property(property: 'niveau', ref: '#/components/schemas/Niveau'),
+            ])),
+            new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
+            new OA\Response(response: 404, description: 'Niveau introuvable'),
+            new OA\Response(response: 422, description: 'Erreur de validation', content: new OA\JsonContent(ref: '#/components/schemas/ErreurValidation')),
+        ],
+    )]
     public function update(ModifierNiveauRequest $request, Niveau $niveau): JsonResponse
     {
         $niveau->update([
@@ -52,6 +116,25 @@ class NiveauController extends Controller
         ]);
     }
 
+    #[OA\Delete(
+        path: '/parametres/niveaux/{niveau}',
+        operationId: 'supprimerNiveau',
+        summary: 'Supprimer logiquement un niveau',
+        description: 'La suppression est refusée si une promotion utilise le niveau.',
+        security: [['sanctum' => []]],
+        tags: ['Niveaux'],
+        parameters: [new OA\Parameter(name: 'niveau', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Niveau supprimé', content: new OA\JsonContent(type: 'object', properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Niveau supprimé avec succès.'),
+            ])),
+            new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
+            new OA\Response(response: 404, description: 'Niveau introuvable'),
+            new OA\Response(response: 422, description: 'Niveau utilisé par une promotion', content: new OA\JsonContent(type: 'object', properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Ce niveau est utilisé par une promotion et ne peut pas être supprimé.'),
+            ])),
+        ],
+    )]
     public function destroy(ModifierNiveauRequest $request, Niveau $niveau): JsonResponse
     {
         if (DB::table('promotions')->where('id_niveau', $niveau->id)->exists()) {

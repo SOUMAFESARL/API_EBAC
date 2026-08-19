@@ -67,6 +67,12 @@ jobs:
       - name: Installer les dépendances de production
         run: composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
 
+      - name: Générer la documentation Swagger
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan l5-swagger:generate
+
       - name: Envoyer les fichiers vers cPanel
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -85,7 +91,10 @@ jobs:
             **/.env.*
             **/node_modules/**
             **/tests/**
-            **/storage/**
+            **/storage/app/**
+            **/storage/debugbar/**
+            **/storage/framework/**
+            **/storage/logs/**
             **/bootstrap/cache/**
             **/docs/**
             **/scripts/**

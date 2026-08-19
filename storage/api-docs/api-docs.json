@@ -1,0 +1,1090 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API EBAC — Églises et niveaux",
+        "description": "Documentation OpenAPI des CRUD des églises et des niveaux.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/api/v1",
+            "description": "Serveur courant"
+        },
+        {
+            "url": "https://api-ebac.severinzran.ci/api/v1",
+            "description": "Production"
+        }
+    ],
+    "paths": {
+        "/eglises": {
+            "get": {
+                "tags": [
+                    "Églises"
+                ],
+                "summary": "Lister les églises",
+                "operationId": "listerEglises",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "par_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "description": "Nom, sigle, code ou ville",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Active",
+                                "Suspendue",
+                                "Archivée"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Eglise"
+                                            }
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 15
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurAuthentification"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Églises"
+                ],
+                "summary": "Créer une église",
+                "description": "Le code EGL-xxxxxx et les champs d’audit sont générés automatiquement.",
+                "operationId": "creerEglise",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EglisePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Église créée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Église créée avec succès."
+                                        },
+                                        "eglise": {
+                                            "$ref": "#/components/schemas/Eglise"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurAuthentification"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/eglises/{eglise}": {
+            "get": {
+                "tags": [
+                    "Églises"
+                ],
+                "summary": "Afficher une église",
+                "operationId": "afficherEglise",
+                "parameters": [
+                    {
+                        "name": "eglise",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Église trouvée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "eglise": {
+                                            "$ref": "#/components/schemas/Eglise"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurAuthentification"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Église introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Églises"
+                ],
+                "summary": "Supprimer logiquement une église",
+                "operationId": "supprimerEglise",
+                "parameters": [
+                    {
+                        "name": "eglise",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Église supprimée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Église supprimée avec succès."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurAuthentification"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Église introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Églises"
+                ],
+                "summary": "Modifier partiellement une église",
+                "operationId": "modifierEglise",
+                "parameters": [
+                    {
+                        "name": "eglise",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EglisePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Église modifiée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Église modifiée avec succès."
+                                        },
+                                        "eglise": {
+                                            "$ref": "#/components/schemas/Eglise"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurAuthentification"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Église introuvable"
+                    },
+                    "422": {
+                        "description": "Erreur de validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/niveaux": {
+            "get": {
+                "tags": [
+                    "Niveaux"
+                ],
+                "summary": "Lister les niveaux par rang",
+                "operationId": "listerNiveaux",
+                "responses": {
+                    "200": {
+                        "description": "Liste des niveaux",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "niveaux": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Niveau"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurAuthentification"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Niveaux"
+                ],
+                "summary": "Créer un niveau",
+                "description": "user_id, user_code et created_by proviennent automatiquement de l’utilisateur connecté.",
+                "operationId": "creerNiveau",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NiveauPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Niveau créé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Niveau créé avec succès."
+                                        },
+                                        "niveau": {
+                                            "$ref": "#/components/schemas/Niveau"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurAuthentification"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Code ou rang invalide/déjà utilisé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/niveaux/{niveau}": {
+            "get": {
+                "tags": [
+                    "Niveaux"
+                ],
+                "summary": "Afficher un niveau",
+                "operationId": "afficherNiveau",
+                "parameters": [
+                    {
+                        "name": "niveau",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Niveau trouvé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "niveau": {
+                                            "$ref": "#/components/schemas/Niveau"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurAuthentification"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Niveau introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Niveaux"
+                ],
+                "summary": "Supprimer logiquement un niveau",
+                "description": "La suppression est refusée si une promotion utilise le niveau.",
+                "operationId": "supprimerNiveau",
+                "parameters": [
+                    {
+                        "name": "niveau",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Niveau supprimé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Niveau supprimé avec succès."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurAuthentification"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Niveau introuvable"
+                    },
+                    "422": {
+                        "description": "Niveau utilisé par une promotion",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Ce niveau est utilisé par une promotion et ne peut pas être supprimé."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Niveaux"
+                ],
+                "summary": "Modifier partiellement un niveau",
+                "operationId": "modifierNiveau",
+                "parameters": [
+                    {
+                        "name": "niveau",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/NiveauPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Niveau modifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Niveau modifié avec succès."
+                                        },
+                                        "niveau": {
+                                            "$ref": "#/components/schemas/Niveau"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurAuthentification"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Niveau introuvable"
+                    },
+                    "422": {
+                        "description": "Erreur de validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "RepresentantEglise": {
+                "required": [
+                    "nom"
+                ],
+                "properties": {
+                    "nom": {
+                        "type": "string",
+                        "example": "Kouassi",
+                        "maxLength": 150
+                    },
+                    "prenoms": {
+                        "type": "string",
+                        "example": "Jean",
+                        "nullable": true,
+                        "maxLength": 150
+                    },
+                    "fonction": {
+                        "type": "string",
+                        "example": "Secrétaire",
+                        "nullable": true,
+                        "maxLength": 100
+                    },
+                    "telephone": {
+                        "type": "string",
+                        "example": "+2250102030405",
+                        "nullable": true,
+                        "maxLength": 30
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "jean@example.com",
+                        "nullable": true,
+                        "maxLength": 150
+                    }
+                },
+                "type": "object"
+            },
+            "EglisePayload": {
+                "required": [
+                    "nom",
+                    "ville_commune"
+                ],
+                "properties": {
+                    "nom": {
+                        "type": "string",
+                        "example": "Église Cité de la Grâce",
+                        "maxLength": 180
+                    },
+                    "sigle": {
+                        "type": "string",
+                        "example": "ECG",
+                        "nullable": true,
+                        "maxLength": 30
+                    },
+                    "pasteur_principal": {
+                        "type": "string",
+                        "example": "Pasteur Yao Thomas",
+                        "nullable": true,
+                        "maxLength": 180
+                    },
+                    "denomination": {
+                        "type": "string",
+                        "example": "Église évangélique",
+                        "nullable": true,
+                        "maxLength": 180
+                    },
+                    "adresse": {
+                        "type": "string",
+                        "example": "Cocody Angré",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
+                    "region": {
+                        "type": "string",
+                        "example": "District autonome d’Abidjan",
+                        "nullable": true,
+                        "maxLength": 120
+                    },
+                    "district": {
+                        "type": "string",
+                        "example": "Abidjan Nord",
+                        "nullable": true,
+                        "maxLength": 120
+                    },
+                    "ville_commune": {
+                        "type": "string",
+                        "example": "Cocody",
+                        "maxLength": 120
+                    },
+                    "telephone": {
+                        "type": "string",
+                        "example": "+2250102030405",
+                        "nullable": true,
+                        "maxLength": 30
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "contact@eglise.example",
+                        "nullable": true,
+                        "maxLength": 150
+                    },
+                    "statut": {
+                        "type": "string",
+                        "default": "Active",
+                        "enum": [
+                            "Active",
+                            "Suspendue",
+                            "Archivée"
+                        ]
+                    },
+                    "capacite_max_stagiaires": {
+                        "type": "integer",
+                        "example": 25,
+                        "default": 0,
+                        "maximum": 65535,
+                        "minimum": 0
+                    },
+                    "representants": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RepresentantEglise"
+                        },
+                        "nullable": true
+                    },
+                    "observations": {
+                        "type": "string",
+                        "example": "Église partenaire depuis 2026.",
+                        "nullable": true
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "example": 42,
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "Eglise": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "example": 1
+                    },
+                    "code": {
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "EGL-000001"
+                    },
+                    "nom": {
+                        "type": "string",
+                        "example": "Église Cité de la Grâce"
+                    },
+                    "sigle": {
+                        "type": "string",
+                        "example": "ECG",
+                        "nullable": true
+                    },
+                    "pasteur_principal": {
+                        "type": "string",
+                        "example": "Pasteur Yao Thomas",
+                        "nullable": true
+                    },
+                    "denomination": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "adresse": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "region": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "district": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "ville_commune": {
+                        "type": "string",
+                        "example": "Cocody"
+                    },
+                    "telephone": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "nullable": true
+                    },
+                    "statut": {
+                        "type": "string",
+                        "enum": [
+                            "Active",
+                            "Suspendue",
+                            "Archivée"
+                        ]
+                    },
+                    "capacite_max_stagiaires": {
+                        "type": "integer",
+                        "example": 25
+                    },
+                    "representants": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RepresentantEglise"
+                        },
+                        "nullable": true
+                    },
+                    "observations": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "user_code": {
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "USR-000042",
+                        "nullable": true
+                    },
+                    "created_by": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "updated_by": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "deleted_by": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "ErreurAuthentification": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Unauthenticated."
+                    }
+                },
+                "type": "object"
+            },
+            "NiveauPayload": {
+                "required": [
+                    "libelle",
+                    "code",
+                    "rang"
+                ],
+                "properties": {
+                    "libelle": {
+                        "type": "string",
+                        "example": "Première Année",
+                        "maxLength": 100
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "A1",
+                        "maxLength": 20
+                    },
+                    "rang": {
+                        "type": "integer",
+                        "example": 1,
+                        "maximum": 65535,
+                        "minimum": 1
+                    },
+                    "statut": {
+                        "type": "string",
+                        "default": "Actif",
+                        "enum": [
+                            "Actif",
+                            "Archive"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "Niveau": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "example": 1
+                    },
+                    "libelle": {
+                        "type": "string",
+                        "example": "Première Année"
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "A1"
+                    },
+                    "rang": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "statut": {
+                        "type": "string",
+                        "example": "Actif",
+                        "enum": [
+                            "Actif",
+                            "Archive"
+                        ]
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "example": 1,
+                        "nullable": true
+                    },
+                    "user_code": {
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "ADMIN",
+                        "nullable": true
+                    },
+                    "created_by": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "example": 1,
+                        "nullable": true
+                    },
+                    "updated_by": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "deleted_by": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "ErreurValidation": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "The nom field is required."
+                    },
+                    "errors": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "sanctum": {
+                "type": "http",
+                "description": "Jeton retourné après la connexion et la confirmation OTP.",
+                "bearerFormat": "Token Sanctum",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Églises",
+            "description": "Églises"
+        },
+        {
+            "name": "Niveaux",
+            "description": "Niveaux"
+        }
+    ]
+}
