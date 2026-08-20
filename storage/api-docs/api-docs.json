@@ -46,7 +46,24 @@
                     {
                         "name": "recherche",
                         "in": "query",
-                        "description": "Nom, sigle, code ou ville",
+                        "description": "Recherche partielle par nom, sigle, code ou ville. Les paramètres q et eglise sont des alias.",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "grâce"
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Alias de recherche.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "eglise",
+                        "in": "query",
+                        "description": "Alias de recherche conservé pour compatibilité.",
                         "schema": {
                             "type": "string"
                         }
@@ -66,6 +83,15 @@
                     {
                         "name": "ville",
                         "in": "query",
+                        "description": "Filtre exact sur la ville ou commune.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ville_commune",
+                        "in": "query",
+                        "description": "Alias du filtre ville.",
                         "schema": {
                             "type": "string"
                         }
@@ -109,8 +135,10 @@
                     {
                         "name": "avec_etudiants",
                         "in": "query",
+                        "description": "Si vrai, retourne uniquement les églises ayant au moins un étudiant rattaché.",
                         "schema": {
-                            "type": "boolean"
+                            "type": "boolean",
+                            "default": false
                         }
                     }
                 ],
@@ -138,6 +166,20 @@
                                         "total": {
                                             "type": "integer",
                                             "example": 1
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "from": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "to": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
                                         }
                                     },
                                     "type": "object"
@@ -303,11 +345,12 @@
                     }
                 ],
                 "requestBody": {
+                    "description": "L’API applique les mêmes règles de modification partielle pour PUT et PATCH.",
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/EglisePayload"
+                                "$ref": "#/components/schemas/EgliseModificationPayload"
                             }
                         }
                     }
@@ -438,11 +481,12 @@
                     }
                 ],
                 "requestBody": {
+                    "description": "L’API applique les mêmes règles de modification partielle pour PUT et PATCH.",
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/EglisePayload"
+                                "$ref": "#/components/schemas/EgliseModificationPayload"
                             }
                         }
                     }
@@ -2118,6 +2162,133 @@
                 },
                 "type": "object"
             },
+            "EgliseModificationPayload": {
+                "description": "Champs modifiables d’une église. Tous les champs sont facultatifs pour une modification partielle.",
+                "properties": {
+                    "nom": {
+                        "type": "string",
+                        "example": "Église Cité de la Grâce",
+                        "maxLength": 180
+                    },
+                    "sigle": {
+                        "type": "string",
+                        "example": "ECG",
+                        "nullable": true,
+                        "maxLength": 30
+                    },
+                    "pasteur_principal": {
+                        "type": "string",
+                        "example": "Pasteur Yao Thomas",
+                        "nullable": true,
+                        "maxLength": 180
+                    },
+                    "denomination": {
+                        "type": "string",
+                        "example": "Église évangélique",
+                        "nullable": true,
+                        "maxLength": 180
+                    },
+                    "adresse": {
+                        "type": "string",
+                        "example": "Cocody Angré",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
+                    "region": {
+                        "type": "string",
+                        "example": "District autonome d’Abidjan",
+                        "nullable": true,
+                        "maxLength": 120
+                    },
+                    "district": {
+                        "type": "string",
+                        "example": "Abidjan Nord",
+                        "nullable": true,
+                        "maxLength": 120
+                    },
+                    "ville_commune": {
+                        "type": "string",
+                        "example": "Cocody",
+                        "maxLength": 120
+                    },
+                    "telephone": {
+                        "type": "string",
+                        "example": "+2250102030405",
+                        "nullable": true,
+                        "maxLength": 30
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "contact@eglise.example",
+                        "nullable": true,
+                        "maxLength": 150
+                    },
+                    "statut": {
+                        "type": "string",
+                        "example": "Active",
+                        "enum": [
+                            "Active",
+                            "Suspendue",
+                            "Archivée"
+                        ]
+                    },
+                    "capacite_max_stagiaires": {
+                        "type": "integer",
+                        "example": 25,
+                        "maximum": 65535,
+                        "minimum": 0
+                    },
+                    "representants": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RepresentantEglise"
+                        },
+                        "nullable": true
+                    },
+                    "observations": {
+                        "type": "string",
+                        "example": "Église partenaire depuis 2026.",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "UtilisateurEglise": {
+                "description": "Informations succinctes d’un utilisateur lié à l’église.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "example": 1
+                    },
+                    "code": {
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "USR-ADMIN",
+                        "nullable": true
+                    },
+                    "nom": {
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "Kouassi"
+                    },
+                    "prenoms": {
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "Jean",
+                        "nullable": true
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "readOnly": true,
+                        "example": "jean@example.com",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "Eglise": {
                 "properties": {
                     "id": {
@@ -2238,6 +2409,40 @@
                         "format": "date-time",
                         "readOnly": true,
                         "nullable": true
+                    },
+                    "nombre_etudiants": {
+                        "description": "Nombre total d’étudiants rattachés à l’église.",
+                        "type": "integer",
+                        "readOnly": true,
+                        "example": 12,
+                        "minimum": 0
+                    },
+                    "compte": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/UtilisateurEglise"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "createur": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/UtilisateurEglise"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "modificateur": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/UtilisateurEglise"
+                            }
+                        ],
+                        "nullable": true,
+                        "readOnly": true
                     }
                 },
                 "type": "object"

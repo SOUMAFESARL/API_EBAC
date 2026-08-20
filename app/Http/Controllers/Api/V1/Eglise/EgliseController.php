@@ -22,15 +22,18 @@ class EgliseController extends Controller
         parameters: [
             new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)),
             new OA\Parameter(name: 'par_page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 15)),
-            new OA\Parameter(name: 'recherche', in: 'query', description: 'Nom, sigle, code ou ville', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'recherche', in: 'query', description: 'Recherche partielle par nom, sigle, code ou ville. Les paramètres q et eglise sont des alias.', schema: new OA\Schema(type: 'string'), example: 'grâce'),
+            new OA\Parameter(name: 'q', in: 'query', description: 'Alias de recherche.', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'eglise', in: 'query', description: 'Alias de recherche conservé pour compatibilité.', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'statut', in: 'query', schema: new OA\Schema(type: 'string', enum: ['Active', 'Suspendue', 'Archivée'])),
-            new OA\Parameter(name: 'ville', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'ville', in: 'query', description: 'Filtre exact sur la ville ou commune.', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'ville_commune', in: 'query', description: 'Alias du filtre ville.', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'region', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'district', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'denomination', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'pasteur', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'capacite_min', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 0)),
-            new OA\Parameter(name: 'avec_etudiants', in: 'query', schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'avec_etudiants', in: 'query', description: 'Si vrai, retourne uniquement les églises ayant au moins un étudiant rattaché.', schema: new OA\Schema(type: 'boolean', default: false)),
         ],
         responses: [
             new OA\Response(
@@ -41,6 +44,9 @@ class EgliseController extends Controller
                     new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/Eglise')),
                     new OA\Property(property: 'per_page', type: 'integer', example: 15),
                     new OA\Property(property: 'total', type: 'integer', example: 1),
+                    new OA\Property(property: 'last_page', type: 'integer', example: 1),
+                    new OA\Property(property: 'from', type: 'integer', nullable: true, example: 1),
+                    new OA\Property(property: 'to', type: 'integer', nullable: true, example: 1),
                 ]),
             ),
             new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
@@ -143,7 +149,7 @@ class EgliseController extends Controller
         security: [['sanctum' => []]],
         tags: ['Églises'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique de l’église', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
-        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/EglisePayload')),
+        requestBody: new OA\RequestBody(required: true, description: 'L’API applique les mêmes règles de modification partielle pour PUT et PATCH.', content: new OA\JsonContent(ref: '#/components/schemas/EgliseModificationPayload')),
         responses: [
             new OA\Response(response: 200, description: 'Église modifiée', content: new OA\JsonContent(type: 'object', properties: [
                 new OA\Property(property: 'message', type: 'string', example: 'Église modifiée avec succès.'),
@@ -161,7 +167,7 @@ class EgliseController extends Controller
         security: [['sanctum' => []]],
         tags: ['Églises'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique de l’église', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
-        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/EglisePayload')),
+        requestBody: new OA\RequestBody(required: true, description: 'L’API applique les mêmes règles de modification partielle pour PUT et PATCH.', content: new OA\JsonContent(ref: '#/components/schemas/EgliseModificationPayload')),
         responses: [
             new OA\Response(response: 200, description: 'Église modifiée', content: new OA\JsonContent(type: 'object', properties: [
                 new OA\Property(property: 'message', type: 'string', example: 'Église modifiée avec succès.'),

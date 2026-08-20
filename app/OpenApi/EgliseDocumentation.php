@@ -52,6 +52,39 @@ use OpenApi\Attributes as OA;
     ],
 )]
 #[OA\Schema(
+    schema: 'EgliseModificationPayload',
+    type: 'object',
+    description: 'Champs modifiables d’une église. Tous les champs sont facultatifs pour une modification partielle.',
+    properties: [
+        new OA\Property(property: 'nom', type: 'string', maxLength: 180, example: 'Église Cité de la Grâce'),
+        new OA\Property(property: 'sigle', type: 'string', nullable: true, maxLength: 30, example: 'ECG'),
+        new OA\Property(property: 'pasteur_principal', type: 'string', nullable: true, maxLength: 180, example: 'Pasteur Yao Thomas'),
+        new OA\Property(property: 'denomination', type: 'string', nullable: true, maxLength: 180, example: 'Église évangélique'),
+        new OA\Property(property: 'adresse', type: 'string', nullable: true, maxLength: 255, example: 'Cocody Angré'),
+        new OA\Property(property: 'region', type: 'string', nullable: true, maxLength: 120, example: 'District autonome d’Abidjan'),
+        new OA\Property(property: 'district', type: 'string', nullable: true, maxLength: 120, example: 'Abidjan Nord'),
+        new OA\Property(property: 'ville_commune', type: 'string', maxLength: 120, example: 'Cocody'),
+        new OA\Property(property: 'telephone', type: 'string', nullable: true, maxLength: 30, example: '+2250102030405'),
+        new OA\Property(property: 'email', type: 'string', format: 'email', nullable: true, maxLength: 150, example: 'contact@eglise.example'),
+        new OA\Property(property: 'statut', type: 'string', enum: ['Active', 'Suspendue', 'Archivée'], example: 'Active'),
+        new OA\Property(property: 'capacite_max_stagiaires', type: 'integer', minimum: 0, maximum: 65535, example: 25),
+        new OA\Property(property: 'representants', type: 'array', nullable: true, items: new OA\Items(ref: '#/components/schemas/RepresentantEglise')),
+        new OA\Property(property: 'observations', type: 'string', nullable: true, example: 'Église partenaire depuis 2026.'),
+    ],
+)]
+#[OA\Schema(
+    schema: 'UtilisateurEglise',
+    type: 'object',
+    description: 'Informations succinctes d’un utilisateur lié à l’église.',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', readOnly: true, example: 1),
+        new OA\Property(property: 'code', type: 'string', nullable: true, readOnly: true, example: 'USR-ADMIN'),
+        new OA\Property(property: 'nom', type: 'string', readOnly: true, example: 'Kouassi'),
+        new OA\Property(property: 'prenoms', type: 'string', nullable: true, readOnly: true, example: 'Jean'),
+        new OA\Property(property: 'email', type: 'string', format: 'email', nullable: true, readOnly: true, example: 'jean@example.com'),
+    ],
+)]
+#[OA\Schema(
     schema: 'Eglise',
     type: 'object',
     properties: [
@@ -79,6 +112,10 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', readOnly: true),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', readOnly: true),
         new OA\Property(property: 'deleted_at', type: 'string', format: 'date-time', nullable: true, readOnly: true),
+        new OA\Property(property: 'nombre_etudiants', type: 'integer', minimum: 0, readOnly: true, description: 'Nombre total d’étudiants rattachés à l’église.', example: 12),
+        new OA\Property(property: 'compte', ref: '#/components/schemas/UtilisateurEglise', nullable: true, readOnly: true),
+        new OA\Property(property: 'createur', ref: '#/components/schemas/UtilisateurEglise', nullable: true, readOnly: true),
+        new OA\Property(property: 'modificateur', ref: '#/components/schemas/UtilisateurEglise', nullable: true, readOnly: true),
     ],
 )]
 #[OA\Schema(
