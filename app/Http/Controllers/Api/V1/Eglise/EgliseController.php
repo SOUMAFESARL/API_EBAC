@@ -59,7 +59,7 @@ class EgliseController extends Controller
 
         $eglises = Eglise::query()
             ->with($this->relations())
-            ->withCount(['etudiants as nombre_etudiants', 'etudiantsHistoriques as nombre_etudiants_historiques'])
+            ->withCount(['etudiants as nombre_etudiants'])
             ->when($recherche, fn ($query) => $query->where(function ($query) use ($recherche) {
                 $query->where('nom', 'like', "%{$recherche}%")
                     ->orWhere('sigle', 'like', "%{$recherche}%")
@@ -73,7 +73,7 @@ class EgliseController extends Controller
             ->when($request->filled('denomination'), fn ($query) => $query->where('denomination', $request->input('denomination')))
             ->when($request->filled('pasteur'), fn ($query) => $query->where('pasteur_principal', 'like', '%'.$request->input('pasteur').'%'))
             ->when($request->filled('capacite_min'), fn ($query) => $query->where('capacite_max_stagiaires', '>=', $request->integer('capacite_min')))
-            ->when($request->boolean('avec_etudiants'), fn ($query) => $query->where(fn ($q) => $q->whereHas('etudiants')->orWhereHas('etudiantsHistoriques')))
+            ->when($request->boolean('avec_etudiants'), fn ($query) => $query->whereHas('etudiants'))
             ->orderBy('nom')
             ->paginate($parPage)
             ->withQueryString();
@@ -136,7 +136,7 @@ class EgliseController extends Controller
     {
         $eglise = Eglise::query()
             ->with($this->relations())
-            ->withCount(['etudiants as nombre_etudiants', 'etudiantsHistoriques as nombre_etudiants_historiques'])
+            ->withCount(['etudiants as nombre_etudiants'])
             ->findOrFail($id);
 
         $eglise = $this->finaliserCompteur($eglise);
@@ -250,9 +250,7 @@ class EgliseController extends Controller
 
     private function finaliserCompteur(Eglise $eglise): Eglise
     {
-        $eglise->nombre_etudiants = (int) $eglise->nombre_etudiants
-            + (int) $eglise->nombre_etudiants_historiques;
-        unset($eglise->nombre_etudiants_historiques);
+        $eglise->nombre_etudiants = (int) $eglise->nombre_etudiants;
 
         return $eglise;
     }
@@ -263,9 +261,7 @@ class EgliseController extends Controller
         $etudiantsEglise = DB::table('etudiants')
             ->select('id')
             ->whereNull('deleted_at')
-            ->where(fn ($query) => $query
-                ->where('eglise_id', $egliseId)
-                ->orWhere('id_eglise', $egliseId));
+            ->where('eglise_id', $egliseId);
 
         $dernieresInscriptions = DB::table('inscriptions')
             ->selectRaw('id_etudiant, MAX(id) as derniere_inscription_id')

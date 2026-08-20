@@ -229,7 +229,7 @@ class EgliseApiTest extends TestCase
         ]);
         DB::table('etudiants')->insert([
             'matricule' => 'EBAC-0002-2026', 'nom' => 'Yao', 'prenoms' => 'Marie',
-            'date_inscription' => '2026-08-20', 'id_eglise' => $egliseId,
+            'date_inscription' => '2026-08-20', 'eglise_id' => $egliseId,
         ]);
 
         $this->getJson('/api/v1/eglises?ville=Cocody&region=Abidjan&district=Nord&denomination=Alliance%20chrétienne&pasteur=Koffi&capacite_min=30&avec_etudiants=1&q=Alliance')

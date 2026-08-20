@@ -36,11 +36,6 @@ class Eglise extends Model
         return $this->hasMany(Etudiant::class, 'eglise_id');
     }
 
-    public function etudiantsHistoriques(): HasMany
-    {
-        return $this->hasMany(Etudiant::class, 'id_eglise');
-    }
-
     public function createur(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
