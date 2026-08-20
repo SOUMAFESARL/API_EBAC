@@ -113,7 +113,6 @@ jobs:
             --exclude-glob storage/debugbar/** \
             --exclude-glob storage/framework/** \
             --exclude-glob storage/logs/** \
-            --exclude-glob bootstrap/cache/** \
             --exclude-glob docs/** \
             --exclude-glob scripts/** \
             --exclude-glob public.zip \
