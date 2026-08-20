@@ -291,13 +291,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Église trouvée",
+                        "description": "Église trouvée avec ses relations et ses statistiques étudiantes",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "eglise": {
-                                            "$ref": "#/components/schemas/Eglise"
+                                            "$ref": "#/components/schemas/EgliseDetail"
                                         }
                                     },
                                     "type": "object"
@@ -2446,6 +2446,83 @@
                     }
                 },
                 "type": "object"
+            },
+            "StatistiquesEtudiantsEglise": {
+                "required": [
+                    "total",
+                    "avec_niveau",
+                    "sans_niveau",
+                    "par_niveau"
+                ],
+                "properties": {
+                    "total": {
+                        "type": "integer",
+                        "example": 12,
+                        "minimum": 0
+                    },
+                    "avec_niveau": {
+                        "type": "integer",
+                        "example": 10,
+                        "minimum": 0
+                    },
+                    "sans_niveau": {
+                        "type": "integer",
+                        "example": 2,
+                        "minimum": 0
+                    },
+                    "par_niveau": {
+                        "type": "array",
+                        "items": {
+                            "required": [
+                                "niveau_id",
+                                "niveau_code",
+                                "niveau_libelle",
+                                "niveau_rang",
+                                "nombre_etudiants"
+                            ],
+                            "properties": {
+                                "niveau_id": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "niveau_code": {
+                                    "type": "string",
+                                    "example": "A1"
+                                },
+                                "niveau_libelle": {
+                                    "type": "string",
+                                    "example": "Première Année"
+                                },
+                                "niveau_rang": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "nombre_etudiants": {
+                                    "type": "integer",
+                                    "example": 6,
+                                    "minimum": 0
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "EgliseDetail": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/Eglise"
+                    },
+                    {
+                        "properties": {
+                            "statistiques_etudiants": {
+                                "$ref": "#/components/schemas/StatistiquesEtudiantsEglise"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
             },
             "ErreurAuthentification": {
                 "properties": {

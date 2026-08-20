@@ -119,6 +119,36 @@ use OpenApi\Attributes as OA;
     ],
 )]
 #[OA\Schema(
+    schema: 'StatistiquesEtudiantsEglise',
+    type: 'object',
+    required: ['total', 'avec_niveau', 'sans_niveau', 'par_niveau'],
+    properties: [
+        new OA\Property(property: 'total', type: 'integer', minimum: 0, example: 12),
+        new OA\Property(property: 'avec_niveau', type: 'integer', minimum: 0, example: 10),
+        new OA\Property(property: 'sans_niveau', type: 'integer', minimum: 0, example: 2),
+        new OA\Property(property: 'par_niveau', type: 'array', items: new OA\Items(
+            type: 'object',
+            required: ['niveau_id', 'niveau_code', 'niveau_libelle', 'niveau_rang', 'nombre_etudiants'],
+            properties: [
+                new OA\Property(property: 'niveau_id', type: 'integer', example: 1),
+                new OA\Property(property: 'niveau_code', type: 'string', example: 'A1'),
+                new OA\Property(property: 'niveau_libelle', type: 'string', example: 'Première Année'),
+                new OA\Property(property: 'niveau_rang', type: 'integer', example: 1),
+                new OA\Property(property: 'nombre_etudiants', type: 'integer', minimum: 0, example: 6),
+            ],
+        )),
+    ],
+)]
+#[OA\Schema(
+    schema: 'EgliseDetail',
+    allOf: [
+        new OA\Schema(ref: '#/components/schemas/Eglise'),
+        new OA\Schema(type: 'object', properties: [
+            new OA\Property(property: 'statistiques_etudiants', ref: '#/components/schemas/StatistiquesEtudiantsEglise', readOnly: true),
+        ]),
+    ],
+)]
+#[OA\Schema(
     schema: 'ErreurAuthentification',
     type: 'object',
     properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')],

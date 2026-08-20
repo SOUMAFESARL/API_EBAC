@@ -125,8 +125,8 @@ class EgliseController extends Controller
         tags: ['Églises'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique de l’église', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
         responses: [
-            new OA\Response(response: 200, description: 'Église trouvée', content: new OA\JsonContent(type: 'object', properties: [
-                new OA\Property(property: 'eglise', ref: '#/components/schemas/Eglise'),
+            new OA\Response(response: 200, description: 'Église trouvée avec ses relations et ses statistiques étudiantes', content: new OA\JsonContent(type: 'object', properties: [
+                new OA\Property(property: 'eglise', ref: '#/components/schemas/EgliseDetail'),
             ])),
             new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
             new OA\Response(response: 404, description: 'Église introuvable'),
@@ -139,7 +139,11 @@ class EgliseController extends Controller
             ->withCount(['etudiants as nombre_etudiants', 'etudiantsHistoriques as nombre_etudiants_historiques'])
             ->findOrFail($id);
 
-        return response()->json(['eglise' => $this->finaliserCompteur($eglise)]);
+        $eglise = $this->finaliserCompteur($eglise);
+        $eglise->statistiques_etudiants = $this->statistiquesEtudiants($eglise->id);
+        $eglise->nombre_etudiants = $eglise->statistiques_etudiants['total'];
+
+        return response()->json(['eglise' => $eglise]);
     }
 
     #[OA\Patch(
@@ -251,5 +255,54 @@ class EgliseController extends Controller
         unset($eglise->nombre_etudiants_historiques);
 
         return $eglise;
+    }
+
+    /** @return array{total: int, avec_niveau: int, sans_niveau: int, par_niveau: array<int, array<string, int|string>>} */
+    private function statistiquesEtudiants(int $egliseId): array
+    {
+        $etudiantsEglise = DB::table('etudiants')
+            ->select('id')
+            ->whereNull('deleted_at')
+            ->where(fn ($query) => $query
+                ->where('eglise_id', $egliseId)
+                ->orWhere('id_eglise', $egliseId));
+
+        $dernieresInscriptions = DB::table('inscriptions')
+            ->selectRaw('id_etudiant, MAX(id) as derniere_inscription_id')
+            ->groupBy('id_etudiant');
+
+        $parNiveau = DB::query()
+            ->fromSub($etudiantsEglise, 'etudiants_eglise')
+            ->joinSub($dernieresInscriptions, 'dernieres_inscriptions', fn ($join) => $join
+                ->on('dernieres_inscriptions.id_etudiant', '=', 'etudiants_eglise.id'))
+            ->join('inscriptions', 'inscriptions.id', '=', 'dernieres_inscriptions.derniere_inscription_id')
+            ->join('promotions', fn ($join) => $join
+                ->on('promotions.id', '=', 'inscriptions.id_promotion')
+                ->whereNull('promotions.deleted_at'))
+            ->join('niveaux', fn ($join) => $join
+                ->on('niveaux.id', '=', 'promotions.id_niveau')
+                ->whereNull('niveaux.deleted_at'))
+            ->selectRaw('niveaux.id as niveau_id, niveaux.code as niveau_code, niveaux.libelle as niveau_libelle, niveaux.rang as niveau_rang, COUNT(*) as nombre_etudiants')
+            ->groupBy('niveaux.id', 'niveaux.code', 'niveaux.libelle', 'niveaux.rang')
+            ->orderBy('niveaux.rang')
+            ->get()
+            ->map(fn ($niveau) => [
+                'niveau_id' => (int) $niveau->niveau_id,
+                'niveau_code' => $niveau->niveau_code,
+                'niveau_libelle' => $niveau->niveau_libelle,
+                'niveau_rang' => (int) $niveau->niveau_rang,
+                'nombre_etudiants' => (int) $niveau->nombre_etudiants,
+            ])
+            ->all();
+
+        $total = DB::query()->fromSub($etudiantsEglise, 'etudiants_eglise')->count();
+        $avecNiveau = array_sum(array_column($parNiveau, 'nombre_etudiants'));
+
+        return [
+            'total' => $total,
+            'avec_niveau' => $avecNiveau,
+            'sans_niveau' => $total - $avecNiveau,
+            'par_niveau' => $parNiveau,
+        ];
     }
 }

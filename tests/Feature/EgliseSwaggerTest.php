@@ -32,7 +32,13 @@ class EgliseSwaggerTest extends TestCase
         $schemas = $documentation['components']['schemas'];
         $this->assertArrayHasKey('EgliseModificationPayload', $schemas);
         $this->assertArrayHasKey('UtilisateurEglise', $schemas);
+        $this->assertArrayHasKey('StatistiquesEtudiantsEglise', $schemas);
+        $this->assertArrayHasKey('EgliseDetail', $schemas);
         $this->assertArrayHasKey('nombre_etudiants', $schemas['Eglise']['properties']);
+        $this->assertSame(
+            '#/components/schemas/EgliseDetail',
+            $documentation['paths']['/eglises/{id}']['get']['responses']['200']['content']['application/json']['schema']['properties']['eglise']['$ref'],
+        );
         $this->assertSame(
             '#/components/schemas/EgliseModificationPayload',
             $documentation['paths']['/eglises/{id}']['patch']['requestBody']['content']['application/json']['schema']['$ref'],

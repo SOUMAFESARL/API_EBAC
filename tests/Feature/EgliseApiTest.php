@@ -257,4 +257,59 @@ class EgliseApiTest extends TestCase
             'deleted_by' => null,
         ]);
     }
+
+    public function test_le_detail_d_une_eglise_compte_les_etudiants_par_dernier_niveau(): void
+    {
+        $this->authentifierAdministrateur();
+        $egliseId = $this->postJson('/api/v1/eglises', [
+            'nom' => 'Église des étudiants', 'ville_commune' => 'Abidjan',
+        ])->assertCreated()->json('eglise.id');
+
+        $niveauA1 = DB::table('niveaux')->insertGetId([
+            'code' => 'A1', 'libelle' => 'Première Année', 'rang' => 1, 'statut' => 'Actif',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $niveauA2 = DB::table('niveaux')->insertGetId([
+            'code' => 'A2', 'libelle' => 'Deuxième Année', 'rang' => 2, 'statut' => 'Actif',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $anneeId = DB::table('annees_academiques')->insertGetId([
+            'libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31',
+            'active' => true, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $promotionA1 = DB::table('promotions')->insertGetId([
+            'code' => 'PROMO-A1', 'id_annee_academique' => $anneeId, 'id_niveau' => $niveauA1,
+            'statut' => 'Active', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $promotionA2 = DB::table('promotions')->insertGetId([
+            'code' => 'PROMO-A2', 'id_annee_academique' => $anneeId, 'id_niveau' => $niveauA2,
+            'statut' => 'Active', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        foreach (range(1, 3) as $index) {
+            DB::table('etudiants')->insert([
+                'matricule' => "EBAC-NIV-{$index}", 'nom' => "Nom {$index}", 'prenoms' => "Prénoms {$index}",
+                'date_inscription' => '2026-08-20', 'eglise_id' => $egliseId,
+            ]);
+        }
+        $etudiants = DB::table('etudiants')->where('eglise_id', $egliseId)->orderBy('id')->pluck('id');
+        DB::table('inscriptions')->insert([
+            ['id_etudiant' => $etudiants[0], 'id_promotion' => $promotionA1, 'date_inscription' => '2025-09-01', 'statut' => 'Terminee', 'created_at' => now(), 'updated_at' => now()],
+            ['id_etudiant' => $etudiants[0], 'id_promotion' => $promotionA2, 'date_inscription' => '2026-09-01', 'statut' => 'En formation', 'created_at' => now(), 'updated_at' => now()],
+            ['id_etudiant' => $etudiants[1], 'id_promotion' => $promotionA1, 'date_inscription' => '2026-09-01', 'statut' => 'En formation', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $this->getJson("/api/v1/eglises/{$egliseId}")
+            ->assertOk()
+            ->assertJsonPath('eglise.nombre_etudiants', 3)
+            ->assertJsonPath('eglise.statistiques_etudiants.total', 3)
+            ->assertJsonPath('eglise.statistiques_etudiants.avec_niveau', 2)
+            ->assertJsonPath('eglise.statistiques_etudiants.sans_niveau', 1)
+            ->assertJsonPath('eglise.statistiques_etudiants.par_niveau.0.niveau_code', 'A1')
+            ->assertJsonPath('eglise.statistiques_etudiants.par_niveau.0.nombre_etudiants', 1)
+            ->assertJsonPath('eglise.statistiques_etudiants.par_niveau.1.niveau_code', 'A2')
+            ->assertJsonPath('eglise.statistiques_etudiants.par_niveau.1.nombre_etudiants', 1)
+            ->assertJsonPath('eglise.compte.id', auth()->id())
+            ->assertJsonPath('eglise.createur.id', auth()->id());
+    }
 }
