@@ -86,6 +86,11 @@ class EgliseSwaggerTest extends TestCase
         $this->assertArrayHasKey('post', $documentation['paths']['/Etudiant/pre-inscription']);
         $this->assertArrayNotHasKey('security', $documentation['paths']['/Etudiant/pre-inscription']['post']);
 
+        $preInscription = $documentation['components']['schemas']['PreInscriptionPayload'];
+        $this->assertContains('eglise_id', $preInscription['required']);
+        $this->assertSame(['Masculin', 'Feminin'], $preInscription['properties']['sexe']['enum']);
+        $this->assertArrayNotHasKey('nullable', $preInscription['properties']['eglise_id']);
+
         foreach (['AnneeAcademique', 'Promotion', 'Matiere', 'Module', 'Cours', 'PreInscriptionPayload', 'PreInscriptionResultat'] as $schema) {
             $this->assertArrayHasKey($schema, $documentation['components']['schemas']);
         }

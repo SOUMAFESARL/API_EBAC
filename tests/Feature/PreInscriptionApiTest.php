@@ -56,7 +56,7 @@ class PreInscriptionApiTest extends TestCase
     {
         $this->postJson('/api/v1/Etudiant/pre-inscription', ['email' => 'invalide'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['nom', 'prenoms', 'telephone', 'email']);
+            ->assertJsonValidationErrors(['nom', 'prenoms', 'telephone', 'email', 'eglise_id']);
 
         $this->assertDatabaseCount('etudiants', 0);
         $this->assertDatabaseCount('dossiers_etudiants', 0);
@@ -65,6 +65,9 @@ class PreInscriptionApiTest extends TestCase
     public function test_le_matricule_est_sequentiel_pour_l_annee_courante(): void
     {
         Notification::fake();
+        $eglise = Eglise::query()->create([
+            'code' => 'EGL-001', 'nom' => 'Église test', 'ville_commune' => 'Cocody',
+        ]);
         \DB::table('etudiants')->insert([
             'matricule' => 'EBAC-0007-'.now()->year,
             'nom' => 'Existant',
@@ -74,6 +77,7 @@ class PreInscriptionApiTest extends TestCase
 
         $this->postJson('/api/v1/Etudiant/pre-inscription', [
             'nom' => 'Kouadio', 'prenoms' => 'Paul', 'email' => 'paul@example.com', 'telephone' => '+2250700000000',
+            'eglise_id' => $eglise->id,
         ])->assertCreated()
             ->assertJsonPath('pre_inscription.matricule', 'EBAC-0008-'.now()->year);
     }
@@ -81,7 +85,10 @@ class PreInscriptionApiTest extends TestCase
     public function test_le_numero_de_dossier_est_sequentiel_pour_les_memes_initiales(): void
     {
         Notification::fake();
-        $payload = ['nom' => 'Zran', 'prenoms' => 'Marc', 'telephone' => '+2250700000001'];
+        $eglise = Eglise::query()->create([
+            'code' => 'EGL-001', 'nom' => 'Église test', 'ville_commune' => 'Cocody',
+        ]);
+        $payload = ['nom' => 'Zran', 'prenoms' => 'Marc', 'telephone' => '+2250700000001', 'eglise_id' => $eglise->id];
 
         $this->postJson('/api/v1/Etudiant/pre-inscription', [...$payload, 'email' => 'marc1@example.com'])
             ->assertCreated()
@@ -89,6 +96,27 @@ class PreInscriptionApiTest extends TestCase
         $this->postJson('/api/v1/Etudiant/pre-inscription', [...$payload, 'email' => 'marc2@example.com'])
             ->assertCreated()
             ->assertJsonPath('pre_inscription.numero_dossier', 'ZRM001'.now()->year);
+    }
+
+    public function test_l_eglise_est_obligatoire_et_le_sexe_est_une_enumeration(): void
+    {
+        $eglise = Eglise::query()->create([
+            'code' => 'EGL-001', 'nom' => 'Église test', 'ville_commune' => 'Cocody',
+        ]);
+        $payload = [
+            'nom' => 'Kouassi', 'prenoms' => 'Jean', 'email' => 'jean@example.com',
+            'telephone' => '+2250102030405', 'sexe' => 'Autre',
+        ];
+
+        $this->postJson('/api/v1/Etudiant/pre-inscription', $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['eglise_id', 'sexe']);
+
+        $eglise->delete();
+        $this->postJson('/api/v1/Etudiant/pre-inscription', [...$payload, 'sexe' => 'Feminin', 'eglise_id' => $eglise->id])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['eglise_id'])
+            ->assertJsonMissingValidationErrors(['sexe']);
     }
 
     public function test_le_courriel_de_confirmation_peut_etre_rendu(): void

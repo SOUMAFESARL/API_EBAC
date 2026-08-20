@@ -14,7 +14,7 @@ class PreInscriptionRequest extends FormRequest
         return [
             'nom' => ['required', 'string', 'max:150'],
             'prenoms' => ['required', 'string', 'max:150'],
-            'sexe' => ['nullable', 'string', 'max:20'],
+            'sexe' => ['nullable', Rule::in(['Masculin', 'Feminin'])],
             'civilite_id' => ['nullable', 'integer', 'exists:civilite,id'],
             'date_naissance' => ['nullable', 'date', 'before:today'],
             'lieu_naissance' => ['nullable', 'string', 'max:150'],
@@ -22,7 +22,7 @@ class PreInscriptionRequest extends FormRequest
             'email' => ['required', 'email:rfc', 'max:150'],
             'telephone' => ['required', 'string', 'max:30'],
             'adresse' => ['nullable', 'string', 'max:255'],
-            'eglise_id' => ['nullable', 'integer', Rule::exists('eglises', 'id')->whereNull('deleted_at')],
+            'eglise_id' => ['required', 'integer', Rule::exists('eglises', 'id')->whereNull('deleted_at')],
             'statut_professionnel' => ['nullable', 'string', 'max:100'],
             'pieces_requises' => ['nullable', 'array'],
             'pieces_requises.*' => ['string', 'max:100'],
@@ -37,6 +37,9 @@ class PreInscriptionRequest extends FormRequest
             'prenoms.required' => 'Les prénoms sont obligatoires.',
             'telephone.required' => 'Le numéro de téléphone est obligatoire.',
             'email.required' => 'L’adresse e-mail est obligatoire.',
+            'eglise_id.required' => 'L’église est obligatoire.',
+            'eglise_id.exists' => 'L’église sélectionnée est invalide.',
+            'sexe.in' => 'Le sexe doit être Masculin ou Feminin.',
         ];
     }
 }

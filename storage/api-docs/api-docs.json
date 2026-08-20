@@ -2971,7 +2971,8 @@
                     "nom",
                     "prenoms",
                     "email",
-                    "telephone"
+                    "telephone",
+                    "eglise_id"
                 ],
                 "properties": {
                     "nom": {
@@ -2982,7 +2983,12 @@
                     },
                     "sexe": {
                         "type": "string",
-                        "nullable": true
+                        "example": "Masculin",
+                        "nullable": true,
+                        "enum": [
+                            "Masculin",
+                            "Feminin"
+                        ]
                     },
                     "date_naissance": {
                         "type": "string",
@@ -3005,8 +3011,9 @@
                         "nullable": true
                     },
                     "eglise_id": {
+                        "description": "Identifiant d’une église existante et non supprimée",
                         "type": "integer",
-                        "nullable": true
+                        "example": 1
                     },
                     "pieces_requises": {
                         "type": "array",
