@@ -1,4 +1,4 @@
-name: Tests et déploiement EBAC
+name: production déploiement API_EBAC
 
 on:
   push:
@@ -72,6 +72,18 @@ jobs:
           cp .env.example .env
           php artisan key:generate
           php artisan l5-swagger:generate
+
+      - name: Vérifier la configuration FTP
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE_PATH: ${{ secrets.FTP_REMOTE_PATH }}
+        run: |
+          test -n "$FTP_HOST" || { echo "Le secret FTP_HOST est absent."; exit 1; }
+          test -n "$FTP_USERNAME" || { echo "Le secret FTP_USERNAME est absent."; exit 1; }
+          test -n "$FTP_PASSWORD" || { echo "Le secret FTP_PASSWORD est absent."; exit 1; }
+          test -n "$FTP_REMOTE_PATH" || { echo "Le secret FTP_REMOTE_PATH est absent."; exit 1; }
 
       - name: Envoyer les fichiers vers cPanel
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5

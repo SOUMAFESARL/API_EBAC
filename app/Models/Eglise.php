@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
@@ -28,6 +29,16 @@ class Eglise extends Model
     public function compte(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function etudiants(): HasMany
+    {
+        return $this->hasMany(Etudiant::class, 'eglise_id');
+    }
+
+    public function etudiantsHistoriques(): HasMany
+    {
+        return $this->hasMany(Etudiant::class, 'id_eglise');
     }
 
     public function createur(): BelongsTo

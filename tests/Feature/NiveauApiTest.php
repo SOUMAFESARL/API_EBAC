@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Models\AnneeAcademique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -118,11 +119,17 @@ class NiveauApiTest extends TestCase
             'libelle' => 'Première Année', 'code' => 'A1', 'rang' => 1,
         ])->assertCreated()->json('niveau.id');
 
+        $anneeAcademique = AnneeAcademique::query()->create([
+            'libelle' => '2026-2027',
+            'date_debut' => '2026-09-01',
+            'date_fin' => '2027-07-31',
+        ]);
+
         \DB::table('promotions')->insert([
-            'rang' => 1,
-            'annee_entree' => 2026,
+            'code' => 'PROMO-2026-A1',
+            'id_annee_academique' => $anneeAcademique->id,
             'id_niveau' => $niveauId,
-            'statut' => 'En cours',
+            'statut' => 'Active',
         ]);
 
         $this->deleteJson("/api/v1/parametres/niveaux/{$niveauId}")

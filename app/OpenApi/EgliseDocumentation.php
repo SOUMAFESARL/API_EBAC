@@ -6,8 +6,8 @@ use OpenApi\Attributes as OA;
 
 #[OA\Info(
     version: '1.0.0',
-    title: 'API EBAC — Églises et niveaux',
-    description: 'Documentation OpenAPI des CRUD des églises et des niveaux.',
+    title: 'API EBAC',
+    description: 'Documentation OpenAPI des API EBAC : églises, paramètres académiques et pré-inscription.',
 )]
 #[OA\Server(url: '/api/v1', description: 'Serveur courant')]
 #[OA\Server(url: 'https://api-ebac.severinzran.ci/api/v1', description: 'Production')]

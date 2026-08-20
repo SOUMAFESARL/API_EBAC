@@ -8,9 +8,19 @@ use App\Http\Controllers\Api\V1\Administration\ProfilController;
 use App\Http\Controllers\Api\V1\Administration\RoleController;
 use App\Http\Controllers\Api\V1\Auth\AuthentificationController;
 use App\Http\Controllers\Api\V1\Eglise\EgliseController;
+use App\Http\Controllers\Api\V1\Etudiant\PreInscriptionController;
 use App\Http\Controllers\Api\V1\Navigation\SidebarController;
+use App\Http\Controllers\Api\V1\Parametre\AnneeAcademiqueController;
+use App\Http\Controllers\Api\V1\Parametre\CoursController;
+use App\Http\Controllers\Api\V1\Parametre\MatiereController;
+use App\Http\Controllers\Api\V1\Parametre\ModuleController;
 use App\Http\Controllers\Api\V1\Parametre\NiveauController;
+use App\Http\Controllers\Api\V1\Parametre\PromotionController;
 use Illuminate\Support\Facades\Route;
+
+Route::post('v1/Etudiant/pre-inscription', [PreInscriptionController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('api.v1.etudiant.pre-inscription');
 
 Route::prefix('v1/auth')->name('api.v1.auth.')->group(function () {
     Route::post('/connexion', [AuthentificationController::class, 'connexion'])
@@ -57,6 +67,16 @@ Route::prefix('v1/parametres')
     ->group(function () {
         Route::apiResource('niveaux', NiveauController::class)
             ->parameters(['niveaux' => 'id']);
+        Route::apiResource('annees-academiques', AnneeAcademiqueController::class)
+            ->parameters(['annees-academiques' => 'id']);
+        Route::apiResource('promotions', PromotionController::class)
+            ->parameters(['promotions' => 'id']);
+        Route::apiResource('matieres', MatiereController::class)
+            ->parameters(['matieres' => 'id']);
+        Route::apiResource('modules', ModuleController::class)
+            ->parameters(['modules' => 'id']);
+        Route::apiResource('cours', CoursController::class)
+            ->parameters(['cours' => 'id']);
     });
 
 Route::apiResource('v1/eglises', EgliseController::class)

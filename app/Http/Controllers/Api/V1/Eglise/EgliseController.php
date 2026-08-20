@@ -24,6 +24,13 @@ class EgliseController extends Controller
             new OA\Parameter(name: 'par_page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 15)),
             new OA\Parameter(name: 'recherche', in: 'query', description: 'Nom, sigle, code ou ville', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'statut', in: 'query', schema: new OA\Schema(type: 'string', enum: ['Active', 'Suspendue', 'Archivée'])),
+            new OA\Parameter(name: 'ville', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'region', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'district', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'denomination', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'pasteur', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'capacite_min', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 0)),
+            new OA\Parameter(name: 'avec_etudiants', in: 'query', schema: new OA\Schema(type: 'boolean')),
         ],
         responses: [
             new OA\Response(
@@ -42,9 +49,11 @@ class EgliseController extends Controller
     public function index(Request $request): JsonResponse
     {
         $parPage = min(max($request->integer('par_page', 15), 1), 100);
-        $recherche = $request->string('recherche')->toString();
+        $recherche = $request->input('recherche', $request->input('q', $request->input('eglise', '')));
 
         $eglises = Eglise::query()
+            ->with($this->relations())
+            ->withCount(['etudiants as nombre_etudiants', 'etudiantsHistoriques as nombre_etudiants_historiques'])
             ->when($recherche, fn ($query) => $query->where(function ($query) use ($recherche) {
                 $query->where('nom', 'like', "%{$recherche}%")
                     ->orWhere('sigle', 'like', "%{$recherche}%")
@@ -52,9 +61,18 @@ class EgliseController extends Controller
                     ->orWhere('ville_commune', 'like', "%{$recherche}%");
             }))
             ->when($request->filled('statut'), fn ($query) => $query->where('statut', $request->string('statut')))
+            ->when($request->filled('ville') || $request->filled('ville_commune'), fn ($query) => $query->where('ville_commune', $request->input('ville', $request->input('ville_commune'))))
+            ->when($request->filled('region'), fn ($query) => $query->where('region', $request->input('region')))
+            ->when($request->filled('district'), fn ($query) => $query->where('district', $request->input('district')))
+            ->when($request->filled('denomination'), fn ($query) => $query->where('denomination', $request->input('denomination')))
+            ->when($request->filled('pasteur'), fn ($query) => $query->where('pasteur_principal', 'like', '%'.$request->input('pasteur').'%'))
+            ->when($request->filled('capacite_min'), fn ($query) => $query->where('capacite_max_stagiaires', '>=', $request->integer('capacite_min')))
+            ->when($request->boolean('avec_etudiants'), fn ($query) => $query->where(fn ($q) => $q->whereHas('etudiants')->orWhereHas('etudiantsHistoriques')))
             ->orderBy('nom')
             ->paginate($parPage)
             ->withQueryString();
+
+        $eglises->getCollection()->transform(fn (Eglise $eglise) => $this->finaliserCompteur($eglise));
 
         return response()->json($eglises);
     }
@@ -110,9 +128,12 @@ class EgliseController extends Controller
     )]
     public function show(int $id): JsonResponse
     {
-        $eglise = Eglise::query()->findOrFail($id);
+        $eglise = Eglise::query()
+            ->with($this->relations())
+            ->withCount(['etudiants as nombre_etudiants', 'etudiantsHistoriques as nombre_etudiants_historiques'])
+            ->findOrFail($id);
 
-        return response()->json(['eglise' => $eglise->load('compte')]);
+        return response()->json(['eglise' => $this->finaliserCompteur($eglise)]);
     }
 
     #[OA\Patch(
@@ -205,5 +226,24 @@ class EgliseController extends Controller
         } while (Eglise::withTrashed()->where('code', $code)->exists());
 
         return $code;
+    }
+
+    /** @return array<int, string> */
+    private function relations(): array
+    {
+        return [
+            'compte:id,code,nom,prenoms,email',
+            'createur:id,code,nom,prenoms,email',
+            'modificateur:id,code,nom,prenoms,email',
+        ];
+    }
+
+    private function finaliserCompteur(Eglise $eglise): Eglise
+    {
+        $eglise->nombre_etudiants = (int) $eglise->nombre_etudiants
+            + (int) $eglise->nombre_etudiants_historiques;
+        unset($eglise->nombre_etudiants_historiques);
+
+        return $eglise;
     }
 }

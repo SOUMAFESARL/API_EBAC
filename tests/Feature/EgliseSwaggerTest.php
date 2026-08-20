@@ -14,7 +14,7 @@ class EgliseSwaggerTest extends TestCase
 
         $documentation = json_decode(file_get_contents($chemin), true, flags: JSON_THROW_ON_ERROR);
 
-        $this->assertSame('API EBAC — Églises et niveaux', $documentation['info']['title']);
+        $this->assertSame('API EBAC', $documentation['info']['title']);
         $this->assertArrayHasKey('get', $documentation['paths']['/eglises']);
         $this->assertArrayHasKey('post', $documentation['paths']['/eglises']);
         $this->assertArrayHasKey('get', $documentation['paths']['/eglises/{id}']);
@@ -46,5 +46,28 @@ class EgliseSwaggerTest extends TestCase
     public function test_swagger_ui_est_accessible(): void
     {
         $this->get('/api/documentation')->assertOk();
+    }
+
+    public function test_swagger_decrit_toutes_les_api_ajoutees(): void
+    {
+        $documentation = json_decode(file_get_contents(storage_path('api-docs/api-docs.json')), true, flags: JSON_THROW_ON_ERROR);
+
+        foreach (['annees-academiques', 'promotions', 'matieres', 'modules', 'cours'] as $ressource) {
+            $collection = "/parametres/{$ressource}";
+            $element = "{$collection}/{id}";
+            foreach (['get', 'post'] as $methode) {
+                $this->assertArrayHasKey($methode, $documentation['paths'][$collection]);
+            }
+            foreach (['get', 'put', 'patch', 'delete'] as $methode) {
+                $this->assertArrayHasKey($methode, $documentation['paths'][$element]);
+            }
+        }
+
+        $this->assertArrayHasKey('post', $documentation['paths']['/Etudiant/pre-inscription']);
+        $this->assertArrayNotHasKey('security', $documentation['paths']['/Etudiant/pre-inscription']['post']);
+
+        foreach (['AnneeAcademique', 'Promotion', 'Matiere', 'Module', 'Cours', 'PreInscriptionPayload', 'PreInscriptionResultat'] as $schema) {
+            $this->assertArrayHasKey($schema, $documentation['components']['schemas']);
+        }
     }
 }

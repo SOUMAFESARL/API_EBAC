@@ -18,7 +18,7 @@ class EtudiantDossierSchemaTest extends TestCase
             'photo_identite',
         ]));
 
-        $this->assertFalse(Schema::hasColumn('etudiants', 'sexe'));
+        $this->assertTrue(Schema::hasColumn('etudiants', 'sexe'));
     }
 
     public function test_un_dossier_peut_posseder_plusieurs_fichiers(): void

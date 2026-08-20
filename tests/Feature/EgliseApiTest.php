@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -198,6 +199,41 @@ class EgliseApiTest extends TestCase
             'user_id' => $administrateur->id,
             'user_code' => $administrateur->code,
         ]);
+    }
+
+    public function test_la_liste_filtre_les_eglises_et_compte_leurs_etudiants(): void
+    {
+        $this->authentifierAdministrateur();
+        $egliseId = $this->postJson('/api/v1/eglises', [
+            'nom' => 'Église Alliance Cocody',
+            'sigle' => 'EAC',
+            'pasteur_principal' => 'Pasteur Koffi',
+            'denomination' => 'Alliance chrétienne',
+            'region' => 'Abidjan',
+            'district' => 'Nord',
+            'ville_commune' => 'Cocody',
+            'capacite_max_stagiaires' => 40,
+        ])->assertCreated()->json('eglise.id');
+
+        DB::table('etudiants')->insert([
+            'matricule' => 'EBAC-0001-2026', 'nom' => 'Kouassi', 'prenoms' => 'Jean',
+            'date_inscription' => '2026-08-20', 'eglise_id' => $egliseId,
+        ]);
+        DB::table('etudiants')->insert([
+            'matricule' => 'EBAC-0002-2026', 'nom' => 'Yao', 'prenoms' => 'Marie',
+            'date_inscription' => '2026-08-20', 'id_eglise' => $egliseId,
+        ]);
+
+        $this->getJson('/api/v1/eglises?ville=Cocody&region=Abidjan&district=Nord&denomination=Alliance%20chrétienne&pasteur=Koffi&capacite_min=30&avec_etudiants=1&q=Alliance')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $egliseId)
+            ->assertJsonPath('data.0.nombre_etudiants', 2)
+            ->assertJsonPath('data.0.createur.id', auth()->id());
+
+        $this->getJson("/api/v1/eglises/{$egliseId}")
+            ->assertOk()
+            ->assertJsonPath('eglise.nombre_etudiants', 2);
     }
 
     public function test_les_champs_techniques_sont_aussi_proteges_lors_de_la_modification(): void
