@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: production-ebac
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -52,6 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: tests
     environment: production
+    timeout-minutes: 30
 
     steps:
       - name: Récupérer le code validé
@@ -85,30 +86,38 @@ jobs:
           test -n "$FTP_PASSWORD" || { echo "Le secret FTP_PASSWORD est absent."; exit 1; }
           test -n "$FTP_REMOTE_PATH" || { echo "Le secret FTP_REMOTE_PATH est absent."; exit 1; }
 
+      - name: Installer le client FTP parallèle
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+
       - name: Envoyer les fichiers vers cPanel
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
-          port: 21
-          local-dir: ./
-          server-dir: ${{ secrets.FTP_REMOTE_PATH }}
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/.github/**
-            **/.env
-            **/.env.*
-            **/node_modules/**
-            **/tests/**
-            **/storage/app/**
-            **/storage/debugbar/**
-            **/storage/framework/**
-            **/storage/logs/**
-            **/bootstrap/cache/**
-            **/docs/**
-            **/scripts/**
-            **/public.zip
-            **/~$*
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE_PATH: ${{ secrets.FTP_REMOTE_PATH }}
+        run: |
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_HOST" <<LFTP_COMMANDS
+          set ftp:ssl-allow no
+          set net:timeout 20
+          set net:max-retries 3
+          set net:reconnect-interval-base 5
+          mirror --reverse --only-newer --parallel=8 --verbose=1 \
+            --exclude-glob .git* \
+            --exclude-glob .git/** \
+            --exclude-glob .github/** \
+            --exclude-glob .env \
+            --exclude-glob .env.* \
+            --exclude-glob node_modules/** \
+            --exclude-glob tests/** \
+            --exclude-glob storage/app/** \
+            --exclude-glob storage/debugbar/** \
+            --exclude-glob storage/framework/** \
+            --exclude-glob storage/logs/** \
+            --exclude-glob bootstrap/cache/** \
+            --exclude-glob docs/** \
+            --exclude-glob scripts/** \
+            --exclude-glob public.zip \
+            --exclude-glob '~$*' \
+            ./ "$FTP_REMOTE_PATH"
+          bye
+          LFTP_COMMANDS
