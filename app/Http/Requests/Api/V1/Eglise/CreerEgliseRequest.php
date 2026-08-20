@@ -23,7 +23,7 @@ class CreerEgliseRequest extends FormRequest
         $requis = $modification ? 'sometimes' : 'required';
 
         return [
-            'code' => ['prohibited'],
+            'code' => ['exclude'],
             'user_id' => ['prohibited'],
             'user_code' => ['prohibited'],
             'created_by' => ['prohibited'],

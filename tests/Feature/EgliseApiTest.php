@@ -100,7 +100,7 @@ class EgliseApiTest extends TestCase
         ]);
     }
 
-    public function test_les_champs_techniques_ne_peuvent_pas_etre_imposes_par_le_frontend(): void
+    public function test_le_code_envoye_par_le_frontend_est_ignore_et_les_champs_techniques_sont_interdits(): void
     {
         $this->authentifierAdministrateur();
 
@@ -112,7 +112,15 @@ class EgliseApiTest extends TestCase
             'nom' => 'Église Test',
             'ville_commune' => 'Abidjan',
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['code', 'user_id', 'user_code', 'created_by']);
+            ->assertJsonValidationErrors(['user_id', 'user_code', 'created_by'])
+            ->assertJsonMissingValidationErrors(['code']);
+
+        $this->postJson('/api/v1/eglises', [
+            'code' => 'CODE-CHOISI',
+            'nom' => 'Église Test',
+            'ville_commune' => 'Abidjan',
+        ])->assertCreated()
+            ->assertJsonPath('eglise.code', 'EGL-000001');
     }
 
     public function test_le_crud_des_eglises_exige_une_authentification(): void
@@ -236,7 +244,7 @@ class EgliseApiTest extends TestCase
             ->assertJsonPath('eglise.nombre_etudiants', 2);
     }
 
-    public function test_les_champs_techniques_sont_aussi_proteges_lors_de_la_modification(): void
+    public function test_le_code_est_ignore_et_les_autres_champs_techniques_restent_proteges_lors_de_la_modification(): void
     {
         $this->authentifierAdministrateur();
 
@@ -249,7 +257,12 @@ class EgliseApiTest extends TestCase
             'user_code' => 'CODE-MODIFIE',
             'deleted_by' => 999,
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['code', 'user_code', 'deleted_by']);
+            ->assertJsonValidationErrors(['user_code', 'deleted_by'])
+            ->assertJsonMissingValidationErrors(['code']);
+
+        $this->patchJson("/api/v1/eglises/{$egliseId}", ['code' => 'CODE-MODIFIE'])
+            ->assertOk()
+            ->assertJsonPath('eglise.code', 'EGL-000001');
 
         $this->assertDatabaseHas('eglises', [
             'id' => $egliseId,
