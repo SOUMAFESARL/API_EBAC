@@ -44,7 +44,7 @@
     <tr><td align="center" style="padding:22px 30px;background:#102a56;color:#dbeafe;">
         <div style="font-size:15px;line-height:22px;font-weight:700;color:#fff;">École Biblique de l'Alliance Chrétienne</div>
         <div style="margin-top:4px;font-size:13px;line-height:20px;">L'équipe EBAC</div>
-        <div style="margin-top:7px;"><a href="https://ebac-test.severinzran.ci" target="_blank" style="color:#fff;font-size:13px;font-weight:700;text-decoration:none;">www.ebac.ci</a></div>
+        <div style="margin-top:7px;"><a href="://ebac-test.severinzran.ci" target="_blank" style="color:#fff;font-size:13px;font-weight:700;text-decoration:none;">www.ebac.ci</a></div>
         <div style="margin-top:8px;font-size:12px;line-height:18px;color:#bfdbfe;">E-mail automatique — merci de ne pas répondre.</div>
     </td></tr>
 </table>
