@@ -4,8 +4,9 @@
 <body style="margin:0;padding:0;background:#eef3f9;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td align="center" style="padding:36px 16px;">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(15,56,120,.12);">
-    <tr><td align="center" style="padding:28px 32px;border-bottom:4px solid #123b8f;">
-        <div style="font-size:22px;font-weight:700;color:#123b8f;">ÉCOLE BIBLIQUE DE L'ALLIANCE CHRÉTIENNE</div>
+    <tr><td align="center" style="padding:28px 32px 22px;border-bottom:4px solid #123b8f;">
+        <img src="{{ $message->embed(public_path('images/logo-ebac.jpg')) }}" width="120" height="120" alt="Logo EBAC" style="display:block;width:120px;height:120px;border:0;border-radius:50%;object-fit:cover;outline:none;box-shadow:none;">
+        <div style="margin-top:14px;font-size:22px;font-weight:700;color:#123b8f;">ÉCOLE BIBLIQUE DE L'ALLIANCE CHRÉTIENNE</div>
         <div style="margin-top:5px;font-size:13px;letter-spacing:2px;color:#64748b;">E.B.A.C.</div>
     </td></tr>
     <tr><td style="padding:34px 40px;">

@@ -133,5 +133,7 @@ class PreInscriptionApiTest extends TestCase
         $this->assertStringContainsString('en cours d’analyse', $contenu);
         $this->assertStringContainsString('EBAC-0001-'.now()->year, $contenu);
         $this->assertStringContainsString('ZRM000'.now()->year, $contenu);
+        $this->assertStringContainsString('<img', $contenu);
+        $this->assertStringContainsString('alt="Logo EBAC"', $contenu);
     }
 }
