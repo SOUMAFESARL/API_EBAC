@@ -96,8 +96,10 @@ class EgliseSwaggerTest extends TestCase
         $this->assertArrayNotHasKey('nullable', $preInscription['properties']['eglise_id']);
 
         $promotion = $documentation['components']['schemas']['PromotionPayload'];
-        $this->assertContains('rang', $promotion['required']);
+        $this->assertContains('num_promotion', $promotion['required']);
         $this->assertContains('id_annee_academique', $promotion['required']);
+        $this->assertArrayNotHasKey('rang', $promotion['properties']);
+        $this->assertArrayNotHasKey('capacite', $promotion['properties']);
 
         foreach (['AnneeAcademique', 'Promotion', 'Matiere', 'Module', 'Cours', 'PreInscriptionPayload', 'PreInscriptionResultat'] as $schema) {
             $this->assertArrayHasKey($schema, $documentation['components']['schemas']);

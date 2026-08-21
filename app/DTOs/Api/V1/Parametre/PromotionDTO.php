@@ -10,7 +10,7 @@ final readonly class PromotionDTO
     /** @param array<string, mixed> $donnees */
     public static function fromArray(array $donnees): self
     {
-        foreach (['rang', 'id_annee_academique', 'id_niveau', 'capacite'] as $champ) {
+        foreach (['num_promotion', 'id_annee_academique', 'id_niveau'] as $champ) {
             if (array_key_exists($champ, $donnees) && $donnees[$champ] !== null) {
                 $donnees[$champ] = (int) $donnees[$champ];
             }

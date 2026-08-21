@@ -2717,7 +2717,7 @@
             "PromotionPayload": {
                 "required": [
                     "code",
-                    "rang",
+                    "num_promotion",
                     "id_annee_academique",
                     "id_niveau"
                 ],
@@ -2726,7 +2726,7 @@
                         "type": "string",
                         "example": "PROMO-2026-A1"
                     },
-                    "rang": {
+                    "num_promotion": {
                         "type": "integer",
                         "example": 1,
                         "maximum": 65535,
@@ -2737,10 +2737,6 @@
                     },
                     "id_niveau": {
                         "type": "integer"
-                    },
-                    "capacite": {
-                        "type": "integer",
-                        "nullable": true
                     },
                     "statut": {
                         "type": "string",

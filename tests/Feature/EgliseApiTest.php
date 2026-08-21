@@ -291,11 +291,11 @@ class EgliseApiTest extends TestCase
             'active' => true, 'created_at' => now(), 'updated_at' => now(),
         ]);
         $promotionA1 = DB::table('promotions')->insertGetId([
-            'code' => 'PROMO-A1', 'rang' => 1, 'id_annee_academique' => $anneeId, 'id_niveau' => $niveauA1,
+            'code' => 'PROMO-A1', 'num_promotion' => 1, 'id_annee_academique' => $anneeId, 'id_niveau' => $niveauA1,
             'statut' => 'Active', 'created_at' => now(), 'updated_at' => now(),
         ]);
         $promotionA2 = DB::table('promotions')->insertGetId([
-            'code' => 'PROMO-A2', 'rang' => 2, 'id_annee_academique' => $anneeId, 'id_niveau' => $niveauA2,
+            'code' => 'PROMO-A2', 'num_promotion' => 2, 'id_annee_academique' => $anneeId, 'id_niveau' => $niveauA2,
             'statut' => 'Active', 'created_at' => now(), 'updated_at' => now(),
         ]);
 
