@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Eglise;
+use App\Models\Civilite;
 use App\Notifications\PreInscriptionRecueNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PreInscriptionApiTest extends TestCase
@@ -15,6 +18,8 @@ class PreInscriptionApiTest extends TestCase
     public function test_la_pre_inscription_est_publique_et_cree_le_dossier(): void
     {
         Notification::fake();
+        Storage::fake('public');
+        $civilite = Civilite::query()->create(['code' => 'M', 'name' => 'Monsieur']);
         $eglise = Eglise::query()->create([
             'code' => 'EGL-001', 'nom' => 'Église test', 'ville_commune' => 'Cocody',
         ]);
@@ -22,7 +27,8 @@ class PreInscriptionApiTest extends TestCase
         $reponse = $this->postJson('/api/v1/etudiant/pre-inscription', [
             'nom' => 'Kouassi',
             'prenoms' => 'Jean Marc',
-            'sexe' => 'Masculin',
+            'civilite_id' => $civilite->id,
+            'photo_identite' => UploadedFile::fake()->image('identite.jpg'),
             'date_naissance' => '2000-05-10',
             'nationalite' => 'Ivoirienne',
             'email' => 'jean@example.com',
@@ -39,7 +45,11 @@ class PreInscriptionApiTest extends TestCase
 
         $this->assertDatabaseHas('etudiants', [
             'id' => $reponse->json('pre_inscription.id'), 'nom' => 'Kouassi', 'eglise_id' => $eglise->id,
+            'civilite_id' => $civilite->id,
         ]);
+        Storage::disk('public')->assertExists(
+            \DB::table('etudiants')->where('id', $reponse->json('pre_inscription.id'))->value('photo_identite'),
+        );
         $this->assertDatabaseHas('dossiers_etudiants', [
             'numero_dossier' => $reponse->json('pre_inscription.numero_dossier'), 'statut' => 'Incomplet',
         ]);
@@ -56,7 +66,7 @@ class PreInscriptionApiTest extends TestCase
     {
         $this->postJson('/api/v1/etudiant/pre-inscription', ['email' => 'invalide'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['nom', 'prenoms', 'telephone', 'email', 'eglise_id']);
+            ->assertJsonValidationErrors(['nom', 'prenoms', 'civilite_id', 'telephone', 'email', 'eglise_id', 'photo_identite']);
 
         $this->assertDatabaseCount('etudiants', 0);
         $this->assertDatabaseCount('dossiers_etudiants', 0);
@@ -65,6 +75,8 @@ class PreInscriptionApiTest extends TestCase
     public function test_le_matricule_est_sequentiel_pour_l_annee_courante(): void
     {
         Notification::fake();
+        Storage::fake('public');
+        $civilite = Civilite::query()->create(['code' => 'M', 'name' => 'Monsieur']);
         $eglise = Eglise::query()->create([
             'code' => 'EGL-001', 'nom' => 'Église test', 'ville_commune' => 'Cocody',
         ]);
@@ -77,7 +89,8 @@ class PreInscriptionApiTest extends TestCase
 
         $this->postJson('/api/v1/etudiant/pre-inscription', [
             'nom' => 'Kouadio', 'prenoms' => 'Paul', 'email' => 'paul@example.com', 'telephone' => '+2250700000000',
-            'eglise_id' => $eglise->id,
+            'eglise_id' => $eglise->id, 'civilite_id' => $civilite->id,
+            'photo_identite' => UploadedFile::fake()->image('identite.jpg'),
         ])->assertCreated()
             ->assertJsonPath('pre_inscription.matricule', 'EBAC-0008-'.now()->year);
     }
@@ -85,38 +98,42 @@ class PreInscriptionApiTest extends TestCase
     public function test_le_numero_de_dossier_est_sequentiel_pour_les_memes_initiales(): void
     {
         Notification::fake();
+        Storage::fake('public');
+        $civilite = Civilite::query()->create(['code' => 'M', 'name' => 'Monsieur']);
         $eglise = Eglise::query()->create([
             'code' => 'EGL-001', 'nom' => 'Église test', 'ville_commune' => 'Cocody',
         ]);
-        $payload = ['nom' => 'Zran', 'prenoms' => 'Marc', 'telephone' => '+2250700000001', 'eglise_id' => $eglise->id];
+        $payload = ['nom' => 'Zran', 'prenoms' => 'Marc', 'telephone' => '+2250700000001', 'eglise_id' => $eglise->id, 'civilite_id' => $civilite->id];
 
-        $this->postJson('/api/v1/etudiant/pre-inscription', [...$payload, 'email' => 'marc1@example.com'])
+        $this->postJson('/api/v1/etudiant/pre-inscription', [...$payload, 'email' => 'marc1@example.com', 'photo_identite' => UploadedFile::fake()->image('identite1.jpg')])
             ->assertCreated()
             ->assertJsonPath('pre_inscription.numero_dossier', 'ZRM000'.now()->year);
-        $this->postJson('/api/v1/etudiant/pre-inscription', [...$payload, 'email' => 'marc2@example.com'])
+        $this->postJson('/api/v1/etudiant/pre-inscription', [...$payload, 'email' => 'marc2@example.com', 'photo_identite' => UploadedFile::fake()->image('identite2.jpg')])
             ->assertCreated()
             ->assertJsonPath('pre_inscription.numero_dossier', 'ZRM001'.now()->year);
     }
 
-    public function test_l_eglise_est_obligatoire_et_le_sexe_est_une_enumeration(): void
+    public function test_l_eglise_et_la_civilite_doivent_exister(): void
     {
         $eglise = Eglise::query()->create([
             'code' => 'EGL-001', 'nom' => 'Église test', 'ville_commune' => 'Cocody',
         ]);
         $payload = [
             'nom' => 'Kouassi', 'prenoms' => 'Jean', 'email' => 'jean@example.com',
-            'telephone' => '+2250102030405', 'sexe' => 'Autre',
+            'telephone' => '+2250102030405', 'civilite_id' => 999999,
+            'photo_identite' => UploadedFile::fake()->image('identite.jpg'),
         ];
 
         $this->postJson('/api/v1/etudiant/pre-inscription', $payload)
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['eglise_id', 'sexe']);
+            ->assertJsonValidationErrors(['eglise_id', 'civilite_id']);
 
+        $civilite = Civilite::query()->create(['code' => 'MME', 'name' => 'Madame']);
         $eglise->delete();
-        $this->postJson('/api/v1/etudiant/pre-inscription', [...$payload, 'sexe' => 'Feminin', 'eglise_id' => $eglise->id])
+        $this->postJson('/api/v1/etudiant/pre-inscription', [...$payload, 'civilite_id' => $civilite->id, 'eglise_id' => $eglise->id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['eglise_id'])
-            ->assertJsonMissingValidationErrors(['sexe']);
+            ->assertJsonMissingValidationErrors(['civilite_id']);
     }
 
     public function test_le_courriel_de_confirmation_peut_etre_rendu(): void

@@ -11,7 +11,7 @@ class Etudiant extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['user_id', 'matricule', 'nom', 'prenoms', 'sexe', 'civilite_id', 'date_naissance', 'lieu_naissance', 'nationalite', 'email', 'telephone', 'adresse', 'eglise_id', 'statut_professionnel', 'date_inscription', 'statut', 'created_by', 'updated_by', 'deleted_by'];
+    protected $fillable = ['user_id', 'matricule', 'nom', 'prenoms', 'civilite_id', 'date_naissance', 'lieu_naissance', 'nationalite', 'email', 'telephone', 'adresse', 'eglise_id', 'statut_professionnel', 'photo_identite', 'date_inscription', 'statut', 'created_by', 'updated_by', 'deleted_by'];
 
     protected function casts(): array { return ['date_naissance' => 'date:Y-m-d', 'date_inscription' => 'date:Y-m-d']; }
 

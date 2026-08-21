@@ -552,7 +552,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "$ref": "#/components/schemas/PreInscriptionPayload"
                             }
@@ -2717,6 +2717,7 @@
             "PromotionPayload": {
                 "required": [
                     "code",
+                    "rang",
                     "id_annee_academique",
                     "id_niveau"
                 ],
@@ -2724,6 +2725,12 @@
                     "code": {
                         "type": "string",
                         "example": "PROMO-2026-A1"
+                    },
+                    "rang": {
+                        "type": "integer",
+                        "example": 1,
+                        "maximum": 65535,
+                        "minimum": 1
                     },
                     "id_annee_academique": {
                         "type": "integer"
@@ -2970,9 +2977,11 @@
                 "required": [
                     "nom",
                     "prenoms",
+                    "civilite_id",
                     "email",
                     "telephone",
-                    "eglise_id"
+                    "eglise_id",
+                    "photo_identite"
                 ],
                 "properties": {
                     "nom": {
@@ -2981,14 +2990,10 @@
                     "prenoms": {
                         "type": "string"
                     },
-                    "sexe": {
-                        "type": "string",
-                        "example": "Masculin",
-                        "nullable": true,
-                        "enum": [
-                            "Masculin",
-                            "Feminin"
-                        ]
+                    "civilite_id": {
+                        "description": "Identifiant d’une civilité existante",
+                        "type": "integer",
+                        "example": 1
                     },
                     "date_naissance": {
                         "type": "string",
@@ -3014,6 +3019,11 @@
                         "description": "Identifiant d’une église existante et non supprimée",
                         "type": "integer",
                         "example": 1
+                    },
+                    "photo_identite": {
+                        "description": "Photo d’identité (jpg, jpeg, png ou webp, 2 Mo maximum)",
+                        "type": "string",
+                        "format": "binary"
                     },
                     "pieces_requises": {
                         "type": "array",

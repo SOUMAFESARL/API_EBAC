@@ -27,6 +27,7 @@ class PromotionApiTest extends TestCase
 
         $id = $this->postJson('/api/v1/parametres/promotions', [
             'code' => 'PROMO-2026-A1',
+            'rang' => 1,
             'id_annee_academique' => $annee->id,
             'id_niveau' => $niveau->id,
             'capacite' => 30,
@@ -34,6 +35,7 @@ class PromotionApiTest extends TestCase
             'date_ouverture' => '2026-09-01',
             'date_cloture' => '2027-07-31',
         ])->assertCreated()
+            ->assertJsonPath('promotion.rang', 1)
             ->assertJsonPath('promotion.nombre_etudiants', 0)
             ->json('promotion.id');
 
@@ -67,6 +69,10 @@ class PromotionApiTest extends TestCase
             'code' => 'PROMO-X', 'id_annee_academique' => 999, 'id_niveau' => 999,
             'date_ouverture' => '2027-07-31', 'date_cloture' => '2026-09-01',
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['id_annee_academique', 'id_niveau', 'date_cloture']);
+            ->assertJsonValidationErrors(['rang', 'id_annee_academique', 'id_niveau', 'date_cloture']);
+
+        $this->postJson('/api/v1/parametres/promotions', ['code' => 'PROMO-Y'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['rang', 'id_annee_academique']);
     }
 }

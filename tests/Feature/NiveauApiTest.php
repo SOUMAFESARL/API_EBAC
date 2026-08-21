@@ -127,6 +127,7 @@ class NiveauApiTest extends TestCase
 
         \DB::table('promotions')->insert([
             'code' => 'PROMO-2026-A1',
+            'rang' => 1,
             'id_annee_academique' => $anneeAcademique->id,
             'id_niveau' => $niveauId,
             'statut' => 'Active',

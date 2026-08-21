@@ -85,11 +85,19 @@ class EgliseSwaggerTest extends TestCase
 
         $this->assertArrayHasKey('post', $documentation['paths']['/etudiant/pre-inscription']);
         $this->assertArrayNotHasKey('security', $documentation['paths']['/etudiant/pre-inscription']['post']);
+        $this->assertArrayHasKey('multipart/form-data', $documentation['paths']['/etudiant/pre-inscription']['post']['requestBody']['content']);
 
         $preInscription = $documentation['components']['schemas']['PreInscriptionPayload'];
         $this->assertContains('eglise_id', $preInscription['required']);
-        $this->assertSame(['Masculin', 'Feminin'], $preInscription['properties']['sexe']['enum']);
+        $this->assertContains('civilite_id', $preInscription['required']);
+        $this->assertContains('photo_identite', $preInscription['required']);
+        $this->assertArrayNotHasKey('sexe', $preInscription['properties']);
+        $this->assertSame('binary', $preInscription['properties']['photo_identite']['format']);
         $this->assertArrayNotHasKey('nullable', $preInscription['properties']['eglise_id']);
+
+        $promotion = $documentation['components']['schemas']['PromotionPayload'];
+        $this->assertContains('rang', $promotion['required']);
+        $this->assertContains('id_annee_academique', $promotion['required']);
 
         foreach (['AnneeAcademique', 'Promotion', 'Matiere', 'Module', 'Cours', 'PreInscriptionPayload', 'PreInscriptionResultat'] as $schema) {
             $this->assertArrayHasKey($schema, $documentation['components']['schemas']);

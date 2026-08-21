@@ -12,6 +12,7 @@ class CreerPromotionRequest extends FormRequest
     {
         return [
             'code' => ['required', 'string', 'max:30', 'unique:promotions,code'],
+            'rang' => ['required', 'integer', 'min:1', 'max:65535'],
             'id_annee_academique' => ['required', 'integer', 'exists:annees_academiques,id'],
             'id_niveau' => ['required', 'integer', 'exists:niveaux,id'],
             'capacite' => ['nullable', 'integer', 'min:1', 'max:65535'],
