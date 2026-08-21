@@ -18,7 +18,7 @@ use App\Http\Controllers\Api\V1\Parametre\NiveauController;
 use App\Http\Controllers\Api\V1\Parametre\PromotionController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('v1/Etudiant/pre-inscription', [PreInscriptionController::class, 'store'])
+Route::post('v1/etudiant/pre-inscription', [PreInscriptionController::class, 'store'])
     ->middleware('throttle:5,1')
     ->name('api.v1.etudiant.pre-inscription');
 

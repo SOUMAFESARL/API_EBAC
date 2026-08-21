@@ -19,7 +19,7 @@ class PreInscriptionApiTest extends TestCase
             'code' => 'EGL-001', 'nom' => 'Église test', 'ville_commune' => 'Cocody',
         ]);
 
-        $reponse = $this->postJson('/api/v1/Etudiant/pre-inscription', [
+        $reponse = $this->postJson('/api/v1/etudiant/pre-inscription', [
             'nom' => 'Kouassi',
             'prenoms' => 'Jean Marc',
             'sexe' => 'Masculin',
@@ -54,7 +54,7 @@ class PreInscriptionApiTest extends TestCase
 
     public function test_les_champs_obligatoires_sont_valides_sans_creer_de_donnees(): void
     {
-        $this->postJson('/api/v1/Etudiant/pre-inscription', ['email' => 'invalide'])
+        $this->postJson('/api/v1/etudiant/pre-inscription', ['email' => 'invalide'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['nom', 'prenoms', 'telephone', 'email', 'eglise_id']);
 
@@ -75,7 +75,7 @@ class PreInscriptionApiTest extends TestCase
             'date_inscription' => now()->toDateString(),
         ]);
 
-        $this->postJson('/api/v1/Etudiant/pre-inscription', [
+        $this->postJson('/api/v1/etudiant/pre-inscription', [
             'nom' => 'Kouadio', 'prenoms' => 'Paul', 'email' => 'paul@example.com', 'telephone' => '+2250700000000',
             'eglise_id' => $eglise->id,
         ])->assertCreated()
@@ -90,10 +90,10 @@ class PreInscriptionApiTest extends TestCase
         ]);
         $payload = ['nom' => 'Zran', 'prenoms' => 'Marc', 'telephone' => '+2250700000001', 'eglise_id' => $eglise->id];
 
-        $this->postJson('/api/v1/Etudiant/pre-inscription', [...$payload, 'email' => 'marc1@example.com'])
+        $this->postJson('/api/v1/etudiant/pre-inscription', [...$payload, 'email' => 'marc1@example.com'])
             ->assertCreated()
             ->assertJsonPath('pre_inscription.numero_dossier', 'ZRM000'.now()->year);
-        $this->postJson('/api/v1/Etudiant/pre-inscription', [...$payload, 'email' => 'marc2@example.com'])
+        $this->postJson('/api/v1/etudiant/pre-inscription', [...$payload, 'email' => 'marc2@example.com'])
             ->assertCreated()
             ->assertJsonPath('pre_inscription.numero_dossier', 'ZRM001'.now()->year);
     }
@@ -108,12 +108,12 @@ class PreInscriptionApiTest extends TestCase
             'telephone' => '+2250102030405', 'sexe' => 'Autre',
         ];
 
-        $this->postJson('/api/v1/Etudiant/pre-inscription', $payload)
+        $this->postJson('/api/v1/etudiant/pre-inscription', $payload)
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['eglise_id', 'sexe']);
 
         $eglise->delete();
-        $this->postJson('/api/v1/Etudiant/pre-inscription', [...$payload, 'sexe' => 'Feminin', 'eglise_id' => $eglise->id])
+        $this->postJson('/api/v1/etudiant/pre-inscription', [...$payload, 'sexe' => 'Feminin', 'eglise_id' => $eglise->id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['eglise_id'])
             ->assertJsonMissingValidationErrors(['sexe']);

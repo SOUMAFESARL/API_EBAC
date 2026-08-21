@@ -22,7 +22,7 @@ class ParametreApiSecurityTest extends TestCase
 
     public function test_la_pre_inscription_ne_demande_pas_d_authentification(): void
     {
-        $this->postJson('/api/v1/Etudiant/pre-inscription', [])
+        $this->postJson('/api/v1/etudiant/pre-inscription', [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['nom', 'prenoms', 'email', 'telephone']);
     }

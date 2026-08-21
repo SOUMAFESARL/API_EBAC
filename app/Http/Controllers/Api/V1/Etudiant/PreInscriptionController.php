@@ -16,7 +16,7 @@ use OpenApi\Attributes as OA;
 
 class PreInscriptionController extends Controller
 {
-    #[OA\Post(path: '/Etudiant/pre-inscription', operationId: 'preInscrireEtudiant', summary: 'Enregistrer une demande publique de pré-inscription', tags: ['Pré-inscription'], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PreInscriptionPayload')), responses: [new OA\Response(response: 201, description: 'Pré-inscription enregistrée', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'pre_inscription', ref: '#/components/schemas/PreInscriptionResultat')])), new OA\Response(response: 422, description: 'Erreur de validation'), new OA\Response(response: 429, description: 'Trop de tentatives')])]
+    #[OA\Post(path: '/etudiant/pre-inscription', operationId: 'preInscrireEtudiant', summary: 'Enregistrer une demande publique de pré-inscription', tags: ['Pré-inscription'], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PreInscriptionPayload')), responses: [new OA\Response(response: 201, description: 'Pré-inscription enregistrée', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'pre_inscription', ref: '#/components/schemas/PreInscriptionResultat')])), new OA\Response(response: 422, description: 'Erreur de validation'), new OA\Response(response: 429, description: 'Trop de tentatives')])]
     public function store(PreInscriptionRequest $request): JsonResponse
     {
         $dto = PreInscriptionDTO::fromArray($request->validated());

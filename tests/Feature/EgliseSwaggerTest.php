@@ -83,8 +83,8 @@ class EgliseSwaggerTest extends TestCase
             }
         }
 
-        $this->assertArrayHasKey('post', $documentation['paths']['/Etudiant/pre-inscription']);
-        $this->assertArrayNotHasKey('security', $documentation['paths']['/Etudiant/pre-inscription']['post']);
+        $this->assertArrayHasKey('post', $documentation['paths']['/etudiant/pre-inscription']);
+        $this->assertArrayNotHasKey('security', $documentation['paths']['/etudiant/pre-inscription']['post']);
 
         $preInscription = $documentation['components']['schemas']['PreInscriptionPayload'];
         $this->assertContains('eglise_id', $preInscription['required']);

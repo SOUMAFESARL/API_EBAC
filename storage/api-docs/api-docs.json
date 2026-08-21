@@ -542,7 +542,7 @@
                 ]
             }
         },
-        "/Etudiant/pre-inscription": {
+        "/etudiant/pre-inscription": {
             "post": {
                 "tags": [
                     "Pré-inscription"
