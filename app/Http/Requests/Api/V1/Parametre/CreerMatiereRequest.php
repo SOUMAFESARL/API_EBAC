@@ -15,6 +15,7 @@ class CreerMatiereRequest extends FormRequest
             'libelle' => ['required', 'string', 'max:180'],
             'id_niveau' => ['required', 'integer', 'exists:niveaux,id'],
             'coefficient' => ['sometimes', 'numeric', 'gt:0', 'max:999.99'],
+            'volume_horaire' => ['sometimes', 'numeric', 'min:0', 'max:9999.99'],
             'type' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string'],
             'objectifs' => ['nullable', 'string'],
@@ -23,6 +24,18 @@ class CreerMatiereRequest extends FormRequest
             'obligatoire' => ['sometimes', 'boolean'],
             'active' => ['sometimes', 'boolean'],
             'version' => ['sometimes', 'integer', 'min:1', 'max:65535'],
+            'modules' => ['sometimes', 'array', 'min:1'],
+            'modules.*.code' => ['nullable', 'string', 'max:50'],
+            'modules.*.libelle' => ['required', 'string', 'max:180', 'distinct:strict'],
+            'modules.*.ordre' => ['sometimes', 'integer', 'min:1', 'max:65535'],
+            'modules.*.description' => ['nullable', 'string'],
+            'modules.*.cours' => ['required', 'array', 'min:1'],
+            'modules.*.cours.*.code' => ['nullable', 'string', 'max:50'],
+            'modules.*.cours.*.libelle' => ['required', 'string', 'max:180'],
+            'modules.*.cours.*.volume_horaire' => ['sometimes', 'numeric', 'min:0', 'max:9999.99'],
+            'modules.*.cours.*.coefficient' => ['sometimes', 'numeric', 'gt:0', 'max:999.99'],
+            'modules.*.cours.*.ordre' => ['sometimes', 'integer', 'min:1', 'max:65535'],
+            'modules.*.cours.*.actif' => ['sometimes', 'boolean'],
         ];
     }
 }

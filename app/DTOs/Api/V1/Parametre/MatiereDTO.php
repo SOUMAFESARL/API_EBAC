@@ -15,7 +15,7 @@ final readonly class MatiereDTO
                 $donnees[$champ] = (int) $donnees[$champ];
             }
         }
-        foreach (['coefficient', 'note_validation'] as $champ) {
+        foreach (['coefficient', 'volume_horaire', 'note_validation'] as $champ) {
             if (array_key_exists($champ, $donnees)) {
                 $donnees[$champ] = (float) $donnees[$champ];
             }

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['code', 'libelle', 'id_niveau', 'coefficient', 'type', 'description', 'objectifs', 'prerequis', 'note_validation', 'obligatoire', 'active', 'version', 'user_id', 'created_by', 'updated_by', 'deleted_by'])]
+#[Fillable(['code', 'libelle', 'id_niveau', 'coefficient', 'volume_horaire', 'type', 'description', 'objectifs', 'prerequis', 'note_validation', 'obligatoire', 'active', 'version', 'user_id', 'created_by', 'updated_by', 'deleted_by'])]
 class Matiere extends Model
 {
     use SoftDeletes;
@@ -17,6 +17,7 @@ class Matiere extends Model
     {
         return [
             'coefficient' => 'decimal:2',
+            'volume_horaire' => 'decimal:2',
             'note_validation' => 'decimal:2',
             'obligatoire' => 'boolean',
             'active' => 'boolean',

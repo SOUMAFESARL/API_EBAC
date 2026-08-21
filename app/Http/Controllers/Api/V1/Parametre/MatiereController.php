@@ -7,8 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Parametre\CreerMatiereRequest;
 use App\Http\Requests\Api\V1\Parametre\ModifierMatiereRequest;
 use App\Models\Matiere;
+use App\Models\Cours;
+use App\Models\Module;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use OpenApi\Attributes as OA;
 
 class MatiereController extends Controller
@@ -40,16 +43,51 @@ class MatiereController extends Controller
     public function store(CreerMatiereRequest $request): JsonResponse
     {
         $utilisateur = $request->user();
-        $dto = MatiereDTO::fromArray($request->validated());
-        $matiere = Matiere::query()->create([
-            ...$dto->toArray(),
-            'user_id' => $utilisateur->id,
-            'created_by' => $utilisateur->id,
-        ]);
+        $donnees = $request->validated();
+        $modules = $donnees['modules'] ?? [];
+        unset($donnees['modules']);
+
+        $matiere = DB::transaction(function () use ($donnees, $modules, $utilisateur): Matiere {
+            $dto = MatiereDTO::fromArray($donnees);
+            $matiere = Matiere::query()->create([
+                ...$dto->toArray(),
+                'user_id' => $utilisateur->id,
+                'created_by' => $utilisateur->id,
+            ]);
+
+            foreach ($modules as $indexModule => $donneesModule) {
+                $cours = $donneesModule['cours'];
+                unset($donneesModule['cours']);
+
+                $module = Module::query()->create([
+                    ...$donneesModule,
+                    'id_matiere' => $matiere->id,
+                    'ordre' => $donneesModule['ordre'] ?? $indexModule + 1,
+                    'user_id' => $utilisateur->id,
+                    'created_by' => $utilisateur->id,
+                ]);
+
+                foreach ($cours as $indexCours => $donneesCours) {
+                    Cours::query()->create([
+                        ...$donneesCours,
+                        'id_module' => $module->id,
+                        'ordre' => $donneesCours['ordre'] ?? $indexCours + 1,
+                        'user_id' => $utilisateur->id,
+                        'created_by' => $utilisateur->id,
+                    ]);
+                }
+            }
+
+            return $matiere;
+        });
 
         return response()->json([
             'message' => 'Matière créée avec succès.',
-            'matiere' => $matiere->load('niveau:id,code,libelle,rang,statut'),
+            'matiere' => $matiere->load([
+                'niveau:id,code,libelle,rang,statut',
+                'modules' => fn ($query) => $query->orderBy('ordre'),
+                'modules.cours' => fn ($query) => $query->orderBy('ordre'),
+            ]),
         ], 201);
     }
 
