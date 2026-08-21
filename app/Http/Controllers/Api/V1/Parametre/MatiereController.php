@@ -20,7 +20,8 @@ class MatiereController extends Controller
     public function index(Request $request): JsonResponse
     {
         $matieres = Matiere::query()
-            ->with('niveau:id,code,libelle,rang,statut')
+            ->with($this->relations())
+            ->withCount('modules as nombre_modules')
             ->when($request->filled('niveau'), fn ($query) => $query->where('id_niveau', $request->integer('niveau')))
             ->when($request->filled('id_niveau'), fn ($query) => $query->where('id_niveau', $request->integer('id_niveau')))
             ->when($request->filled('type'), fn ($query) => $query->where('type', $request->input('type')))
@@ -83,11 +84,7 @@ class MatiereController extends Controller
 
         return response()->json([
             'message' => 'Matière créée avec succès.',
-            'matiere' => $matiere->load([
-                'niveau:id,code,libelle,rang,statut',
-                'modules' => fn ($query) => $query->orderBy('ordre'),
-                'modules.cours' => fn ($query) => $query->orderBy('ordre'),
-            ]),
+            'matiere' => $this->charger($matiere),
         ], 201);
     }
 
@@ -95,7 +92,7 @@ class MatiereController extends Controller
     public function show(int $id): JsonResponse
     {
         return response()->json([
-            'matiere' => Matiere::query()->with('niveau:id,code,libelle,rang,statut')->findOrFail($id),
+            'matiere' => $this->charger(Matiere::query()->findOrFail($id)),
         ]);
     }
 
@@ -109,7 +106,7 @@ class MatiereController extends Controller
 
         return response()->json([
             'message' => 'Matière modifiée avec succès.',
-            'matiere' => $matiere->fresh()->load('niveau:id,code,libelle,rang,statut'),
+            'matiere' => $this->charger($matiere->fresh()),
         ]);
     }
 
@@ -121,5 +118,20 @@ class MatiereController extends Controller
         $matiere->delete();
 
         return response()->json(['message' => 'Matière supprimée avec succès.']);
+    }
+
+    /** @return array<string, mixed> */
+    private function relations(): array
+    {
+        return [
+            'niveau:id,code,libelle,rang,statut',
+            'modules' => fn ($query) => $query->orderBy('ordre')->orderBy('id'),
+            'modules.cours' => fn ($query) => $query->orderBy('ordre')->orderBy('id'),
+        ];
+    }
+
+    private function charger(Matiere $matiere): Matiere
+    {
+        return $matiere->load($this->relations())->loadCount('modules as nombre_modules');
     }
 }

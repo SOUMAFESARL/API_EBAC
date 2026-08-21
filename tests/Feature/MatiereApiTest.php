@@ -68,7 +68,7 @@ class MatiereApiTest extends TestCase
         Sanctum::actingAs($utilisateur);
         $niveau = Niveau::query()->create(['libelle' => 'Première année', 'code' => 'A1', 'rang' => 1]);
 
-        $this->postJson('/api/v1/parametres/matieres', [
+        $id = $this->postJson('/api/v1/parametres/matieres', [
             'code' => 'MAT-CHRISTO-001',
             'libelle' => 'Doctrine chrétienne',
             'id_niveau' => $niveau->id,
@@ -95,7 +95,27 @@ class MatiereApiTest extends TestCase
             ->assertJsonCount(2, 'matiere.modules.1.cours')
             ->assertJsonPath('matiere.modules.0.ordre', 1)
             ->assertJsonPath('matiere.modules.1.ordre', 2)
-            ->assertJsonPath('matiere.modules.1.cours.0.coefficient', '1.50');
+            ->assertJsonPath('matiere.modules.1.cours.0.coefficient', '1.50')
+            ->assertJsonPath('matiere.nombre_modules', 2)
+            ->json('matiere.id');
+
+        $this->getJson('/api/v1/parametres/matieres')
+            ->assertOk()
+            ->assertJsonCount(1, 'matieres')
+            ->assertJsonPath('matieres.0.id', $id)
+            ->assertJsonPath('matieres.0.niveau.id', $niveau->id)
+            ->assertJsonPath('matieres.0.nombre_modules', 2)
+            ->assertJsonCount(2, 'matieres.0.modules')
+            ->assertJsonCount(2, 'matieres.0.modules.0.cours')
+            ->assertJsonPath('matieres.0.modules.1.libelle', 'Christologie');
+
+        $this->getJson("/api/v1/parametres/matieres/{$id}")
+            ->assertOk()
+            ->assertJsonPath('matiere.niveau.id', $niveau->id)
+            ->assertJsonPath('matiere.nombre_modules', 2)
+            ->assertJsonCount(2, 'matiere.modules')
+            ->assertJsonCount(2, 'matiere.modules.1.cours')
+            ->assertJsonPath('matiere.modules.0.cours.1.libelle', 'La révélation');
 
         $this->assertDatabaseCount('matieres', 1);
         $this->assertDatabaseCount('modules', 2);
