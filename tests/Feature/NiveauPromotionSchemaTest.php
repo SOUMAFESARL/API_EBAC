@@ -34,9 +34,9 @@ class NiveauPromotionSchemaTest extends TestCase
         $this->assertTrue(Schema::hasColumns('promotions', [
             'id',
             'code',
+            'num_promotion',
             'id_annee_academique',
             'id_niveau',
-            'capacite',
             'statut',
             'date_ouverture',
             'date_cloture',
