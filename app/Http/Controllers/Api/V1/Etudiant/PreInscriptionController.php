@@ -7,10 +7,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Etudiant\PreInscriptionRequest;
 use App\Models\DossierEtudiant;
 use App\Models\Etudiant;
+use App\Models\FichierDossierEtudiant;
 use App\Notifications\PreInscriptionRecueNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
 
@@ -21,14 +23,17 @@ class PreInscriptionController extends Controller
     {
         $dto = PreInscriptionDTO::fromArray($request->validated());
         $donnees = $dto->toArray();
+        $cheminsEnregistres = [];
         $donnees['photo_identite'] = $request->file('photo_identite')->store('etudiants/photos-identite', 'public');
+        $cheminsEnregistres[] = $donnees['photo_identite'];
 
-        $resultat = DB::transaction(function () use ($donnees): array {
+        try {
+            $resultat = DB::transaction(function () use ($donnees, $request, &$cheminsEnregistres): array {
             $dossier = [
                 'pieces_requises' => $donnees['pieces_requises'] ?? null,
                 'observations' => $donnees['observations'] ?? null,
             ];
-            unset($donnees['pieces_requises'], $donnees['observations']);
+            unset($donnees['pieces_requises'], $donnees['observations'], $donnees['documents']);
 
             $etudiant = Etudiant::query()->create([
                 ...$donnees,
@@ -44,8 +49,26 @@ class PreInscriptionController extends Controller
                 'date_ouverture' => now()->toDateString(),
             ]);
 
+            foreach ($request->file('documents', []) as $document) {
+                $chemin = $document->store("etudiants/dossiers/{$dossierEtudiant->id}", 'public');
+                $cheminsEnregistres[] = $chemin;
+
+                FichierDossierEtudiant::query()->create([
+                    'id_dossier_etudiant' => $dossierEtudiant->id,
+                    'type_piece' => pathinfo($document->getClientOriginalName(), PATHINFO_FILENAME),
+                    'nom_original' => $document->getClientOriginalName(),
+                    'chemin' => $chemin,
+                    'mime_type' => $document->getMimeType(),
+                    'taille' => $document->getSize(),
+                ]);
+            }
+
             return [$etudiant, $dossierEtudiant];
-        });
+            });
+        } catch (\Throwable $exception) {
+            Storage::disk('public')->delete($cheminsEnregistres);
+            throw $exception;
+        }
 
         [$etudiant, $dossier] = $resultat;
 
@@ -65,6 +88,7 @@ class PreInscriptionController extends Controller
                 'numero_dossier' => $dossier->numero_dossier,
                 'statut' => $etudiant->statut,
                 'statut_dossier' => $dossier->statut,
+                'nombre_documents' => $dossier->fichiers()->count(),
             ],
         ], 201);
     }

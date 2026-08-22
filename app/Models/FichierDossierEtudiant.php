@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class FichierDossierEtudiant extends Model
+{
+    protected $table = 'fichiers_dossiers_etudiants';
+
+    protected $fillable = [
+        'id_dossier_etudiant',
+        'type_piece',
+        'nom_original',
+        'chemin',
+        'mime_type',
+        'taille',
+    ];
+
+    protected function casts(): array
+    {
+        return ['taille' => 'integer'];
+    }
+
+    public function dossier(): BelongsTo
+    {
+        return $this->belongsTo(DossierEtudiant::class, 'id_dossier_etudiant');
+    }
+}

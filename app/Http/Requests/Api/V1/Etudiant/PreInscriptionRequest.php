@@ -24,6 +24,8 @@ class PreInscriptionRequest extends FormRequest
             'eglise_id' => ['required', 'integer', Rule::exists('eglises', 'id')->whereNull('deleted_at')],
             'statut_professionnel' => ['nullable', 'string', 'max:100'],
             'photo_identite' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'documents' => ['sometimes', 'array', 'max:10'],
+            'documents.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
             'pieces_requises' => ['nullable', 'array'],
             'pieces_requises.*' => ['string', 'max:100'],
             'observations' => ['nullable', 'string'],

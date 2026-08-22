@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DossierEtudiant extends Model
@@ -16,4 +17,5 @@ class DossierEtudiant extends Model
     protected function casts(): array { return ['date_ouverture' => 'date:Y-m-d', 'pieces_requises' => 'array']; }
 
     public function etudiant(): BelongsTo { return $this->belongsTo(Etudiant::class, 'id_etudiant'); }
+    public function fichiers(): HasMany { return $this->hasMany(FichierDossierEtudiant::class, 'id_dossier_etudiant'); }
 }

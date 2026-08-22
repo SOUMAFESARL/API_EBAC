@@ -3021,6 +3021,16 @@
                         "type": "string",
                         "format": "binary"
                     },
+                    "documents": {
+                        "description": "Pièces du dossier (PDF ou images, 10 Mo maximum par fichier)",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "binary"
+                        },
+                        "nullable": true,
+                        "maxItems": 10
+                    },
                     "pieces_requises": {
                         "type": "array",
                         "items": {

@@ -29,6 +29,10 @@ class PreInscriptionApiTest extends TestCase
             'prenoms' => 'Jean Marc',
             'civilite_id' => $civilite->id,
             'photo_identite' => UploadedFile::fake()->image('identite.jpg'),
+            'documents' => [
+                UploadedFile::fake()->create('piece-identite.pdf', 500, 'application/pdf'),
+                UploadedFile::fake()->create('diplome.pdf', 750, 'application/pdf'),
+            ],
             'date_naissance' => '2000-05-10',
             'nationalite' => 'Ivoirienne',
             'email' => 'jean@example.com',
@@ -42,6 +46,7 @@ class PreInscriptionApiTest extends TestCase
             ->assertJsonPath('pre_inscription.numero_dossier', 'KOJ000'.now()->year)
             ->assertJsonPath('pre_inscription.statut', 'Préinscrit')
             ->assertJsonPath('pre_inscription.statut_dossier', 'Incomplet');
+        $reponse->assertJsonPath('pre_inscription.nombre_documents', 2);
 
         $this->assertDatabaseHas('etudiants', [
             'id' => $reponse->json('pre_inscription.id'), 'nom' => 'Kouassi', 'eglise_id' => $eglise->id,
@@ -53,6 +58,10 @@ class PreInscriptionApiTest extends TestCase
         $this->assertDatabaseHas('dossiers_etudiants', [
             'numero_dossier' => $reponse->json('pre_inscription.numero_dossier'), 'statut' => 'Incomplet',
         ]);
+        $this->assertDatabaseCount('fichiers_dossiers_etudiants', 2);
+        foreach (\DB::table('fichiers_dossiers_etudiants')->pluck('chemin') as $chemin) {
+            Storage::disk('public')->assertExists($chemin);
+        }
         Notification::assertSentOnDemand(
             PreInscriptionRecueNotification::class,
             fn (PreInscriptionRecueNotification $notification, array $canaux, object $destinataire) =>
