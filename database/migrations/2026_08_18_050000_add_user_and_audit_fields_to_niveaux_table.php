@@ -8,16 +8,30 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('niveaux', function (Blueprint $table) {
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->string('user_code', 150)->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('deleted_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->softDeletes();
+        if (! Schema::hasColumn('niveaux', 'user_id')) {
+            Schema::table('niveaux', fn (Blueprint $table) =>
+                $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete()
+            );
+        }
 
-            $table->index('user_code');
-        });
+        if (! Schema::hasColumn('niveaux', 'user_code')) {
+            Schema::table('niveaux', function (Blueprint $table) {
+                $table->string('user_code', 150)->nullable();
+                $table->index('user_code');
+            });
+        }
+
+        foreach (['created_by', 'updated_by', 'deleted_by'] as $colonne) {
+            if (! Schema::hasColumn('niveaux', $colonne)) {
+                Schema::table('niveaux', fn (Blueprint $table) =>
+                    $table->foreignId($colonne)->nullable()->constrained('users')->nullOnDelete()
+                );
+            }
+        }
+
+        if (! Schema::hasColumn('niveaux', 'deleted_at')) {
+            Schema::table('niveaux', fn (Blueprint $table) => $table->softDeletes());
+        }
     }
 
     public function down(): void
