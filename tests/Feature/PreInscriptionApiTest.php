@@ -136,6 +136,33 @@ class PreInscriptionApiTest extends TestCase
             ->assertJsonMissingValidationErrors(['civilite_id']);
     }
 
+    public function test_l_email_doit_etre_unique(): void
+    {
+        $civilite = Civilite::query()->create(['code' => 'M', 'name' => 'Monsieur']);
+        $eglise = Eglise::query()->create([
+            'code' => 'EGL-001', 'nom' => 'Eglise test', 'ville_commune' => 'Cocody',
+        ]);
+        \DB::table('etudiants')->insert([
+            'matricule' => 'EBAC-0001-'.now()->year,
+            'nom' => 'Existant',
+            'prenoms' => 'Etudiant',
+            'email' => 'existant@example.com',
+            'date_inscription' => now()->toDateString(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->postJson('/api/v1/etudiant/pre-inscription', [
+            'nom' => 'Nouveau',
+            'prenoms' => 'Etudiant',
+            'email' => 'existant@example.com',
+            'telephone' => '+2250700000000',
+            'civilite_id' => $civilite->id,
+            'eglise_id' => $eglise->id,
+            'photo_identite' => UploadedFile::fake()->image('identite.jpg'),
+        ])->assertUnprocessable()->assertJsonValidationErrors(['email']);
+    }
+
     public function test_le_courriel_de_confirmation_peut_etre_rendu(): void
     {
         $notification = new PreInscriptionRecueNotification(

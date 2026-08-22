@@ -18,7 +18,7 @@ class PreInscriptionRequest extends FormRequest
             'date_naissance' => ['nullable', 'date', 'before:today'],
             'lieu_naissance' => ['nullable', 'string', 'max:150'],
             'nationalite' => ['nullable', 'string', 'max:80'],
-            'email' => ['required', 'email:rfc', 'max:150'],
+            'email' => ['required', 'email:rfc', 'max:150', 'unique:etudiants,email'],
             'telephone' => ['required', 'string', 'max:30'],
             'adresse' => ['nullable', 'string', 'max:255'],
             'eglise_id' => ['required', 'integer', Rule::exists('eglises', 'id')->whereNull('deleted_at')],
