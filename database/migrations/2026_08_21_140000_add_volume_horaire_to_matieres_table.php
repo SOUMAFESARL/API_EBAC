@@ -8,9 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('matieres', function (Blueprint $table) {
-            $table->decimal('volume_horaire', 6, 2)->default(0)->after('coefficient');
-        });
+        if (! Schema::hasColumn('matieres', 'volume_horaire')) {
+            Schema::table('matieres', function (Blueprint $table) {
+                $table->decimal('volume_horaire', 6, 2)->default(0)->after('coefficient');
+            });
+        }
     }
 
     public function down(): void

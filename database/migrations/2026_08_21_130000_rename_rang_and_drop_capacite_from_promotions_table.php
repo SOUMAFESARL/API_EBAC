@@ -8,13 +8,21 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('promotions', function (Blueprint $table) {
-            $table->renameColumn('rang', 'num_promotion');
-        });
+        if (Schema::hasColumn('promotions', 'rang') && ! Schema::hasColumn('promotions', 'num_promotion')) {
+            Schema::table('promotions', function (Blueprint $table) {
+                $table->renameColumn('rang', 'num_promotion');
+            });
+        } elseif (Schema::hasColumn('promotions', 'rang')) {
+            Schema::table('promotions', function (Blueprint $table) {
+                $table->dropColumn('rang');
+            });
+        }
 
-        Schema::table('promotions', function (Blueprint $table) {
-            $table->dropColumn('capacite');
-        });
+        if (Schema::hasColumn('promotions', 'capacite')) {
+            Schema::table('promotions', function (Blueprint $table) {
+                $table->dropColumn('capacite');
+            });
+        }
     }
 
     public function down(): void

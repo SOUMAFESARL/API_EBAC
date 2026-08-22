@@ -9,9 +9,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('promotions', function (Blueprint $table) {
-            $table->unsignedSmallInteger('annee_entree')->nullable()->after('num_promotion');
-        });
+        if (! Schema::hasColumn('promotions', 'annee_entree')) {
+            Schema::table('promotions', function (Blueprint $table) {
+                $table->unsignedSmallInteger('annee_entree')->nullable()->after('num_promotion');
+            });
+        }
 
         DB::table('promotions')
             ->leftJoin('annees_academiques', 'promotions.id_annee_academique', '=', 'annees_academiques.id')
@@ -23,7 +25,7 @@ return new class extends Migration
                     ? (int) substr((string) $promotion->date_debut, 0, 4)
                     : (int) substr((string) $promotion->libelle, 0, 4);
 
-                DB::table('promotions')->where('id', $promotion->id)->update([
+                DB::table('promotions')->where('id', $promotion->id)->whereNull('annee_entree')->update([
                     'annee_entree' => $annee >= 1900 ? $annee : (int) date('Y'),
                 ]);
             });
