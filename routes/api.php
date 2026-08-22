@@ -81,8 +81,7 @@ Route::prefix('v1/parametres')
 
 Route::apiResource('v1/eglises', EgliseController::class)
     ->names('api.v1.eglises')
-    ->parameters(['eglises' => 'id'])
-    ->middleware(['auth:sanctum', 'compte.actif']);
+    ->parameters(['eglises' => 'id']);
 
 Route::prefix('v1/administration/comptes')
     ->name('api.v1.administration.comptes.')

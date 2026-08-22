@@ -123,10 +123,22 @@ class EgliseApiTest extends TestCase
             ->assertJsonPath('eglise.code', 'EGL-000001');
     }
 
-    public function test_le_crud_des_eglises_exige_une_authentification(): void
+    public function test_le_crud_des_eglises_est_public(): void
     {
-        $this->getJson('/api/v1/eglises')->assertUnauthorized();
-        $this->postJson('/api/v1/eglises', [])->assertUnauthorized();
+        $egliseId = $this->postJson('/api/v1/eglises', [
+            'nom' => 'Église publique',
+            'ville_commune' => 'Abidjan',
+        ])->assertCreated()
+            ->assertJsonPath('eglise.created_by', null)
+            ->json('eglise.id');
+
+        $this->getJson('/api/v1/eglises')->assertOk();
+        $this->getJson("/api/v1/eglises/{$egliseId}")->assertOk();
+        $this->putJson("/api/v1/eglises/{$egliseId}", ['nom' => 'Église publique modifiée'])
+            ->assertOk();
+        $this->patchJson("/api/v1/eglises/{$egliseId}", ['ville_commune' => 'Cocody'])
+            ->assertOk();
+        $this->deleteJson("/api/v1/eglises/{$egliseId}")->assertOk();
     }
 
     public function test_la_creation_valide_les_champs_obligatoires_et_les_representants(): void

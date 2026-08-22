@@ -24,6 +24,17 @@ class EgliseSwaggerTest extends TestCase
         $this->assertSame('http', $documentation['components']['securitySchemes']['sanctum']['type']);
         $this->assertSame('bearer', $documentation['components']['securitySchemes']['sanctum']['scheme']);
 
+        foreach ([
+            ['/eglises', 'get'],
+            ['/eglises', 'post'],
+            ['/eglises/{id}', 'get'],
+            ['/eglises/{id}', 'put'],
+            ['/eglises/{id}', 'patch'],
+            ['/eglises/{id}', 'delete'],
+        ] as [$route, $methode]) {
+            $this->assertArrayNotHasKey('security', $documentation['paths'][$route][$methode]);
+        }
+
         $parametres = array_column($documentation['paths']['/eglises']['get']['parameters'], 'name');
         foreach (['recherche', 'q', 'eglise', 'ville', 'ville_commune', 'region', 'district', 'denomination', 'pasteur', 'capacite_min', 'avec_etudiants'] as $parametre) {
             $this->assertContains($parametre, $parametres);

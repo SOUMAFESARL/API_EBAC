@@ -17,7 +17,6 @@ class EgliseController extends Controller
         path: '/eglises',
         operationId: 'listerEglises',
         summary: 'Lister les églises',
-        security: [['sanctum' => []]],
         tags: ['Églises'],
         parameters: [
             new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)),
@@ -49,7 +48,6 @@ class EgliseController extends Controller
                     new OA\Property(property: 'to', type: 'integer', nullable: true, example: 1),
                 ]),
             ),
-            new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
         ],
     )]
     public function index(Request $request): JsonResponse
@@ -88,7 +86,6 @@ class EgliseController extends Controller
         operationId: 'creerEglise',
         summary: 'Créer une église',
         description: 'Le code EGL-xxxxxx et les champs d’audit sont générés automatiquement.',
-        security: [['sanctum' => []]],
         tags: ['Églises'],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/EglisePayload')),
         responses: [
@@ -96,7 +93,6 @@ class EgliseController extends Controller
                 new OA\Property(property: 'message', type: 'string', example: 'Église créée avec succès.'),
                 new OA\Property(property: 'eglise', ref: '#/components/schemas/Eglise'),
             ])),
-            new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
             new OA\Response(response: 422, description: 'Erreur de validation', content: new OA\JsonContent(ref: '#/components/schemas/ErreurValidation')),
         ],
     )]
@@ -107,9 +103,11 @@ class EgliseController extends Controller
 
         $eglise = DB::transaction(function () use ($donnees, $administrateur) {
             $donnees['code'] = $this->genererCode();
-            $donnees['user_id'] = $administrateur->id;
-            $donnees['user_code'] = $administrateur->code;
-            $donnees['created_by'] = $administrateur->id;
+            if ($administrateur) {
+                $donnees['user_id'] = $administrateur->id;
+                $donnees['user_code'] = $administrateur->code;
+                $donnees['created_by'] = $administrateur->id;
+            }
 
             return Eglise::query()->create($donnees);
         });
@@ -121,14 +119,12 @@ class EgliseController extends Controller
         path: '/eglises/{id}',
         operationId: 'afficherEglise',
         summary: 'Afficher une église',
-        security: [['sanctum' => []]],
         tags: ['Églises'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique de l’église', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
         responses: [
             new OA\Response(response: 200, description: 'Église trouvée avec ses relations et ses statistiques étudiantes', content: new OA\JsonContent(type: 'object', properties: [
                 new OA\Property(property: 'eglise', ref: '#/components/schemas/EgliseDetail'),
             ])),
-            new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
             new OA\Response(response: 404, description: 'Église introuvable'),
         ],
     )]
@@ -150,7 +146,6 @@ class EgliseController extends Controller
         path: '/eglises/{id}',
         operationId: 'modifierEglise',
         summary: 'Modifier partiellement une église',
-        security: [['sanctum' => []]],
         tags: ['Églises'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique de l’église', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
         requestBody: new OA\RequestBody(required: true, description: 'L’API applique les mêmes règles de modification partielle pour PUT et PATCH.', content: new OA\JsonContent(ref: '#/components/schemas/EgliseModificationPayload')),
@@ -159,7 +154,6 @@ class EgliseController extends Controller
                 new OA\Property(property: 'message', type: 'string', example: 'Église modifiée avec succès.'),
                 new OA\Property(property: 'eglise', ref: '#/components/schemas/Eglise'),
             ])),
-            new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
             new OA\Response(response: 404, description: 'Église introuvable'),
             new OA\Response(response: 422, description: 'Erreur de validation', content: new OA\JsonContent(ref: '#/components/schemas/ErreurValidation')),
         ],
@@ -168,7 +162,6 @@ class EgliseController extends Controller
         path: '/eglises/{id}',
         operationId: 'remplacerEglise',
         summary: 'Modifier une église',
-        security: [['sanctum' => []]],
         tags: ['Églises'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique de l’église', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
         requestBody: new OA\RequestBody(required: true, description: 'L’API applique les mêmes règles de modification partielle pour PUT et PATCH.', content: new OA\JsonContent(ref: '#/components/schemas/EgliseModificationPayload')),
@@ -177,7 +170,6 @@ class EgliseController extends Controller
                 new OA\Property(property: 'message', type: 'string', example: 'Église modifiée avec succès.'),
                 new OA\Property(property: 'eglise', ref: '#/components/schemas/Eglise'),
             ])),
-            new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
             new OA\Response(response: 404, description: 'Église introuvable'),
             new OA\Response(response: 422, description: 'Erreur de validation', content: new OA\JsonContent(ref: '#/components/schemas/ErreurValidation')),
         ],
@@ -187,7 +179,10 @@ class EgliseController extends Controller
         $eglise = Eglise::query()->findOrFail($id);
         $donnees = $request->validated();
 
-        $eglise->update([...$donnees, 'updated_by' => $request->user()->id]);
+        $eglise->update([
+            ...$donnees,
+            ...($request->user() ? ['updated_by' => $request->user()->id] : []),
+        ]);
 
         return response()->json([
             'message' => 'Église modifiée avec succès.',
@@ -199,21 +194,21 @@ class EgliseController extends Controller
         path: '/eglises/{id}',
         operationId: 'supprimerEglise',
         summary: 'Supprimer logiquement une église',
-        security: [['sanctum' => []]],
         tags: ['Églises'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID numérique de l’église', schema: new OA\Schema(type: 'integer', minimum: 1, example: 1))],
         responses: [
             new OA\Response(response: 200, description: 'Église supprimée', content: new OA\JsonContent(type: 'object', properties: [
                 new OA\Property(property: 'message', type: 'string', example: 'Église supprimée avec succès.'),
             ])),
-            new OA\Response(response: 401, description: 'Non authentifié', content: new OA\JsonContent(ref: '#/components/schemas/ErreurAuthentification')),
             new OA\Response(response: 404, description: 'Église introuvable'),
         ],
     )]
     public function destroy(Request $request, int $id): JsonResponse
     {
         $eglise = Eglise::query()->findOrFail($id);
-        $eglise->update(['deleted_by' => $request->user()->id]);
+        if ($request->user()) {
+            $eglise->update(['deleted_by' => $request->user()->id]);
+        }
         $eglise->delete();
 
         return response()->json(['message' => 'Église supprimée avec succès.']);

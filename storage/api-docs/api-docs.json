@@ -186,23 +186,8 @@
                                 }
                             }
                         }
-                    },
-                    "401": {
-                        "description": "Non authentifié",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErreurAuthentification"
-                                }
-                            }
-                        }
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             },
             "post": {
                 "tags": [
@@ -241,16 +226,6 @@
                             }
                         }
                     },
-                    "401": {
-                        "description": "Non authentifié",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErreurAuthentification"
-                                }
-                            }
-                        }
-                    },
                     "422": {
                         "description": "Erreur de validation",
                         "content": {
@@ -261,12 +236,7 @@
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             }
         },
         "/eglises/{id}": {
@@ -305,25 +275,10 @@
                             }
                         }
                     },
-                    "401": {
-                        "description": "Non authentifié",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErreurAuthentification"
-                                }
-                            }
-                        }
-                    },
                     "404": {
                         "description": "Église introuvable"
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             },
             "put": {
                 "tags": [
@@ -375,16 +330,6 @@
                             }
                         }
                     },
-                    "401": {
-                        "description": "Non authentifié",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErreurAuthentification"
-                                }
-                            }
-                        }
-                    },
                     "404": {
                         "description": "Église introuvable"
                     },
@@ -398,12 +343,7 @@
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             },
             "delete": {
                 "tags": [
@@ -441,25 +381,10 @@
                             }
                         }
                     },
-                    "401": {
-                        "description": "Non authentifié",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErreurAuthentification"
-                                }
-                            }
-                        }
-                    },
                     "404": {
                         "description": "Église introuvable"
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             },
             "patch": {
                 "tags": [
@@ -511,16 +436,6 @@
                             }
                         }
                     },
-                    "401": {
-                        "description": "Non authentifié",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErreurAuthentification"
-                                }
-                            }
-                        }
-                    },
                     "404": {
                         "description": "Église introuvable"
                     },
@@ -534,12 +449,7 @@
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             }
         },
         "/etudiant/pre-inscription": {
