@@ -30,8 +30,33 @@ return new class extends Migration
                 ]);
             });
 
+        if (Schema::hasColumn('promotions', 'id_annee_academique')) {
+            if (DB::getDriverName() === 'mysql') {
+                $contraintes = DB::select(<<<'SQL'
+                    SELECT CONSTRAINT_NAME AS nom
+                    FROM information_schema.KEY_COLUMN_USAGE
+                    WHERE TABLE_SCHEMA = DATABASE()
+                      AND TABLE_NAME = 'promotions'
+                      AND COLUMN_NAME = 'id_annee_academique'
+                      AND REFERENCED_TABLE_NAME IS NOT NULL
+                SQL);
+
+                foreach ($contraintes as $contrainte) {
+                    $nom = str_replace('`', '``', $contrainte->nom);
+                    DB::statement("ALTER TABLE `promotions` DROP FOREIGN KEY `{$nom}`");
+                }
+
+                Schema::table('promotions', function (Blueprint $table) {
+                    $table->dropColumn('id_annee_academique');
+                });
+            } else {
+                Schema::table('promotions', function (Blueprint $table) {
+                    $table->dropConstrainedForeignId('id_annee_academique');
+                });
+            }
+        }
+
         Schema::table('promotions', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('id_annee_academique');
             $table->unsignedSmallInteger('annee_entree')->nullable(false)->change();
         });
     }
