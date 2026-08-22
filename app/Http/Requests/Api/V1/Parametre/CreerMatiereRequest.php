@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1\Parametre;
 
+use App\Rules\UtilisateurEstEnseignant;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CreerMatiereRequest extends FormRequest
@@ -14,6 +15,7 @@ class CreerMatiereRequest extends FormRequest
             'code' => ['required', 'string', 'max:50', 'unique:matieres,code'],
             'libelle' => ['required', 'string', 'max:180'],
             'id_niveau' => ['required', 'integer', 'exists:niveaux,id'],
+            'enseignant_id' => ['nullable', 'integer', new UtilisateurEstEnseignant],
             'coefficient' => ['sometimes', 'numeric', 'gt:0', 'max:999.99'],
             'volume_horaire' => ['sometimes', 'numeric', 'min:0', 'max:9999.99'],
             'type' => ['nullable', 'string', 'max:50'],

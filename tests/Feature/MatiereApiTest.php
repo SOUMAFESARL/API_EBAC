@@ -18,12 +18,15 @@ class MatiereApiTest extends TestCase
         $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
         $utilisateur = User::factory()->create(['id_role' => $role->id]);
         Sanctum::actingAs($utilisateur);
+        $roleEnseignant = Role::query()->create(['code' => 'ENSEIGNANT', 'libelle' => 'Enseignant']);
+        $enseignant = User::factory()->create(['id_role' => $roleEnseignant->id]);
         $niveau = Niveau::query()->create(['libelle' => 'Première année', 'code' => 'A1', 'rang' => 1]);
 
         $id = $this->postJson('/api/v1/parametres/matieres', [
             'code' => 'MAT-BIB-001',
             'libelle' => 'Introduction biblique',
             'id_niveau' => $niveau->id,
+            'enseignant_id' => $enseignant->id,
             'coefficient' => 2.5,
             'volume_horaire' => 30,
             'type' => 'Fondamentale',
@@ -34,10 +37,12 @@ class MatiereApiTest extends TestCase
         ])->assertCreated()
             ->assertJsonPath('matiere.code', 'MAT-BIB-001')
             ->assertJsonPath('matiere.volume_horaire', '30.00')
+            ->assertJsonPath('matiere.enseignant.id', $enseignant->id)
+            ->assertJsonPath('matiere.enseignant.role.code', 'ENSEIGNANT')
             ->assertJsonPath('matiere.created_by', $utilisateur->id)
             ->json('matiere.id');
 
-        $this->getJson("/api/v1/parametres/matieres?niveau={$niveau->id}&type=Fondamentale&active=1&obligatoire=1&version=1&q=biblique")
+        $this->getJson("/api/v1/parametres/matieres?niveau={$niveau->id}&enseignant_id={$enseignant->id}&type=Fondamentale&active=1&obligatoire=1&version=1&q=biblique")
             ->assertOk()->assertJsonCount(1, 'matieres');
         $this->getJson("/api/v1/parametres/matieres/{$id}")
             ->assertOk()->assertJsonPath('matiere.niveau.id', $niveau->id);
@@ -52,13 +57,15 @@ class MatiereApiTest extends TestCase
     public function test_creation_valide_code_niveau_et_valeurs_numeriques(): void
     {
         $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
-        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        $utilisateur = User::factory()->create(['id_role' => $role->id]);
+        Sanctum::actingAs($utilisateur);
 
         $this->postJson('/api/v1/parametres/matieres', [
             'code' => 'MAT-X', 'libelle' => 'Matière invalide', 'id_niveau' => 999,
+            'enseignant_id' => $utilisateur->id,
             'coefficient' => 0, 'volume_horaire' => -1, 'note_validation' => 101, 'version' => 0,
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['id_niveau', 'coefficient', 'volume_horaire', 'note_validation', 'version']);
+            ->assertJsonValidationErrors(['id_niveau', 'enseignant_id', 'coefficient', 'volume_horaire', 'note_validation', 'version']);
     }
 
     public function test_une_matiere_est_creee_avec_plusieurs_modules_et_cours(): void

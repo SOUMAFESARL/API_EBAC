@@ -24,6 +24,7 @@ class MatiereController extends Controller
             ->withCount('modules as nombre_modules')
             ->when($request->filled('niveau'), fn ($query) => $query->where('id_niveau', $request->integer('niveau')))
             ->when($request->filled('id_niveau'), fn ($query) => $query->where('id_niveau', $request->integer('id_niveau')))
+            ->when($request->filled('enseignant') || $request->filled('enseignant_id'), fn ($query) => $query->where('enseignant_id', $request->integer('enseignant', $request->integer('enseignant_id'))))
             ->when($request->filled('type'), fn ($query) => $query->where('type', $request->input('type')))
             ->when($request->has('active'), fn ($query) => $query->where('active', $request->boolean('active')))
             ->when($request->has('obligatoire'), fn ($query) => $query->where('obligatoire', $request->boolean('obligatoire')))
@@ -125,6 +126,8 @@ class MatiereController extends Controller
     {
         return [
             'niveau:id,code,libelle,rang,statut',
+            'enseignant:id,code,nom,prenoms,email,id_role',
+            'enseignant.role:id,code,libelle',
             'modules' => fn ($query) => $query->orderBy('ordre')->orderBy('id'),
             'modules.cours' => fn ($query) => $query->orderBy('ordre')->orderBy('id'),
         ];

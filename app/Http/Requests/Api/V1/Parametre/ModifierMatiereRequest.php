@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1\Parametre;
 
+use App\Rules\UtilisateurEstEnseignant;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,6 +16,7 @@ class ModifierMatiereRequest extends FormRequest
             'code' => ['sometimes', 'required', 'string', 'max:50', Rule::unique('matieres', 'code')->ignore($this->route('id'))],
             'libelle' => ['sometimes', 'required', 'string', 'max:180'],
             'id_niveau' => ['sometimes', 'required', 'integer', 'exists:niveaux,id'],
+            'enseignant_id' => ['sometimes', 'nullable', 'integer', new UtilisateurEstEnseignant],
             'coefficient' => ['sometimes', 'numeric', 'gt:0', 'max:999.99'],
             'volume_horaire' => ['sometimes', 'numeric', 'min:0', 'max:9999.99'],
             'type' => ['nullable', 'string', 'max:50'],

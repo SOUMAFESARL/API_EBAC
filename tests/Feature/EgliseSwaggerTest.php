@@ -108,7 +108,7 @@ class EgliseSwaggerTest extends TestCase
 
         $promotion = $documentation['components']['schemas']['PromotionPayload'];
         $this->assertContains('num_promotion', $promotion['required']);
-        $this->assertContains('id_annee_academique', $promotion['required']);
+        $this->assertContains('annee_entree', $promotion['required']);
         $this->assertArrayNotHasKey('rang', $promotion['properties']);
         $this->assertArrayNotHasKey('capacite', $promotion['properties']);
 

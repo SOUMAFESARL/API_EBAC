@@ -2628,7 +2628,7 @@
                 "required": [
                     "code",
                     "num_promotion",
-                    "id_annee_academique",
+                    "annee_entree",
                     "id_niveau"
                 ],
                 "properties": {
@@ -2642,8 +2642,11 @@
                         "maximum": 65535,
                         "minimum": 1
                     },
-                    "id_annee_academique": {
-                        "type": "integer"
+                    "annee_entree": {
+                        "type": "integer",
+                        "example": 2026,
+                        "maximum": 9999,
+                        "minimum": 1900
                     },
                     "id_niveau": {
                         "type": "integer"
@@ -2777,6 +2780,11 @@
                     },
                     "id_niveau": {
                         "type": "integer"
+                    },
+                    "enseignant_id": {
+                        "description": "Utilisateur ayant le rôle Enseignant",
+                        "type": "integer",
+                        "nullable": true
                     },
                     "coefficient": {
                         "type": "number",

@@ -17,12 +17,12 @@ class PromotionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $promotions = Promotion::query()
-            ->with(['niveau:id,code,libelle', 'anneeAcademique:id,libelle,date_debut,date_fin,active'])
+            ->with(['niveau:id,code,libelle'])
             ->withCount(['inscriptions as nombre_etudiants'])
             ->when($request->filled('niveau'), fn ($query) => $query->where('id_niveau', $request->integer('niveau')))
             ->when($request->filled('id_niveau'), fn ($query) => $query->where('id_niveau', $request->integer('id_niveau')))
-            ->when($request->filled('annee'), fn ($query) => $query->where('id_annee_academique', $request->integer('annee')))
-            ->when($request->filled('id_annee_academique'), fn ($query) => $query->where('id_annee_academique', $request->integer('id_annee_academique')))
+            ->when($request->filled('annee'), fn ($query) => $query->where('annee_entree', $request->integer('annee')))
+            ->when($request->filled('annee_entree'), fn ($query) => $query->where('annee_entree', $request->integer('annee_entree')))
             ->when($request->filled('statut') || $request->filled('status'), fn ($query) => $query->where('statut', $request->input('statut', $request->input('status'))))
             ->when($request->filled('promotion'), function ($query) use ($request) {
                 $promotion = $request->string('promotion')->toString();
@@ -97,7 +97,7 @@ class PromotionController extends Controller
 
     private function charger(Promotion $promotion): Promotion
     {
-        return $promotion->load(['niveau:id,code,libelle', 'anneeAcademique:id,libelle,date_debut,date_fin,active'])
+        return $promotion->load(['niveau:id,code,libelle'])
             ->loadCount(['inscriptions as nombre_etudiants']);
     }
 }

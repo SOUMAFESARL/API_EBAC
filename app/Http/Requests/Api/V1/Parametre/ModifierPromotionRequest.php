@@ -14,7 +14,7 @@ class ModifierPromotionRequest extends FormRequest
         return [
             'code' => ['sometimes', 'required', 'string', 'max:30', Rule::unique('promotions', 'code')->ignore($this->route('id'))],
             'num_promotion' => [$this->isMethod('put') ? 'required' : 'sometimes', 'integer', 'min:1', 'max:65535'],
-            'id_annee_academique' => [$this->isMethod('put') ? 'required' : 'sometimes', 'integer', 'exists:annees_academiques,id'],
+            'annee_entree' => [$this->isMethod('put') ? 'required' : 'sometimes', 'integer', 'digits:4', 'min:1900', 'max:9999'],
             'id_niveau' => ['sometimes', 'required', 'integer', 'exists:niveaux,id'],
             'statut' => ['sometimes', 'required', 'string', 'max:30'],
             'date_ouverture' => ['nullable', 'date'],

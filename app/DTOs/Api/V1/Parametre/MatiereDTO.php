@@ -10,7 +10,7 @@ final readonly class MatiereDTO
     /** @param array<string, mixed> $donnees */
     public static function fromArray(array $donnees): self
     {
-        foreach (['id_niveau', 'version'] as $champ) {
+        foreach (['id_niveau', 'enseignant_id', 'version'] as $champ) {
             if (array_key_exists($champ, $donnees)) {
                 $donnees[$champ] = (int) $donnees[$champ];
             }

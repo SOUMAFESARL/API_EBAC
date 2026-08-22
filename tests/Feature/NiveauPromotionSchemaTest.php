@@ -35,7 +35,7 @@ class NiveauPromotionSchemaTest extends TestCase
             'id',
             'code',
             'num_promotion',
-            'id_annee_academique',
+            'annee_entree',
             'id_niveau',
             'statut',
             'date_ouverture',
