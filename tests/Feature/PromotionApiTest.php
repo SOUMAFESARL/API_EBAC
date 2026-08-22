@@ -15,6 +15,16 @@ class PromotionApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_toutes_les_routes_des_promotions_exigent_une_authentification(): void
+    {
+        $this->getJson('/api/v1/parametres/promotions')->assertUnauthorized();
+        $this->postJson('/api/v1/parametres/promotions', [])->assertUnauthorized();
+        $this->getJson('/api/v1/parametres/promotions/1')->assertUnauthorized();
+        $this->putJson('/api/v1/parametres/promotions/1', [])->assertUnauthorized();
+        $this->patchJson('/api/v1/parametres/promotions/1', [])->assertUnauthorized();
+        $this->deleteJson('/api/v1/parametres/promotions/1')->assertUnauthorized();
+    }
+
     public function test_crud_filtres_et_nombre_d_etudiants(): void
     {
         $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
