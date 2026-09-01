@@ -2626,16 +2626,11 @@
             },
             "PromotionPayload": {
                 "required": [
-                    "code",
                     "num_promotion",
                     "annee_entree",
                     "id_niveau"
                 ],
                 "properties": {
-                    "code": {
-                        "type": "string",
-                        "example": "PROMO-2026-A1"
-                    },
                     "num_promotion": {
                         "type": "integer",
                         "example": 1,
@@ -2679,6 +2674,11 @@
                             "id": {
                                 "type": "integer",
                                 "readOnly": true
+                            },
+                            "code": {
+                                "type": "string",
+                                "readOnly": true,
+                                "example": "PROMO-000001"
                             },
                             "nombre_etudiants": {
                                 "type": "integer",

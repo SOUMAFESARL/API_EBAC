@@ -9,6 +9,7 @@ use App\Http\Requests\Api\V1\Parametre\ModifierPromotionRequest;
 use App\Models\Promotion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use OpenApi\Attributes as OA;
 
 class PromotionController extends Controller
@@ -42,11 +43,14 @@ class PromotionController extends Controller
     {
         $utilisateur = $request->user();
         $dto = PromotionDTO::fromArray($request->validated());
-        $promotion = Promotion::query()->create([
-            ...$dto->toArray(),
-            'user_id' => $utilisateur->id,
-            'created_by' => $utilisateur->id,
-        ]);
+        $promotion = DB::transaction(function () use ($dto, $utilisateur): Promotion {
+            return Promotion::query()->create([
+                ...$dto->toArray(),
+                'code' => $this->genererCode(),
+                'user_id' => $utilisateur->id,
+                'created_by' => $utilisateur->id,
+            ]);
+        });
 
         return response()->json([
             'message' => 'Promotion créée avec succès.',
@@ -99,5 +103,24 @@ class PromotionController extends Controller
     {
         return $promotion->load(['niveau:id,code,libelle'])
             ->loadCount(['inscriptions as nombre_etudiants']);
+    }
+
+    private function genererCode(): string
+    {
+        $dernierCode = Promotion::withTrashed()
+            ->where('code', 'like', 'PROMO-%')
+            ->lockForUpdate()
+            ->orderByDesc('code')
+            ->value('code');
+
+        $sequence = $dernierCode && preg_match('/^PROMO-(\d+)$/', $dernierCode, $correspondances)
+            ? ((int) $correspondances[1]) + 1
+            : 1;
+
+        do {
+            $code = 'PROMO-'.str_pad((string) $sequence++, 6, '0', STR_PAD_LEFT);
+        } while (Promotion::withTrashed()->where('code', $code)->exists());
+
+        return $code;
     }
 }
