@@ -1,7 +1,7 @@
 # API EBAC — rôles et permissions
 
 Version : 17 août 2026
-Base URL : `https://api-ebac.severinzran.ci/api/v1`
+Base URL : `https://api-ebac.soumafe.com/api/v1`
 
 ## 1. Authentification
 
@@ -31,7 +31,7 @@ Chaque clic sur une case envoie immédiatement une requête PATCH. Il n’est pa
 ### Requête
 
 ```http
-GET https://api-ebac.severinzran.ci/api/v1/administration/roles/catalogue-droits
+GET https://api-ebac.soumafe.com/api/v1/administration/roles/catalogue-droits
 ```
 
 ### Réponse HTTP 200
@@ -73,13 +73,13 @@ GET https://api-ebac.severinzran.ci/api/v1/administration/roles/catalogue-droits
 ### Requête
 
 ```http
-GET https://api-ebac.severinzran.ci/api/v1/administration/roles/{role_id}/droits
+GET https://api-ebac.soumafe.com/api/v1/administration/roles/{role_id}/droits
 ```
 
 Exemple :
 
 ```http
-GET https://api-ebac.severinzran.ci/api/v1/administration/roles/2/droits
+GET https://api-ebac.soumafe.com/api/v1/administration/roles/2/droits
 ```
 
 ### Réponse HTTP 200
@@ -108,7 +108,7 @@ GET https://api-ebac.severinzran.ci/api/v1/administration/roles/2/droits
 ### URL
 
 ```http
-PATCH https://api-ebac.severinzran.ci/api/v1/administration/roles/{role_id}/droits/{permission_id}
+PATCH https://api-ebac.soumafe.com/api/v1/administration/roles/{role_id}/droits/{permission_id}
 ```
 
 ### Accorder le droit
@@ -154,7 +154,7 @@ Le changement est enregistré immédiatement et utilisé dès la prochaine requ�
 ## 6. Créer un rôle
 
 ```http
-POST https://api-ebac.severinzran.ci/api/v1/administration/roles
+POST https://api-ebac.soumafe.com/api/v1/administration/roles
 ```
 
 Le code du rôle est saisi par le frontend. Il est converti en majuscules et doit être unique.
@@ -201,7 +201,7 @@ Le rôle `ADMIN` ne peut pas être supprimé. Un rôle encore attribué à un co
 ## 8. Créer une permission
 
 ```http
-POST https://api-ebac.severinzran.ci/api/v1/administration/permissions
+POST https://api-ebac.soumafe.com/api/v1/administration/permissions
 ```
 
 Le code de la permission est généré automatiquement par l’API. Le frontend ne doit jamais envoyer `code`.
@@ -250,7 +250,7 @@ Payload pour associer les actions :
 ```javascript
 async function modifierDroit(roleId, permissionId, accordee, token) {
   const response = await fetch(
-    `https://api-ebac.severinzran.ci/api/v1/administration/roles/${roleId}/droits/${permissionId}`,
+    `https://api-ebac.soumafe.com/api/v1/administration/roles/${roleId}/droits/${permissionId}`,
     {
       method: 'PATCH',
       headers: {

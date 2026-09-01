@@ -10,7 +10,7 @@ use OpenApi\Attributes as OA;
     description: 'Documentation OpenAPI des API EBAC : églises, paramètres académiques et pré-inscription.',
 )]
 #[OA\Server(url: '/api/v1', description: 'Serveur courant')]
-#[OA\Server(url: 'https://api-ebac.severinzran.ci/api/v1', description: 'Production')]
+#[OA\Server(url: 'https://api-ebac.soumafe.com/api/v1', description: 'Production')]
 #[OA\SecurityScheme(
     securityScheme: 'sanctum',
     type: 'http',

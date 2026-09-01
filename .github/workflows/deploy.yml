@@ -79,12 +79,12 @@ jobs:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          FTP_REMOTE_PATH: ${{ secrets.FTP_REMOTE_PATH }}
+          FTP_REMOTE_PATH: /public_html/api-ebac/
         run: |
-          test -n "$FTP_HOST" || { echo "Le secret FTP_HOST est absent."; exit 1; }
+          test -n "$FTP_HOST" || { echo "La configuration FTP_HOST est absente."; exit 1; }
           test -n "$FTP_USERNAME" || { echo "Le secret FTP_USERNAME est absent."; exit 1; }
           test -n "$FTP_PASSWORD" || { echo "Le secret FTP_PASSWORD est absent."; exit 1; }
-          test -n "$FTP_REMOTE_PATH" || { echo "Le secret FTP_REMOTE_PATH est absent."; exit 1; }
+          test -n "$FTP_REMOTE_PATH" || { echo "La configuration FTP_REMOTE_PATH est absente."; exit 1; }
 
       - name: Installer le client FTP parallèle
         run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
@@ -94,7 +94,7 @@ jobs:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          FTP_REMOTE_PATH: ${{ secrets.FTP_REMOTE_PATH }}
+          FTP_REMOTE_PATH: /public_html/api-ebac/
         run: |
           lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_HOST" <<LFTP_COMMANDS
           set ftp:ssl-allow no

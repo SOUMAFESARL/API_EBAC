@@ -11,7 +11,7 @@
             "description": "Serveur courant"
         },
         {
-            "url": "https://api-ebac.severinzran.ci/api/v1",
+            "url": "https://api-ebac.soumafe.com/api/v1",
             "description": "Production"
         }
     ],

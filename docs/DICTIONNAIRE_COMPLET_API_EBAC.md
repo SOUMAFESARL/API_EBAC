@@ -1,7 +1,7 @@
 # Dictionnaire complet des API EBAC
 
 Version : API v1
-Base URL : `https://api-ebac.severinzran.ci/api/v1`
+Base URL : `https://api-ebac.soumafe.com/api/v1`
 Format : JSON UTF-8, sauf téléversement de photo (`multipart/form-data`).
 
 ## 1. Conventions générales
@@ -129,7 +129,7 @@ Actions initiales : `AJOUTER`, `SUPPRIMER`, `MODIFIER`, `VOIR`, `IMPRIMER`, `TEL
 {
   "current_page": 1,
   "data": [],
-  "first_page_url": "https://api-ebac.severinzran.ci/api/v1/administration/roles?page=1",
+  "first_page_url": "https://api-ebac.soumafe.com/api/v1/administration/roles?page=1",
   "from": 1,
   "last_page": 1,
   "last_page_url": "...page=1",
@@ -316,7 +316,7 @@ Réponse `201` :
 ```json
 {
   "message": "Compte créé avec succès. Les identifiants temporaires ont été envoyés par e-mail.",
-  "compte": {"id": 12, "matricule": "EBAC-0001-2026", "code": "USR-000012", "user_id": 1, "user_code": "USR-ADMIN", "nom": "Zran", "prenoms": "Severin", "email": "severin@ebac.ci", "photo_url": "https://api-ebac.severinzran.ci/api/v1/utilisateurs/12/photo"}
+  "compte": {"id": 12, "matricule": "EBAC-0001-2026", "code": "USR-000012", "user_id": 1, "user_code": "USR-ADMIN", "nom": "Zran", "prenoms": "Severin", "email": "severin@ebac.ci", "photo_url": "https://api-ebac.soumafe.com/api/v1/utilisateurs/12/photo"}
 }
 ```
 
@@ -668,9 +668,9 @@ Secrets GitHub requis :
 
 | Secret | Exemple |
 |---|---|
-| `FTP_HOST` | `ftp.severinzran.ci` |
+| `FTP_HOST` | Hôte FTP fourni par l'hébergeur |
 | `FTP_USERNAME` | utilisateur FTP cPanel |
 | `FTP_PASSWORD` | mot de passe FTP cPanel |
-| `FTP_REMOTE_PATH` | `/api-ebac.severinzran.ci/` |
+| `FTP_REMOTE_PATH` | `/public_html/api-ebac/` |
 
 Le fichier `.env`, les tests, le dossier `storage` et les fichiers temporaires ne sont pas transférés. Après une migration ajoutée au projet, exécuter `php artisan migrate --force` depuis le terminal cPanel si l’hébergement ne fournit pas de mécanisme automatique pour cette commande.
