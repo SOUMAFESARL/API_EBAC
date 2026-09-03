@@ -79,7 +79,7 @@ jobs:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          FTP_REMOTE_PATH: /public_html/api-ebac/
+          FTP_REMOTE_PATH: /public_html/api-ebac/api/
         run: |
           test -n "$FTP_HOST" || { echo "La configuration FTP_HOST est absente."; exit 1; }
           test -n "$FTP_USERNAME" || { echo "Le secret FTP_USERNAME est absent."; exit 1; }
@@ -94,7 +94,7 @@ jobs:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          FTP_REMOTE_PATH: /public_html/api-ebac/
+          FTP_REMOTE_PATH: /public_html/api-ebac/api/
         run: |
           lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_HOST" <<LFTP_COMMANDS
           set ftp:ssl-allow no
