@@ -866,7 +866,7 @@
                 ]
             }
         },
-        "/administration/preinscriptions/{preinscription}/creer-compte": {
+        "/administration/preinscriptions/{id}/creer-compte": {
             "post": {
                 "tags": [
                     "Administration des préinscriptions"
@@ -876,7 +876,7 @@
                 "operationId": "creerCompteDepuisPreinscription",
                 "parameters": [
                     {
-                        "name": "preinscription",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {

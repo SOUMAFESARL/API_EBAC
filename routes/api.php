@@ -71,7 +71,8 @@ Route::prefix('v1/administration/preinscriptions')
         Route::get('/', [GestionPreInscriptionController::class, 'index'])->name('index');
         Route::get('/{preinscription}', [GestionPreInscriptionController::class, 'show'])->name('show');
         Route::patch('/{preinscription}/email', [GestionPreInscriptionController::class, 'modifierEmail'])->name('email.update');
-        Route::post('/{preinscription}/creer-compte', [GestionPreInscriptionController::class, 'valider'])
+        Route::post('/{id}/creer-compte', [GestionPreInscriptionController::class, 'valider'])
+            ->whereNumber('id')
             ->name('creer-compte');
     });
 

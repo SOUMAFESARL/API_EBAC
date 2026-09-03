@@ -100,12 +100,12 @@ class EgliseSwaggerTest extends TestCase
         $this->assertArrayHasKey('get', $documentation['paths']['/administration/preinscriptions']);
         $this->assertArrayHasKey('get', $documentation['paths']['/administration/preinscriptions/{preinscription}']);
         $this->assertArrayHasKey('patch', $documentation['paths']['/administration/preinscriptions/{preinscription}/email']);
-        $this->assertArrayHasKey('post', $documentation['paths']['/administration/preinscriptions/{preinscription}/creer-compte']);
+        $this->assertArrayHasKey('post', $documentation['paths']['/administration/preinscriptions/{id}/creer-compte']);
         $this->assertArrayHasKey('get', $documentation['paths']['/administration/etudiants']);
         $this->assertArrayHasKey('get', $documentation['paths']['/administration/dossiers-etudiants']);
         $this->assertSame(
             [['sanctum' => []]],
-            $documentation['paths']['/administration/preinscriptions/{preinscription}/creer-compte']['post']['security'],
+            $documentation['paths']['/administration/preinscriptions/{id}/creer-compte']['post']['security'],
         );
 
         $preInscription = $documentation['components']['schemas']['PreInscriptionPayload'];
