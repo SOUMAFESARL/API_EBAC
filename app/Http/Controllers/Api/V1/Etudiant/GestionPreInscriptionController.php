@@ -19,14 +19,14 @@ use OpenApi\Attributes as OA;
 
 class GestionPreInscriptionController extends Controller
 {
-    #[OA\Get(path: '/administration/preinscriptions', operationId: 'listerPreinscriptionsAdministration', summary: 'Lister les préinscriptions à vérifier', tags: ['Administration des préinscriptions'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'statut', in: 'query', schema: new OA\Schema(type: 'string', default: 'Préinscrit')), new OA\Parameter(name: 'recherche', in: 'query', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'par_page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 15))], responses: [new OA\Response(response: 200, description: 'Liste paginée', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/PreInscriptionAdministration'))])), new OA\Response(response: 401, description: 'Non authentifié'), new OA\Response(response: 403, description: 'Accès interdit aux rôles ENSEIGNANT et ETUDIANT')])]
+    #[OA\Get(path: '/administration/preinscriptions', operationId: 'listerPreinscriptionsAdministration', summary: 'Lister toutes les préinscriptions', tags: ['Administration des préinscriptions'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'statut', in: 'query', description: 'Filtre facultatif : Préinscrit, Inscrit ou Rejeté', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'recherche', in: 'query', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'par_page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 15))], responses: [new OA\Response(response: 200, description: 'Liste paginée', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/PreInscriptionAdministration'))])), new OA\Response(response: 401, description: 'Non authentifié'), new OA\Response(response: 403, description: 'Accès interdit aux rôles ENSEIGNANT et ETUDIANT')])]
     public function index(Request $request): AnonymousResourceCollection
     {
         $parPage = min(max($request->integer('par_page', 15), 1), 100);
 
         $preinscriptions = Etudiant::query()
-            ->with(['eglise', 'dossier.fichiers'])
-            ->where('statut', $request->string('statut', 'Préinscrit')->toString())
+            ->with(['civilite', 'eglise', 'dossier.fichiers'])
+            ->when($request->string('statut')->toString(), fn ($query, string $statut) => $query->where('statut', $statut))
             ->when($request->string('recherche')->toString(), function ($query, string $recherche) {
                 $query->where(function ($query) use ($recherche) {
                     $query->where('nom', 'like', "%{$recherche}%")
@@ -50,7 +50,34 @@ class GestionPreInscriptionController extends Controller
         $preinscription = Etudiant::query()->findOrFail($id);
 
         return response()->json([
-            'preinscription' => $this->formatter($preinscription->load(['eglise', 'dossier.fichiers'])),
+            'preinscription' => $this->formatter($preinscription->load(['civilite', 'eglise', 'dossier.fichiers'])),
+        ]);
+    }
+
+    #[OA\Get(path: '/administration/preinscriptions/{id}/creer-compte', operationId: 'preparerCompteDepuisPreinscription', summary: 'Préparer la création du compte étudiant', tags: ['Administration des préinscriptions'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Données du formulaire de création'), new OA\Response(response: 403, description: 'Accès interdit aux rôles ENSEIGNANT et ETUDIANT'), new OA\Response(response: 404, description: 'Préinscription introuvable'), new OA\Response(response: 422, description: 'Préinscription déjà traitée')])]
+    public function preparerCompte(int $id): JsonResponse
+    {
+        $preinscription = Etudiant::query()
+            ->with(['civilite', 'eglise', 'dossier.fichiers'])
+            ->findOrFail($id);
+
+        if ($preinscription->statut !== 'Préinscrit' || $preinscription->user_id !== null) {
+            return response()->json(['message' => 'Cette préinscription a déjà été traitée.'], 422);
+        }
+
+        $roleEtudiant = Role::query()->where('code', 'ETUDIANT')->first();
+
+        return response()->json([
+            'preinscription' => $this->formatter($preinscription),
+            'role' => $roleEtudiant ? [
+                'id' => $roleEtudiant->id,
+                'code' => $roleEtudiant->code,
+                'libelle' => $roleEtudiant->libelle,
+            ] : null,
+            'valeurs_par_defaut' => [
+                'statut' => 'Actif',
+                'deux_fa_active' => false,
+            ],
         ]);
     }
 
@@ -134,18 +161,55 @@ class GestionPreInscriptionController extends Controller
         ]);
     }
 
+    #[OA\Post(path: '/administration/preinscriptions/{id}/rejeter', operationId: 'rejeterPreinscription', summary: 'Rejeter une préinscription avec un motif', tags: ['Administration des préinscriptions'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['motif'], properties: [new OA\Property(property: 'motif', type: 'string', maxLength: 1000, example: 'Pièce d’identité illisible.')])), responses: [new OA\Response(response: 200, description: 'Préinscription rejetée'), new OA\Response(response: 403, description: 'Accès interdit aux rôles ENSEIGNANT et ETUDIANT'), new OA\Response(response: 404, description: 'Préinscription introuvable'), new OA\Response(response: 422, description: 'Motif invalide ou préinscription déjà traitée')])]
+    public function rejeter(Request $request, int $id): JsonResponse
+    {
+        $donnees = $request->validate([
+            'motif' => ['required', 'string', 'max:1000'],
+        ], [
+            'motif.required' => 'Le motif du rejet est obligatoire.',
+        ]);
+
+        $preinscription = DB::transaction(function () use ($id, $donnees, $request): Etudiant {
+            $etudiant = Etudiant::query()->with('dossier')->lockForUpdate()->findOrFail($id);
+
+            if ($etudiant->statut !== 'Préinscrit' || $etudiant->user_id !== null) {
+                abort(422, 'Cette préinscription a déjà été traitée.');
+            }
+
+            $etudiant->update([
+                'statut' => 'Rejeté',
+                'updated_by' => $request->user()->id,
+            ]);
+            $etudiant->dossier?->update([
+                'statut' => 'Rejeté',
+                'observations' => $donnees['motif'],
+                'updated_by' => $request->user()->id,
+            ]);
+
+            return $etudiant;
+        });
+
+        return response()->json([
+            'message' => 'Préinscription rejetée avec succès.',
+            'preinscription' => $this->formatter($preinscription->load(['civilite', 'eglise', 'dossier.fichiers'])),
+        ]);
+    }
+
     /** @return array<string, mixed> */
     private function formatter(Etudiant $etudiant): array
     {
         return [
             'id' => $etudiant->id,
             'user_id' => $etudiant->user_id,
+            'compte_cree' => $etudiant->user_id !== null,
             'matricule' => $etudiant->matricule,
             'nom' => $etudiant->nom,
             'prenoms' => $etudiant->prenoms,
             'email' => $etudiant->email,
             'telephone' => $etudiant->telephone,
             'civilite_id' => $etudiant->civilite_id,
+            'civilite' => $etudiant->relationLoaded('civilite') ? $etudiant->civilite : null,
             'date_naissance' => $etudiant->date_naissance?->format('Y-m-d'),
             'lieu_naissance' => $etudiant->lieu_naissance,
             'nationalite' => $etudiant->nationalite,

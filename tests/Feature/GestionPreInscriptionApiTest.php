@@ -66,6 +66,12 @@ class GestionPreInscriptionApiTest extends TestCase
             ->assertJsonPath('data.0.id', $etudiant->id)
             ->assertJsonPath('data.0.dossier.numero_dossier', $dossier->numero_dossier);
 
+        $this->getJson("/api/v1/administration/preinscriptions/{$etudiant->id}/creer-compte")
+            ->assertOk()
+            ->assertJsonPath('preinscription.id', $etudiant->id)
+            ->assertJsonPath('role.code', 'ETUDIANT')
+            ->assertJsonPath('valeurs_par_defaut.statut', 'Actif');
+
         $compteId = $this->postJson("/api/v1/administration/preinscriptions/{$etudiant->id}/creer-compte", [
             'id_role' => $roleSecretaire->id,
         ])
@@ -137,7 +143,53 @@ class GestionPreInscriptionApiTest extends TestCase
 
             $this->getJson('/api/v1/administration/preinscriptions')->assertForbidden();
             $this->getJson('/api/v1/administration/preinscriptions/1')->assertForbidden();
+            $this->getJson('/api/v1/administration/preinscriptions/1/creer-compte')->assertForbidden();
             $this->postJson('/api/v1/administration/preinscriptions/1/creer-compte')->assertForbidden();
+            $this->postJson('/api/v1/administration/preinscriptions/1/rejeter', ['motif' => 'Test'])->assertForbidden();
         }
+    }
+
+    public function test_un_gestionnaire_peut_rejeter_une_preinscription_avec_un_motif(): void
+    {
+        $role = Role::query()->create(['code' => 'GESTIONNAIRE', 'libelle' => 'Gestionnaire']);
+        $gestionnaire = User::factory()->create(['id_role' => $role->id]);
+        Sanctum::actingAs($gestionnaire);
+        $etudiant = Etudiant::query()->create([
+            'matricule' => 'EBAC-0100-'.now()->year,
+            'nom' => 'YAO',
+            'prenoms' => 'Marc',
+            'email' => 'marc.yao@example.net',
+            'telephone' => '0102030405',
+            'date_inscription' => now()->toDateString(),
+            'statut' => 'Préinscrit',
+        ]);
+        $dossier = DossierEtudiant::query()->create([
+            'id_etudiant' => $etudiant->id,
+            'numero_dossier' => 'YAM100'.now()->year,
+            'statut' => 'Incomplet',
+            'date_ouverture' => now()->toDateString(),
+        ]);
+
+        $this->postJson("/api/v1/administration/preinscriptions/{$etudiant->id}/rejeter", [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('motif');
+
+        $this->postJson("/api/v1/administration/preinscriptions/{$etudiant->id}/rejeter", [
+            'motif' => 'Pièce d’identité illisible.',
+        ])->assertOk()
+            ->assertJsonPath('preinscription.statut', 'Rejeté')
+            ->assertJsonPath('preinscription.dossier.statut', 'Rejeté')
+            ->assertJsonPath('preinscription.dossier.observations', 'Pièce d’identité illisible.');
+
+        $this->assertDatabaseHas('etudiants', ['id' => $etudiant->id, 'statut' => 'Rejeté']);
+        $this->assertDatabaseHas('dossiers_etudiants', [
+            'id' => $dossier->id,
+            'statut' => 'Rejeté',
+            'observations' => 'Pièce d’identité illisible.',
+        ]);
+
+        $this->getJson('/api/v1/administration/preinscriptions')
+            ->assertOk()
+            ->assertJsonPath('data.0.statut', 'Rejeté');
     }
 }

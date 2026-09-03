@@ -694,15 +694,15 @@
                 "tags": [
                     "Administration des préinscriptions"
                 ],
-                "summary": "Lister les préinscriptions à vérifier",
+                "summary": "Lister toutes les préinscriptions",
                 "operationId": "listerPreinscriptionsAdministration",
                 "parameters": [
                     {
                         "name": "statut",
                         "in": "query",
+                        "description": "Filtre facultatif : Préinscrit, Inscrit ou Rejeté",
                         "schema": {
-                            "type": "string",
-                            "default": "Préinscrit"
+                            "type": "string"
                         }
                     },
                     {
@@ -807,6 +807,42 @@
             }
         },
         "/administration/preinscriptions/{id}/creer-compte": {
+            "get": {
+                "tags": [
+                    "Administration des préinscriptions"
+                ],
+                "summary": "Préparer la création du compte étudiant",
+                "operationId": "preparerCompteDepuisPreinscription",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Données du formulaire de création"
+                    },
+                    "403": {
+                        "description": "Accès interdit aux rôles ENSEIGNANT et ETUDIANT"
+                    },
+                    "404": {
+                        "description": "Préinscription introuvable"
+                    },
+                    "422": {
+                        "description": "Préinscription déjà traitée"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
             "post": {
                 "tags": [
                     "Administration des préinscriptions"
@@ -854,6 +890,64 @@
                     },
                     "422": {
                         "description": "Préinscription déjà traitée, e-mail déjà utilisé, rôle absent ou aucune année académique active"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/preinscriptions/{id}/rejeter": {
+            "post": {
+                "tags": [
+                    "Administration des préinscriptions"
+                ],
+                "summary": "Rejeter une préinscription avec un motif",
+                "operationId": "rejeterPreinscription",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "motif"
+                                ],
+                                "properties": {
+                                    "motif": {
+                                        "type": "string",
+                                        "example": "Pièce d’identité illisible.",
+                                        "maxLength": 1000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Préinscription rejetée"
+                    },
+                    "403": {
+                        "description": "Accès interdit aux rôles ENSEIGNANT et ETUDIANT"
+                    },
+                    "404": {
+                        "description": "Préinscription introuvable"
+                    },
+                    "422": {
+                        "description": "Motif invalide ou préinscription déjà traitée"
                     }
                 },
                 "security": [

@@ -70,10 +70,16 @@ Route::prefix('v1/administration/preinscriptions')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.interdits:ENSEIGNANT,ETUDIANT'])
     ->group(function () {
         Route::get('/', [GestionPreInscriptionController::class, 'index'])->name('index');
+        Route::get('/{id}/creer-compte', [GestionPreInscriptionController::class, 'preparerCompte'])
+            ->whereNumber('id')
+            ->name('creer-compte.formulaire');
         Route::get('/{id}', [GestionPreInscriptionController::class, 'show'])->whereNumber('id')->name('show');
         Route::post('/{id}/creer-compte', [GestionPreInscriptionController::class, 'valider'])
             ->whereNumber('id')
             ->name('creer-compte');
+        Route::post('/{id}/rejeter', [GestionPreInscriptionController::class, 'rejeter'])
+            ->whereNumber('id')
+            ->name('rejeter');
     });
 
 Route::get('v1/administration/etudiants', [EtudiantController::class, 'index'])
