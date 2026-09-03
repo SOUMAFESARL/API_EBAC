@@ -119,6 +119,7 @@ class EgliseSwaggerTest extends TestCase
         $this->assertContains('eglise_id', $preInscription['required']);
         $this->assertContains('civilite_id', $preInscription['required']);
         $this->assertContains('photo_identite', $preInscription['required']);
+        $this->assertContains('situation_matrimonial', $preInscription['required']);
         $this->assertArrayNotHasKey('sexe', $preInscription['properties']);
         $this->assertSame('binary', $preInscription['properties']['photo_identite']['format']);
         $this->assertArrayNotHasKey('nullable', $preInscription['properties']['eglise_id']);

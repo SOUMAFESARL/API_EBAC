@@ -79,7 +79,7 @@ class PreInscriptionApiTest extends TestCase
     {
         $this->postJson('/api/v1/etudiant/pre-inscription', ['email' => 'invalide'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['nom', 'prenoms', 'civilite_id', 'telephone', 'email', 'eglise_id', 'photo_identite']);
+            ->assertJsonValidationErrors(['nom', 'prenoms', 'civilite_id', 'telephone', 'email', 'eglise_id', 'photo_identite', 'situation_matrimonial']);
 
         $this->assertDatabaseCount('etudiants', 0);
         $this->assertDatabaseCount('dossiers_etudiants', 0);
@@ -103,6 +103,7 @@ class PreInscriptionApiTest extends TestCase
         $this->postJson('/api/v1/etudiant/pre-inscription', [
             'nom' => 'Kouadio', 'prenoms' => 'Paul', 'email' => 'paul@example.com', 'telephone' => '+2250700000000',
             'eglise_id' => $eglise->id, 'civilite_id' => $civilite->id,
+            'situation_matrimonial' => 'Célibataire',
             'photo_identite' => UploadedFile::fake()->image('identite.jpg'),
         ])->assertCreated()
             ->assertJsonPath('pre_inscription.matricule', 'EBAC-0008-'.now()->year);
@@ -116,7 +117,7 @@ class PreInscriptionApiTest extends TestCase
         $eglise = Eglise::query()->create([
             'code' => 'EGL-001', 'nom' => 'Église test', 'ville_commune' => 'Cocody',
         ]);
-        $payload = ['nom' => 'Zran', 'prenoms' => 'Marc', 'telephone' => '+2250700000001', 'eglise_id' => $eglise->id, 'civilite_id' => $civilite->id];
+        $payload = ['nom' => 'Zran', 'prenoms' => 'Marc', 'telephone' => '+2250700000001', 'eglise_id' => $eglise->id, 'civilite_id' => $civilite->id, 'situation_matrimonial' => 'Marié'];
 
         $this->postJson('/api/v1/etudiant/pre-inscription', [...$payload, 'email' => 'marc1@example.com', 'photo_identite' => UploadedFile::fake()->image('identite1.jpg')])
             ->assertCreated()

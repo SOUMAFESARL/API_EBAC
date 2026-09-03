@@ -26,7 +26,7 @@ class PreInscriptionRequest extends FormRequest
             'adresse' => ['nullable', 'string', 'max:255'],
             'eglise_id' => ['required', 'integer', Rule::exists('eglises', 'id')->whereNull('deleted_at')],
             'statut_professionnel' => ['nullable', 'string', 'max:100'],
-            'situation_matrimonial' => ['nullable', 'string', 'max:50'],
+            'situation_matrimonial' => ['required', 'string', 'max:50'],
             'nombre_enfant' => ['nullable', 'integer', 'min:0', 'max:65535'],
             'photo_identite' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'documents' => ['sometimes', 'array', 'max:10'],
@@ -50,6 +50,7 @@ class PreInscriptionRequest extends FormRequest
             'civilite_id.exists' => 'La civilité sélectionnée est invalide.',
             'photo_identite.required' => 'La photo d’identité est obligatoire.',
             'photo_identite.image' => 'La photo d’identité doit être une image valide.',
+            'situation_matrimonial.required' => 'La situation matrimoniale est obligatoire.',
         ];
     }
 }

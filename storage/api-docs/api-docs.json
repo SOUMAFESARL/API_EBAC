@@ -3675,7 +3675,8 @@
                     "email",
                     "telephone",
                     "eglise_id",
-                    "photo_identite"
+                    "photo_identite",
+                    "situation_matrimonial"
                 ],
                 "properties": {
                     "nom": {
@@ -3712,7 +3713,6 @@
                     "situation_matrimonial": {
                         "type": "string",
                         "example": "Marié",
-                        "nullable": true,
                         "maxLength": 50
                     },
                     "nombre_enfant": {
