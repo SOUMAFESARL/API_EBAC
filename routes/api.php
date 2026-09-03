@@ -69,8 +69,8 @@ Route::prefix('v1/administration/preinscriptions')
     ->middleware(['auth:sanctum', 'compte.actif', 'permission:COMPTE_GERER'])
     ->group(function () {
         Route::get('/', [GestionPreInscriptionController::class, 'index'])->name('index');
-        Route::get('/{preinscription}', [GestionPreInscriptionController::class, 'show'])->name('show');
-        Route::patch('/{preinscription}/email', [GestionPreInscriptionController::class, 'modifierEmail'])->name('email.update');
+        Route::get('/{id}', [GestionPreInscriptionController::class, 'show'])->whereNumber('id')->name('show');
+        Route::patch('/{id}/email', [GestionPreInscriptionController::class, 'modifierEmail'])->whereNumber('id')->name('email.update');
         Route::post('/{id}/creer-compte', [GestionPreInscriptionController::class, 'valider'])
             ->whereNumber('id')
             ->name('creer-compte');

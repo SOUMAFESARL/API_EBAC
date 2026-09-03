@@ -15,8 +15,7 @@ class ModifierEmailPreInscriptionRequest extends FormRequest
 
     public function rules(): array
     {
-        /** @var Etudiant $preinscription */
-        $preinscription = $this->route('preinscription');
+        $preinscription = Etudiant::query()->findOrFail((int) $this->route('id'));
 
         return [
             'email' => [

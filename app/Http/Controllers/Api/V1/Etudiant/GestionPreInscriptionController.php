@@ -47,17 +47,21 @@ class GestionPreInscriptionController extends Controller
         return JsonResource::collection($preinscriptions);
     }
 
-    #[OA\Get(path: '/administration/preinscriptions/{preinscription}', operationId: 'afficherPreinscriptionAdministration', summary: 'Consulter une préinscription', tags: ['Administration des préinscriptions'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'preinscription', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Détail de la préinscription', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'preinscription', ref: '#/components/schemas/PreInscriptionAdministration')])), new OA\Response(response: 401, description: 'Non authentifié'), new OA\Response(response: 403, description: 'Permission COMPTE_GERER requise'), new OA\Response(response: 404, description: 'Préinscription introuvable')])]
-    public function show(Etudiant $preinscription): JsonResponse
+    #[OA\Get(path: '/administration/preinscriptions/{id}', operationId: 'afficherPreinscriptionAdministration', summary: 'Consulter une préinscription', tags: ['Administration des préinscriptions'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Détail de la préinscription', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'preinscription', ref: '#/components/schemas/PreInscriptionAdministration')])), new OA\Response(response: 401, description: 'Non authentifié'), new OA\Response(response: 403, description: 'Permission COMPTE_GERER requise'), new OA\Response(response: 404, description: 'Préinscription introuvable')])]
+    public function show(int $id): JsonResponse
     {
+        $preinscription = Etudiant::query()->findOrFail($id);
+
         return response()->json([
             'preinscription' => $this->formatter($preinscription->load(['eglise', 'dossier.fichiers'])),
         ]);
     }
 
-    #[OA\Patch(path: '/administration/preinscriptions/{preinscription}/email', operationId: 'modifierEmailPreinscription', summary: 'Corriger l’adresse e-mail d’une préinscription', tags: ['Administration des préinscriptions'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'preinscription', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['email'], properties: [new OA\Property(property: 'email', type: 'string', format: 'email')])), responses: [new OA\Response(response: 200, description: 'E-mail modifié et confirmation renvoyée'), new OA\Response(response: 401, description: 'Non authentifié'), new OA\Response(response: 403, description: 'Permission COMPTE_GERER requise'), new OA\Response(response: 404, description: 'Préinscription introuvable'), new OA\Response(response: 422, description: 'E-mail invalide ou déjà utilisé')])]
-    public function modifierEmail(ModifierEmailPreInscriptionRequest $request, Etudiant $preinscription): JsonResponse
+    #[OA\Patch(path: '/administration/preinscriptions/{id}/email', operationId: 'modifierEmailPreinscription', summary: 'Corriger l’adresse e-mail d’une préinscription', tags: ['Administration des préinscriptions'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['email'], properties: [new OA\Property(property: 'email', type: 'string', format: 'email')])), responses: [new OA\Response(response: 200, description: 'E-mail modifié et confirmation renvoyée'), new OA\Response(response: 401, description: 'Non authentifié'), new OA\Response(response: 403, description: 'Permission COMPTE_GERER requise'), new OA\Response(response: 404, description: 'Préinscription introuvable'), new OA\Response(response: 422, description: 'E-mail invalide ou déjà utilisé')])]
+    public function modifierEmail(ModifierEmailPreInscriptionRequest $request, int $id): JsonResponse
     {
+        $preinscription = Etudiant::query()->findOrFail($id);
+
         if ($preinscription->user_id !== null) {
             return response()->json([
                 'message' => 'Le compte existe déjà. Modifiez plutôt l’adresse du compte utilisateur.',

@@ -756,7 +756,7 @@
                 ]
             }
         },
-        "/administration/preinscriptions/{preinscription}": {
+        "/administration/preinscriptions/{id}": {
             "get": {
                 "tags": [
                     "Administration des préinscriptions"
@@ -765,7 +765,7 @@
                 "operationId": "afficherPreinscriptionAdministration",
                 "parameters": [
                     {
-                        "name": "preinscription",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -806,7 +806,7 @@
                 ]
             }
         },
-        "/administration/preinscriptions/{preinscription}/email": {
+        "/administration/preinscriptions/{id}/email": {
             "patch": {
                 "tags": [
                     "Administration des préinscriptions"
@@ -815,7 +815,7 @@
                 "operationId": "modifierEmailPreinscription",
                 "parameters": [
                     {
-                        "name": "preinscription",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
