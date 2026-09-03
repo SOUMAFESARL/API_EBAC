@@ -118,4 +118,26 @@ class GestionPreInscriptionApiTest extends TestCase
         $this->postJson($url)->assertUnprocessable();
         $this->assertSame(1, User::query()->where('email', $etudiant->email)->count());
     }
+
+    public function test_un_autre_role_sans_permission_peut_acceder_aux_preinscriptions(): void
+    {
+        $role = Role::query()->create(['code' => 'GESTIONNAIRE', 'libelle' => 'Gestionnaire']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+
+        $this->getJson('/api/v1/administration/preinscriptions')->assertOk();
+        $this->getJson('/api/v1/administration/preinscriptions/999999')->assertNotFound();
+        $this->postJson('/api/v1/administration/preinscriptions/999999/creer-compte')->assertNotFound();
+    }
+
+    public function test_les_roles_enseignant_et_etudiant_ne_peuvent_pas_acceder_aux_preinscriptions(): void
+    {
+        foreach (['ENSEIGNANT', 'ETUDIANT'] as $codeRole) {
+            $role = Role::query()->create(['code' => $codeRole, 'libelle' => $codeRole]);
+            Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+
+            $this->getJson('/api/v1/administration/preinscriptions')->assertForbidden();
+            $this->getJson('/api/v1/administration/preinscriptions/1')->assertForbidden();
+            $this->postJson('/api/v1/administration/preinscriptions/1/creer-compte')->assertForbidden();
+        }
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Civilite;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -71,9 +72,16 @@ class CiviliteApiTest extends TestCase
             ->assertJsonValidationErrors('code');
     }
 
-    public function test_les_routes_des_civilites_exigent_une_authentification(): void
+    public function test_la_consultation_des_civilites_est_publique_et_les_ecritures_sont_protegees(): void
     {
-        $this->getJson('/api/v1/parametres/civilites')->assertUnauthorized();
+        $civilite = Civilite::query()->create(['code' => 'M', 'name' => 'Monsieur']);
+
+        $this->getJson('/api/v1/parametres/civilites')
+            ->assertOk()
+            ->assertJsonPath('civilites.0.id', $civilite->id);
+        $this->getJson("/api/v1/parametres/civilites/{$civilite->id}")
+            ->assertOk()
+            ->assertJsonPath('civilite.id', $civilite->id);
         $this->postJson('/api/v1/parametres/civilites', [])->assertUnauthorized();
     }
 }

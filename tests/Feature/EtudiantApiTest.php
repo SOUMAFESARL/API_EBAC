@@ -9,7 +9,6 @@ use App\Models\Eglise;
 use App\Models\Etudiant;
 use App\Models\Inscription;
 use App\Models\Niveau;
-use App\Models\Permission;
 use App\Models\Promotion;
 use App\Models\Role;
 use App\Models\User;
@@ -24,8 +23,6 @@ class EtudiantApiTest extends TestCase
     public function test_le_secretariat_liste_et_filtre_tous_les_etudiants(): void
     {
         $role = Role::query()->create(['code' => 'SECRETAIRE_ACADEMIQUE', 'libelle' => 'Secrétaire académique']);
-        $permission = Permission::query()->create(['code' => 'COMPTE_GERER', 'libelle' => 'Gérer les comptes']);
-        $role->permissions()->attach($permission->id, ['actif' => true]);
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
 
         $monsieur = Civilite::query()->create(['code' => 'M', 'name' => 'Monsieur']);
@@ -115,11 +112,14 @@ class EtudiantApiTest extends TestCase
             ->assertJsonValidationErrors('date_fin');
     }
 
-    public function test_un_utilisateur_sans_permission_ne_peut_pas_lister_les_etudiants(): void
+    public function test_les_roles_enseignant_et_etudiant_ne_peuvent_pas_lister_les_etudiants_et_les_dossiers(): void
     {
-        $role = Role::query()->create(['code' => 'ENSEIGNANT', 'libelle' => 'Enseignant']);
-        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        foreach (['ENSEIGNANT', 'ETUDIANT'] as $codeRole) {
+            $role = Role::query()->create(['code' => $codeRole, 'libelle' => $codeRole]);
+            Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
 
-        $this->getJson('/api/v1/administration/etudiants')->assertForbidden();
+            $this->getJson('/api/v1/administration/etudiants')->assertForbidden();
+            $this->getJson('/api/v1/administration/dossiers-etudiants')->assertForbidden();
+        }
     }
 }

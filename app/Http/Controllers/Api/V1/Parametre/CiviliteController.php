@@ -12,7 +12,7 @@ use OpenApi\Attributes as OA;
 
 class CiviliteController extends Controller
 {
-    #[OA\Get(path: '/parametres/civilites', operationId: 'listerCivilites', summary: 'Lister les civilités', tags: ['Civilités'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'actif', in: 'query', schema: new OA\Schema(type: 'boolean')), new OA\Parameter(name: 'recherche', in: 'query', schema: new OA\Schema(type: 'string'))], responses: [new OA\Response(response: 200, description: 'Liste des civilités', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'civilites', type: 'array', items: new OA\Items(ref: '#/components/schemas/Civilite'))])), new OA\Response(response: 401, description: 'Non authentifié')])]
+    #[OA\Get(path: '/parametres/civilites', operationId: 'listerCivilites', summary: 'Lister publiquement les civilités', tags: ['Civilités'], parameters: [new OA\Parameter(name: 'actif', in: 'query', schema: new OA\Schema(type: 'boolean')), new OA\Parameter(name: 'recherche', in: 'query', schema: new OA\Schema(type: 'string'))], responses: [new OA\Response(response: 200, description: 'Liste des civilités', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'civilites', type: 'array', items: new OA\Items(ref: '#/components/schemas/Civilite'))]))])]
     public function index(Request $request): JsonResponse
     {
         $civilites = Civilite::query()
@@ -45,7 +45,7 @@ class CiviliteController extends Controller
         return response()->json(['message' => 'Civilité créée avec succès.', 'civilite' => $civilite], 201);
     }
 
-    #[OA\Get(path: '/parametres/civilites/{id}', operationId: 'afficherCivilite', summary: 'Afficher une civilité', tags: ['Civilités'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Civilité trouvée'), new OA\Response(response: 401, description: 'Non authentifié'), new OA\Response(response: 404, description: 'Civilité introuvable')])]
+    #[OA\Get(path: '/parametres/civilites/{id}', operationId: 'afficherCivilite', summary: 'Afficher publiquement une civilité', tags: ['Civilités'], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Civilité trouvée'), new OA\Response(response: 404, description: 'Civilité introuvable')])]
     public function show(int $id): JsonResponse
     {
         return response()->json(['civilite' => Civilite::query()->findOrFail($id)]);

@@ -67,7 +67,7 @@ Route::get('v1/utilisateurs/{compte}/photo', [CompteController::class, 'photo'])
 
 Route::prefix('v1/administration/preinscriptions')
     ->name('api.v1.administration.preinscriptions.')
-    ->middleware(['auth:sanctum', 'compte.actif', 'permission:COMPTE_GERER'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.interdits:ENSEIGNANT,ETUDIANT'])
     ->group(function () {
         Route::get('/', [GestionPreInscriptionController::class, 'index'])->name('index');
         Route::get('/{id}', [GestionPreInscriptionController::class, 'show'])->whereNumber('id')->name('show');
@@ -77,12 +77,18 @@ Route::prefix('v1/administration/preinscriptions')
     });
 
 Route::get('v1/administration/etudiants', [EtudiantController::class, 'index'])
-    ->middleware(['auth:sanctum', 'compte.actif', 'permission:COMPTE_GERER'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.interdits:ENSEIGNANT,ETUDIANT'])
     ->name('api.v1.administration.etudiants.index');
 
 Route::get('v1/administration/dossiers-etudiants', [DossierEtudiantController::class, 'index'])
-    ->middleware(['auth:sanctum', 'compte.actif', 'permission:COMPTE_GERER'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.interdits:ENSEIGNANT,ETUDIANT'])
     ->name('api.v1.administration.dossiers-etudiants.index');
+
+Route::get('v1/parametres/civilites', [CiviliteController::class, 'index'])
+    ->name('api.v1.parametres.civilites.index');
+Route::get('v1/parametres/civilites/{id}', [CiviliteController::class, 'show'])
+    ->whereNumber('id')
+    ->name('api.v1.parametres.civilites.show');
 
 Route::prefix('v1/parametres')
     ->name('api.v1.parametres.')
@@ -90,7 +96,9 @@ Route::prefix('v1/parametres')
     ->group(function () {
         Route::get('civilites/create', [CiviliteController::class, 'create'])->name('civilites.create');
         Route::get('civilites/{id}/edit', [CiviliteController::class, 'edit'])->whereNumber('id')->name('civilites.edit');
-        Route::apiResource('civilites', CiviliteController::class)->parameters(['civilites' => 'id']);
+        Route::apiResource('civilites', CiviliteController::class)
+            ->except(['index', 'show'])
+            ->parameters(['civilites' => 'id']);
         Route::apiResource('niveaux', NiveauController::class)
             ->parameters(['niveaux' => 'id']);
         Route::apiResource('annees-academiques', AnneeAcademiqueController::class)

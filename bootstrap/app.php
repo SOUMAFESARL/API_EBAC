@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\InterdireRoles;
 use App\Http\Middleware\VerifierAdministrateur;
 use App\Http\Middleware\VerifierCompteActif;
 use App\Http\Middleware\VerifierPermission;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'administrateur' => VerifierAdministrateur::class,
             'compte.actif' => VerifierCompteActif::class,
             'permission' => VerifierPermission::class,
+            'roles.interdits' => InterdireRoles::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
