@@ -806,66 +806,6 @@
                 ]
             }
         },
-        "/administration/preinscriptions/{id}/email": {
-            "patch": {
-                "tags": [
-                    "Administration des préinscriptions"
-                ],
-                "summary": "Corriger l’adresse e-mail d’une préinscription",
-                "operationId": "modifierEmailPreinscription",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "email"
-                                ],
-                                "properties": {
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "E-mail modifié et confirmation renvoyée"
-                    },
-                    "401": {
-                        "description": "Non authentifié"
-                    },
-                    "403": {
-                        "description": "Permission COMPTE_GERER requise"
-                    },
-                    "404": {
-                        "description": "Préinscription introuvable"
-                    },
-                    "422": {
-                        "description": "E-mail invalide ou déjà utilisé"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
         "/administration/preinscriptions/{id}/creer-compte": {
             "post": {
                 "tags": [

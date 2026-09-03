@@ -3,20 +3,17 @@
 namespace App\Http\Controllers\Api\V1\Etudiant;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\Etudiant\ModifierEmailPreInscriptionRequest;
 use App\Http\Resources\Api\V1\UtilisateurResource;
 use App\Models\AnneeAcademique;
 use App\Models\Etudiant;
 use App\Models\Role;
 use App\Models\User;
 use App\Notifications\CompteCreeNotification;
-use App\Notifications\PreInscriptionRecueNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
 
@@ -54,37 +51,6 @@ class GestionPreInscriptionController extends Controller
 
         return response()->json([
             'preinscription' => $this->formatter($preinscription->load(['eglise', 'dossier.fichiers'])),
-        ]);
-    }
-
-    #[OA\Patch(path: '/administration/preinscriptions/{id}/email', operationId: 'modifierEmailPreinscription', summary: 'Corriger l’adresse e-mail d’une préinscription', tags: ['Administration des préinscriptions'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['email'], properties: [new OA\Property(property: 'email', type: 'string', format: 'email')])), responses: [new OA\Response(response: 200, description: 'E-mail modifié et confirmation renvoyée'), new OA\Response(response: 401, description: 'Non authentifié'), new OA\Response(response: 403, description: 'Permission COMPTE_GERER requise'), new OA\Response(response: 404, description: 'Préinscription introuvable'), new OA\Response(response: 422, description: 'E-mail invalide ou déjà utilisé')])]
-    public function modifierEmail(ModifierEmailPreInscriptionRequest $request, int $id): JsonResponse
-    {
-        $preinscription = Etudiant::query()->findOrFail($id);
-
-        if ($preinscription->user_id !== null) {
-            return response()->json([
-                'message' => 'Le compte existe déjà. Modifiez plutôt l’adresse du compte utilisateur.',
-            ], 422);
-        }
-
-        $preinscription->update([
-            'email' => $request->validated('email'),
-            'updated_by' => $request->user()->id,
-        ]);
-        $dossier = $preinscription->dossier;
-
-        Notification::route('mail', $preinscription->email)->notify(
-            new PreInscriptionRecueNotification(
-                nomComplet: trim("{$preinscription->prenoms} {$preinscription->nom}"),
-                matricule: $preinscription->matricule,
-                numeroDossier: $dossier?->numero_dossier ?? 'Non renseigné',
-            ),
-        );
-
-        return response()->json([
-            'message' => 'Adresse e-mail modifiée. La confirmation de préinscription a été renvoyée.',
-            'preinscription' => $this->formatter($preinscription->fresh()->load(['eglise', 'dossier.fichiers'])),
         ]);
     }
 
