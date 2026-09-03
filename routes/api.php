@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\Etudiant\GestionPreInscriptionController;
 use App\Http\Controllers\Api\V1\Etudiant\PreInscriptionController;
 use App\Http\Controllers\Api\V1\Navigation\SidebarController;
 use App\Http\Controllers\Api\V1\Parametre\AnneeAcademiqueController;
+use App\Http\Controllers\Api\V1\Parametre\CiviliteController;
 use App\Http\Controllers\Api\V1\Parametre\CoursController;
 use App\Http\Controllers\Api\V1\Parametre\MatiereController;
 use App\Http\Controllers\Api\V1\Parametre\ModuleController;
@@ -87,6 +88,9 @@ Route::prefix('v1/parametres')
     ->name('api.v1.parametres.')
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->group(function () {
+        Route::get('civilites/create', [CiviliteController::class, 'create'])->name('civilites.create');
+        Route::get('civilites/{id}/edit', [CiviliteController::class, 'edit'])->whereNumber('id')->name('civilites.edit');
+        Route::apiResource('civilites', CiviliteController::class)->parameters(['civilites' => 'id']);
         Route::apiResource('niveaux', NiveauController::class)
             ->parameters(['niveaux' => 'id']);
         Route::apiResource('annees-academiques', AnneeAcademiqueController::class)

@@ -94,6 +94,14 @@ class EgliseSwaggerTest extends TestCase
             }
         }
 
+        $this->assertArrayHasKey('get', $documentation['paths']['/parametres/civilites']);
+        $this->assertArrayHasKey('post', $documentation['paths']['/parametres/civilites']);
+        $this->assertArrayHasKey('get', $documentation['paths']['/parametres/civilites/create']);
+        $this->assertArrayHasKey('get', $documentation['paths']['/parametres/civilites/{id}/edit']);
+        foreach (['get', 'put', 'patch', 'delete'] as $methode) {
+            $this->assertArrayHasKey($methode, $documentation['paths']['/parametres/civilites/{id}']);
+        }
+
         $this->assertArrayHasKey('post', $documentation['paths']['/etudiant/pre-inscription']);
         $this->assertArrayNotHasKey('security', $documentation['paths']['/etudiant/pre-inscription']['post']);
         $this->assertArrayHasKey('multipart/form-data', $documentation['paths']['/etudiant/pre-inscription']['post']['requestBody']['content']);
@@ -123,7 +131,7 @@ class EgliseSwaggerTest extends TestCase
         $this->assertArrayNotHasKey('rang', $promotion['properties']);
         $this->assertArrayNotHasKey('capacite', $promotion['properties']);
 
-        foreach (['AnneeAcademique', 'Promotion', 'Matiere', 'Module', 'Cours', 'PreInscriptionPayload', 'PreInscriptionResultat', 'PreInscriptionAdministration', 'CompteEtudiantCree', 'EtudiantListe', 'DossierEtudiantListe'] as $schema) {
+        foreach (['AnneeAcademique', 'Promotion', 'Matiere', 'Module', 'Cours', 'Civilite', 'CivilitePayload', 'PreInscriptionPayload', 'PreInscriptionResultat', 'PreInscriptionAdministration', 'CompteEtudiantCree', 'EtudiantListe', 'DossierEtudiantListe'] as $schema) {
             $this->assertArrayHasKey($schema, $documentation['components']['schemas']);
         }
     }

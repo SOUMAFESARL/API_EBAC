@@ -1093,6 +1093,309 @@
                 ]
             }
         },
+        "/parametres/civilites": {
+            "get": {
+                "tags": [
+                    "Civilités"
+                ],
+                "summary": "Lister les civilités",
+                "operationId": "listerCivilites",
+                "parameters": [
+                    {
+                        "name": "actif",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des civilités",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "civilites": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Civilite"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Civilités"
+                ],
+                "summary": "Créer une civilité",
+                "operationId": "creerCivilite",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CivilitePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Civilité créée"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/civilites/create": {
+            "get": {
+                "tags": [
+                    "Civilités"
+                ],
+                "summary": "Obtenir les valeurs du formulaire de création",
+                "operationId": "preparerCreationCivilite",
+                "responses": {
+                    "200": {
+                        "description": "Valeurs par défaut"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/civilites/{id}": {
+            "get": {
+                "tags": [
+                    "Civilités"
+                ],
+                "summary": "Afficher une civilité",
+                "operationId": "afficherCivilite",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Civilité trouvée"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "404": {
+                        "description": "Civilité introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Civilités"
+                ],
+                "summary": "Modifier une civilité",
+                "operationId": "remplacerCivilite",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CivilitePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Civilité modifiée"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "404": {
+                        "description": "Civilité introuvable"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Civilités"
+                ],
+                "summary": "Supprimer logiquement une civilité",
+                "operationId": "supprimerCivilite",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Civilité supprimée"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "404": {
+                        "description": "Civilité introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Civilités"
+                ],
+                "summary": "Modifier partiellement une civilité",
+                "operationId": "modifierCivilite",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CivilitePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Civilité modifiée"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "404": {
+                        "description": "Civilité introuvable"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/civilites/{id}/edit": {
+            "get": {
+                "tags": [
+                    "Civilités"
+                ],
+                "summary": "Obtenir une civilité à modifier",
+                "operationId": "preparerModificationCivilite",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Civilité à modifier"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "404": {
+                        "description": "Civilité introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/parametres/cours": {
             "get": {
                 "tags": [
@@ -3712,6 +4015,72 @@
                     }
                 },
                 "type": "object"
+            },
+            "CivilitePayload": {
+                "required": [
+                    "code",
+                    "name"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "example": "M",
+                        "maxLength": 10
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Monsieur",
+                        "maxLength": 50
+                    },
+                    "abreviation": {
+                        "type": "string",
+                        "example": "M.",
+                        "nullable": true,
+                        "maxLength": 10
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
+                    "actif": {
+                        "type": "boolean",
+                        "default": true
+                    }
+                },
+                "type": "object"
+            },
+            "Civilite": {
+                "type": "object",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CivilitePayload"
+                    },
+                    {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "readOnly": true
+                            },
+                            "created_by": {
+                                "type": "integer",
+                                "readOnly": true,
+                                "nullable": true
+                            },
+                            "updated_by": {
+                                "type": "integer",
+                                "readOnly": true,
+                                "nullable": true
+                            },
+                            "cree_le": {
+                                "type": "string",
+                                "format": "date-time",
+                                "readOnly": true
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
             }
         },
         "securitySchemes": {
@@ -3743,6 +4112,10 @@
         {
             "name": "Années académiques",
             "description": "Années académiques"
+        },
+        {
+            "name": "Civilités",
+            "description": "Civilités"
         },
         {
             "name": "Cours",
