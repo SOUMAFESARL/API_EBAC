@@ -1,13 +1,14 @@
 <?php
 
-use App\Http\Controllers\Api\V1\Administration\CompteController;
 use App\Http\Controllers\Api\V1\Administration\ActionController;
+use App\Http\Controllers\Api\V1\Administration\CompteController;
 use App\Http\Controllers\Api\V1\Administration\MenuController;
 use App\Http\Controllers\Api\V1\Administration\PermissionController;
 use App\Http\Controllers\Api\V1\Administration\ProfilController;
 use App\Http\Controllers\Api\V1\Administration\RoleController;
 use App\Http\Controllers\Api\V1\Auth\AuthentificationController;
 use App\Http\Controllers\Api\V1\Eglise\EgliseController;
+use App\Http\Controllers\Api\V1\Etudiant\GestionPreInscriptionController;
 use App\Http\Controllers\Api\V1\Etudiant\PreInscriptionController;
 use App\Http\Controllers\Api\V1\Navigation\SidebarController;
 use App\Http\Controllers\Api\V1\Parametre\AnneeAcademiqueController;
@@ -61,6 +62,16 @@ Route::get('v1/navigation/sidebar', SidebarController::class)
 Route::get('v1/utilisateurs/{compte}/photo', [CompteController::class, 'photo'])
     ->name('api.v1.utilisateurs.photo');
 
+Route::prefix('v1/administration/preinscriptions')
+    ->name('api.v1.administration.preinscriptions.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'permission:COMPTE_GERER'])
+    ->group(function () {
+        Route::get('/', [GestionPreInscriptionController::class, 'index'])->name('index');
+        Route::get('/{preinscription}', [GestionPreInscriptionController::class, 'show'])->name('show');
+        Route::post('/{preinscription}/creer-compte', [GestionPreInscriptionController::class, 'valider'])
+            ->name('creer-compte');
+    });
+
 Route::prefix('v1/parametres')
     ->name('api.v1.parametres.')
     ->middleware(['auth:sanctum', 'compte.actif'])
@@ -89,6 +100,7 @@ Route::prefix('v1/administration/comptes')
     ->group(function () {
         Route::get('/', [CompteController::class, 'index'])->name('index');
         Route::get('/create', [CompteController::class, 'create'])->name('create');
+        Route::post('/etudiants', [CompteController::class, 'storeEtudiant'])->name('etudiants.store');
         Route::post('/', [CompteController::class, 'store'])->name('store');
         Route::get('/{compte}', [CompteController::class, 'show'])->name('show');
         Route::get('/{compte}/edit', [CompteController::class, 'edit'])->name('edit');

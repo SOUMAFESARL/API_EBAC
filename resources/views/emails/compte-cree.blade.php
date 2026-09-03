@@ -24,6 +24,18 @@
         <tr><td style="padding:22px 24px;">
             <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#64748b;text-transform:uppercase;">Adresse e-mail</div>
             <div style="margin-top:6px;font-size:16px;line-height:24px;color:#102a56;word-break:break-word;">{{ $email }}</div>
+            @if ($matricule ?? null)
+            <div style="margin-top:18px;font-size:12px;font-weight:700;letter-spacing:1px;color:#64748b;text-transform:uppercase;">Matricule</div>
+            <div style="margin-top:6px;font-size:16px;line-height:24px;font-weight:700;color:#123b8f;">{{ $matricule }}</div>
+            @endif
+            @if ($anneeAcademique ?? null)
+            <div style="margin-top:18px;font-size:12px;font-weight:700;letter-spacing:1px;color:#64748b;text-transform:uppercase;">Année académique</div>
+            <div style="margin-top:6px;font-size:16px;line-height:24px;color:#102a56;">{{ $anneeAcademique }}</div>
+            @endif
+            @if ($eglise ?? null)
+            <div style="margin-top:18px;font-size:12px;font-weight:700;letter-spacing:1px;color:#64748b;text-transform:uppercase;">Église</div>
+            <div style="margin-top:6px;font-size:16px;line-height:24px;color:#102a56;">{{ $eglise }}</div>
+            @endif
             <div style="margin-top:18px;font-size:12px;font-weight:700;letter-spacing:1px;color:#64748b;text-transform:uppercase;">Rôle attribué</div>
             <div style="margin-top:6px;font-size:16px;line-height:24px;font-weight:700;color:#123b8f;">{{ $role }}</div>
         </td></tr></table>

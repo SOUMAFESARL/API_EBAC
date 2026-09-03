@@ -452,6 +452,180 @@
                 }
             }
         },
+        "/administration/preinscriptions": {
+            "get": {
+                "tags": [
+                    "Administration des préinscriptions"
+                ],
+                "summary": "Lister les préinscriptions à vérifier",
+                "operationId": "listerPreinscriptionsAdministration",
+                "parameters": [
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "Préinscrit"
+                        }
+                    },
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "par_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PreInscriptionAdministration"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Permission COMPTE_GERER requise"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/preinscriptions/{preinscription}": {
+            "get": {
+                "tags": [
+                    "Administration des préinscriptions"
+                ],
+                "summary": "Consulter une préinscription",
+                "operationId": "afficherPreinscriptionAdministration",
+                "parameters": [
+                    {
+                        "name": "preinscription",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détail de la préinscription",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "preinscription": {
+                                            "$ref": "#/components/schemas/PreInscriptionAdministration"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Permission COMPTE_GERER requise"
+                    },
+                    "404": {
+                        "description": "Préinscription introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/preinscriptions/{preinscription}/creer-compte": {
+            "post": {
+                "tags": [
+                    "Administration des préinscriptions"
+                ],
+                "summary": "Valider une préinscription et créer automatiquement le compte étudiant",
+                "description": "Attribue le rôle ETUDIANT sans choix côté client, rattache le compte à la fiche, valide le dossier et envoie par e-mail le mot de passe temporaire, le matricule, l’année académique et l’église.",
+                "operationId": "creerCompteDepuisPreinscription",
+                "parameters": [
+                    {
+                        "name": "preinscription",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Compte étudiant créé et e-mail envoyé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "compte": {
+                                            "$ref": "#/components/schemas/CompteEtudiantCree"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Permission COMPTE_GERER requise"
+                    },
+                    "404": {
+                        "description": "Préinscription introuvable"
+                    },
+                    "422": {
+                        "description": "Préinscription déjà traitée, e-mail déjà utilisé, rôle absent ou aucune année académique active"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/etudiant/pre-inscription": {
             "post": {
                 "tags": [
@@ -3068,6 +3242,131 @@
                     }
                 },
                 "type": "object"
+            },
+            "PreInscriptionAdministration": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "matricule": {
+                        "type": "string",
+                        "example": "EBAC-0001-2026"
+                    },
+                    "nom": {
+                        "type": "string"
+                    },
+                    "prenoms": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "telephone": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "civilite_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "date_naissance": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "lieu_naissance": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "nationalite": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "adresse": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "statut_professionnel": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "photo_identite": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "date_inscription": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "statut": {
+                        "type": "string",
+                        "example": "Préinscrit"
+                    },
+                    "eglise": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/Eglise"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "dossier": {
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "CompteEtudiantCree": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "matricule": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "nom": {
+                        "type": "string"
+                    },
+                    "prenoms": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "statut": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "ETUDIANT"
+                            },
+                            "libelle": {
+                                "type": "string",
+                                "example": "Étudiant"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -3083,6 +3382,10 @@
         {
             "name": "Églises",
             "description": "Églises"
+        },
+        {
+            "name": "Administration des préinscriptions",
+            "description": "Administration des préinscriptions"
         },
         {
             "name": "Pré-inscription",

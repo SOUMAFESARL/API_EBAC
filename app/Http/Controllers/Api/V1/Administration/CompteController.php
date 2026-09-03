@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\V1\Administration;
 
 use App\DTOs\Api\V1\Administration\CreerCompteDTO;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Administration\EnregistrerCompteEtudiantRequest;
 use App\Http\Requests\Api\V1\Administration\EnregistrerCompteRequest;
 use App\Http\Requests\Api\V1\Administration\ModifierCompteRequest;
 use App\Http\Resources\Api\V1\UtilisateurResource;
 use App\Models\Civilite;
+use App\Models\Etudiant;
 use App\Models\Role;
 use App\Models\User;
 use App\Notifications\CompteCreeNotification;
@@ -16,8 +18,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CompteController extends Controller
 {
@@ -87,13 +89,63 @@ class CompteController extends Controller
                 $administrateur,
             );
 
-            return User::query()->create($dto->toArray());
+            $compte = User::query()->create($dto->toArray());
+
+            if ((int) $compte->id_role === (int) Role::query()->where('code', 'ETUDIANT')->value('id')) {
+                $this->synchroniserFicheEtudiant($compte, $administrateur);
+            }
+
+            return $compte;
         });
 
         $compte->notifyNow(new CompteCreeNotification($motDePasseTemporaire));
 
         return response()->json([
             'message' => 'Compte créé avec succès. Le mot de passe temporaire a été envoyé par email.',
+            'compte' => UtilisateurResource::make($compte->load(['role', 'civilite'])),
+        ], 201);
+    }
+
+    public function storeEtudiant(EnregistrerCompteEtudiantRequest $request): JsonResponse
+    {
+        $donnees = $request->validated();
+        $roleEtudiant = Role::query()->where('code', 'ETUDIANT')->first();
+
+        if (! $roleEtudiant) {
+            return response()->json([
+                'message' => 'Le rôle ETUDIANT n’est pas configuré.',
+            ], 422);
+        }
+
+        $motDePasseTemporaire = Str::password(16);
+        $createur = $request->user();
+
+        if ($request->hasFile('photo')) {
+            $donnees['photo'] = $request->file('photo')->store('comptes', 'public');
+        }
+
+        $compte = DB::transaction(function () use ($donnees, $motDePasseTemporaire, $createur, $roleEtudiant) {
+            $donnees['code'] = $this->genererCode();
+            $donnees['id_role'] = $roleEtudiant->id;
+
+            $dto = CreerCompteDTO::fromArray(
+                $donnees,
+                $motDePasseTemporaire,
+                $this->genererMatricule(),
+                $createur,
+            );
+
+            $compte = User::query()->create($dto->toArray());
+
+            $this->synchroniserFicheEtudiant($compte, $createur);
+
+            return $compte;
+        });
+
+        $compte->notifyNow(new CompteCreeNotification($motDePasseTemporaire));
+
+        return response()->json([
+            'message' => 'Compte étudiant créé avec succès. Le mot de passe temporaire a été envoyé par email.',
             'compte' => UtilisateurResource::make($compte->load(['role', 'civilite'])),
         ], 201);
     }
@@ -180,12 +232,17 @@ class CompteController extends Controller
     private function genererMatricule(): string
     {
         $annee = now()->year;
-        $matricules = User::withTrashed()
+        $matriculesUtilisateurs = User::withTrashed()
+            ->where('matricule', 'like', 'EBAC-%-'.$annee)
+            ->lockForUpdate()
+            ->pluck('matricule');
+        $matriculesEtudiants = Etudiant::withTrashed()
             ->where('matricule', 'like', 'EBAC-%-'.$annee)
             ->lockForUpdate()
             ->pluck('matricule');
 
-        $derniereSequence = $matricules
+        $derniereSequence = $matriculesUtilisateurs
+            ->merge($matriculesEtudiants)
             ->map(function (?string $matricule) use ($annee): int {
                 return preg_match('/^EBAC-(\d{4})-'.$annee.'$/', (string) $matricule, $correspondances)
                     ? (int) $correspondances[1]
@@ -194,6 +251,36 @@ class CompteController extends Controller
             ->max() ?? 0;
 
         return sprintf('EBAC-%04d-%d', $derniereSequence + 1, $annee);
+    }
+
+    private function synchroniserFicheEtudiant(User $compte, User $createur): Etudiant
+    {
+        $fiche = Etudiant::query()
+            ->where('email', $compte->email)
+            ->whereNull('user_id')
+            ->first();
+
+        if ($fiche) {
+            $fiche->update([
+                'user_id' => $compte->id,
+                'updated_by' => $createur->id,
+            ]);
+
+            return $fiche;
+        }
+
+        return Etudiant::query()->create([
+            'user_id' => $compte->id,
+            'matricule' => $compte->matricule,
+            'nom' => $compte->nom,
+            'prenoms' => $compte->prenoms,
+            'civilite_id' => $compte->civilite_id,
+            'email' => $compte->email,
+            'photo_identite' => $compte->photo,
+            'date_inscription' => now()->toDateString(),
+            'statut' => 'En formation',
+            'created_by' => $createur->id,
+        ]);
     }
 
     private function genererCode(): string

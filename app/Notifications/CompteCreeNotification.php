@@ -12,6 +12,8 @@ class CompteCreeNotification extends Notification
 
     public function __construct(
         private readonly string $motDePasseTemporaire,
+        private readonly ?string $anneeAcademique = null,
+        private readonly ?string $eglise = null,
     ) {}
 
     /**
@@ -32,6 +34,9 @@ class CompteCreeNotification extends Notification
                 'nomComplet' => trim("{$notifiable->prenoms} {$notifiable->nom}"),
                 'email' => $notifiable->email,
                 'motDePasseTemporaire' => $this->motDePasseTemporaire,
+                'matricule' => $notifiable->matricule,
+                'anneeAcademique' => $this->anneeAcademique,
+                'eglise' => $this->eglise,
                 'role' => $notifiable->role?->libelle ?? 'Utilisateur',
                 'urlConnexion' => rtrim((string) config('app.frontend_url', 'https://ebac.ci'), '/'),
             ]);

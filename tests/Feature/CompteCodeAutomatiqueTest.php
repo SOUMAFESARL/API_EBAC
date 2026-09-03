@@ -3,14 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\Civilite;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Notifications\CompteCreeNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\UploadedFile;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -87,6 +88,92 @@ class CompteCodeAutomatiqueTest extends TestCase
                     && Hash::check($motDePasseEnvoye, $compteEglise->password);
             },
         );
+    }
+
+    public function test_un_secretaire_academique_peut_creer_un_compte_etudiant_et_le_mot_de_passe_est_envoye(): void
+    {
+        Notification::fake();
+
+        $roleSecretaire = Role::query()->create([
+            'code' => 'SECRETAIRE_ACADEMIQUE',
+            'libelle' => 'Secrétaire académique',
+        ]);
+        $roleEtudiant = Role::query()->create([
+            'code' => 'ETUDIANT',
+            'libelle' => 'Étudiant',
+        ]);
+        $permission = Permission::query()->create([
+            'code' => 'COMPTE_GERER',
+            'libelle' => 'Gérer les comptes',
+        ]);
+        $roleSecretaire->permissions()->attach($permission->id, ['actif' => true]);
+
+        Sanctum::actingAs(User::factory()->create(['id_role' => $roleSecretaire->id]));
+        $civilite = Civilite::query()->create(['code' => 'M', 'name' => 'Monsieur']);
+
+        $compteId = $this->postJson('/api/v1/administration/comptes/etudiants', [
+            'civilite_id' => $civilite->id,
+            'nom' => 'KOUASSI',
+            'prenoms' => 'Paul',
+            'email' => 'paul.kouassi@example.net',
+            'id_role' => $roleSecretaire->id,
+        ])->assertCreated()
+            ->assertJsonPath('compte.role.code', 'ETUDIANT')
+            ->json('compte.id');
+
+        $compte = User::query()->findOrFail($compteId);
+
+        $this->assertDatabaseHas('etudiants', [
+            'user_id' => $compte->id,
+            'matricule' => $compte->matricule,
+            'email' => $compte->email,
+            'created_by' => $compte->created_by,
+        ]);
+
+        Notification::assertSentTo(
+            $compte,
+            CompteCreeNotification::class,
+            function (CompteCreeNotification $notification) use ($compte): bool {
+                $motDePasse = $notification->toMail($compte)->viewData['motDePasseTemporaire'] ?? null;
+
+                return is_string($motDePasse)
+                    && strlen($motDePasse) === 16
+                    && Hash::check($motDePasse, $compte->password);
+            },
+        );
+    }
+
+    public function test_le_endpoint_generique_cree_aussi_la_fiche_pour_un_role_etudiant(): void
+    {
+        Notification::fake();
+        $roleAdmin = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        $roleEtudiant = Role::query()->create(['code' => 'ETUDIANT', 'libelle' => 'Étudiant']);
+        $admin = User::factory()->create(['id_role' => $roleAdmin->id]);
+        Sanctum::actingAs($admin);
+        $civilite = Civilite::query()->create(['code' => 'M', 'name' => 'Monsieur']);
+
+        $compteId = $this->postJson('/api/v1/administration/comptes', [
+            'civilite_id' => $civilite->id,
+            'nom' => 'YAO',
+            'prenoms' => 'Anne',
+            'email' => 'anne.yao@example.net',
+            'id_role' => $roleEtudiant->id,
+        ])->assertCreated()->json('compte.id');
+
+        $this->assertDatabaseHas('etudiants', [
+            'user_id' => $compteId,
+            'email' => 'anne.yao@example.net',
+            'statut' => 'En formation',
+        ]);
+    }
+
+    public function test_un_utilisateur_sans_permission_ne_peut_pas_creer_un_compte_etudiant(): void
+    {
+        $role = Role::query()->create(['code' => 'ENSEIGNANT', 'libelle' => 'Enseignant']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+
+        $this->postJson('/api/v1/administration/comptes/etudiants', [])
+            ->assertForbidden();
     }
 
     public function test_un_code_fourni_par_le_client_est_refuse(): void

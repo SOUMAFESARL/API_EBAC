@@ -47,5 +47,25 @@ class MenuAdministrationSeeder extends Seeder
 
         Role::query()->where('code', 'ADMIN')->first()?->permissions()
             ->syncWithoutDetaching(array_fill_keys($permissionIds, ['actif' => true]));
+
+        $roleSecretaire = Role::query()->firstOrCreate(
+            ['code' => 'SECRETAIRE_ACADEMIQUE'],
+            [
+                'libelle' => 'Secrétaire académique',
+                'description' => 'Gestion administrative et académique des étudiants',
+            ],
+        );
+        Role::query()->firstOrCreate(
+            ['code' => 'ETUDIANT'],
+            [
+                'libelle' => 'Étudiant',
+                'description' => 'Compte étudiant',
+            ],
+        );
+
+        $permissionCompte = Permission::query()->where('code', 'COMPTE_GERER')->firstOrFail();
+        $roleSecretaire->permissions()->syncWithoutDetaching([
+            $permissionCompte->id => ['actif' => true],
+        ]);
     }
 }

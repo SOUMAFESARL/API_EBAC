@@ -13,8 +13,23 @@ class Etudiant extends Model
 
     protected $fillable = ['user_id', 'matricule', 'nom', 'prenoms', 'civilite_id', 'date_naissance', 'lieu_naissance', 'nationalite', 'email', 'telephone', 'adresse', 'eglise_id', 'statut_professionnel', 'photo_identite', 'date_inscription', 'statut', 'created_by', 'updated_by', 'deleted_by'];
 
-    protected function casts(): array { return ['date_naissance' => 'date:Y-m-d', 'date_inscription' => 'date:Y-m-d']; }
+    protected function casts(): array
+    {
+        return ['date_naissance' => 'date:Y-m-d', 'date_inscription' => 'date:Y-m-d'];
+    }
 
-    public function eglise(): BelongsTo { return $this->belongsTo(Eglise::class, 'eglise_id'); }
-    public function dossier(): HasOne { return $this->hasOne(DossierEtudiant::class, 'id_etudiant'); }
+    public function eglise(): BelongsTo
+    {
+        return $this->belongsTo(Eglise::class, 'eglise_id');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function dossier(): HasOne
+    {
+        return $this->hasOne(DossierEtudiant::class, 'id_etudiant');
+    }
 }
