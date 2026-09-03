@@ -99,6 +99,7 @@ class EgliseSwaggerTest extends TestCase
         $this->assertArrayHasKey('multipart/form-data', $documentation['paths']['/etudiant/pre-inscription']['post']['requestBody']['content']);
         $this->assertArrayHasKey('get', $documentation['paths']['/administration/preinscriptions']);
         $this->assertArrayHasKey('get', $documentation['paths']['/administration/preinscriptions/{preinscription}']);
+        $this->assertArrayHasKey('patch', $documentation['paths']['/administration/preinscriptions/{preinscription}/email']);
         $this->assertArrayHasKey('post', $documentation['paths']['/administration/preinscriptions/{preinscription}/creer-compte']);
         $this->assertArrayHasKey('get', $documentation['paths']['/administration/etudiants']);
         $this->assertArrayHasKey('get', $documentation['paths']['/administration/dossiers-etudiants']);

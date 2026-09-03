@@ -66,6 +66,13 @@ class GestionPreInscriptionApiTest extends TestCase
             ->assertJsonPath('data.0.id', $etudiant->id)
             ->assertJsonPath('data.0.dossier.numero_dossier', $dossier->numero_dossier);
 
+        $this->patchJson("/api/v1/administration/preinscriptions/{$etudiant->id}/email", [
+            'email' => 'jean.corrige@example.net',
+        ])->assertOk()
+            ->assertJsonPath('preinscription.email', 'jean.corrige@example.net');
+
+        $etudiant->refresh();
+
         $compteId = $this->postJson("/api/v1/administration/preinscriptions/{$etudiant->id}/creer-compte", [
             'id_role' => $roleSecretaire->id,
         ])

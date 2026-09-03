@@ -70,6 +70,7 @@ Route::prefix('v1/administration/preinscriptions')
     ->group(function () {
         Route::get('/', [GestionPreInscriptionController::class, 'index'])->name('index');
         Route::get('/{preinscription}', [GestionPreInscriptionController::class, 'show'])->name('show');
+        Route::patch('/{preinscription}/email', [GestionPreInscriptionController::class, 'modifierEmail'])->name('email.update');
         Route::post('/{preinscription}/creer-compte', [GestionPreInscriptionController::class, 'valider'])
             ->name('creer-compte');
     });
