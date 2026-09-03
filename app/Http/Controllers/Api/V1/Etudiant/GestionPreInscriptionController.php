@@ -108,6 +108,15 @@ class GestionPreInscriptionController extends Controller
                 abort(422, 'Un compte utilise déjà l’adresse e-mail de cette préinscription.');
             }
 
+            $matricule = $etudiant->matricule;
+            if (! $matricule || User::withTrashed()->where('matricule', $matricule)->exists()) {
+                $matricule = $this->genererMatricule();
+                $etudiant->update([
+                    'matricule' => $matricule,
+                    'updated_by' => $createur->id,
+                ]);
+            }
+
             $roleEtudiant = Role::query()->where('code', 'ETUDIANT')->first();
             if (! $roleEtudiant) {
                 abort(422, 'Le rôle ETUDIANT n’est pas configuré.');
@@ -115,7 +124,7 @@ class GestionPreInscriptionController extends Controller
 
             $compte = User::query()->create([
                 'civilite_id' => $etudiant->civilite_id,
-                'matricule' => $etudiant->matricule,
+                'matricule' => $matricule,
                 'code' => $this->genererCode(),
                 'user_code' => $createur->code,
                 'user_id' => (string) $createur->id,
@@ -235,5 +244,27 @@ class GestionPreInscriptionController extends Controller
             ->max() ?? 0;
 
         return 'USR-'.str_pad((string) ($derniereSequence + 1), 6, '0', STR_PAD_LEFT);
+    }
+
+    private function genererMatricule(): string
+    {
+        $annee = now()->year;
+        $matriculesEtudiants = Etudiant::query()
+            ->withTrashed()
+            ->where('matricule', 'like', "EBAC-%-{$annee}")
+            ->lockForUpdate()
+            ->pluck('matricule');
+        $matriculesUtilisateurs = User::query()
+            ->withTrashed()
+            ->where('matricule', 'like', "EBAC-%-{$annee}")
+            ->lockForUpdate()
+            ->pluck('matricule');
+
+        $derniereSequence = $matriculesEtudiants
+            ->merge($matriculesUtilisateurs)
+            ->map(fn (?string $matricule): int => preg_match("/^EBAC-(\\d{4})-{$annee}$/", (string) $matricule, $correspondances) ? (int) $correspondances[1] : 0)
+            ->max() ?? 0;
+
+        return sprintf('EBAC-%04d-%d', $derniereSequence + 1, $annee);
     }
 }

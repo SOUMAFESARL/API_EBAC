@@ -12,7 +12,6 @@ class PreInscriptionRecueNotification extends Notification
 
     public function __construct(
         public readonly string $nomComplet,
-        public readonly string $matricule,
         public readonly string $numeroDossier,
     ) {}
 
@@ -28,7 +27,6 @@ class PreInscriptionRecueNotification extends Notification
             ->subject('Confirmation de votre demande de pré-inscription à l’EBAC')
             ->view('emails.pre-inscription-recue', [
                 'nomComplet' => $this->nomComplet,
-                'matricule' => $this->matricule,
                 'numeroDossier' => $this->numeroDossier,
             ]);
     }

@@ -37,7 +37,6 @@ class PreInscriptionController extends Controller
 
                 $etudiant = Etudiant::query()->create([
                     ...$donnees,
-                    'matricule' => $this->genererMatricule(),
                     'date_inscription' => now()->toDateString(),
                     'statut' => 'Préinscrit',
                 ]);
@@ -75,7 +74,6 @@ class PreInscriptionController extends Controller
         Notification::route('mail', $etudiant->email)->notify(
             new PreInscriptionRecueNotification(
                 nomComplet: trim("{$etudiant->prenoms} {$etudiant->nom}"),
-                matricule: $etudiant->matricule,
                 numeroDossier: $dossier->numero_dossier,
             ),
         );
@@ -84,7 +82,6 @@ class PreInscriptionController extends Controller
             'message' => 'Pré-inscription enregistrée avec succès.',
             'pre_inscription' => [
                 'id' => $etudiant->id,
-                'matricule' => $etudiant->matricule,
                 'numero_dossier' => $dossier->numero_dossier,
                 'statut' => $etudiant->statut,
                 'statut_dossier' => $dossier->statut,
@@ -93,24 +90,6 @@ class PreInscriptionController extends Controller
                 'nombre_enfant' => $etudiant->nombre_enfant,
             ],
         ], 201);
-    }
-
-    private function genererMatricule(): string
-    {
-        $annee = now()->year;
-        $derniereSequence = Etudiant::query()
-            ->withTrashed()
-            ->where('matricule', 'like', "EBAC-%-{$annee}")
-            ->lockForUpdate()
-            ->pluck('matricule')
-            ->map(function (string $matricule) use ($annee): int {
-                return preg_match("/^EBAC-(\\d{4})-{$annee}$/", $matricule, $correspondances)
-                    ? (int) $correspondances[1]
-                    : 0;
-            })
-            ->max() ?? 0;
-
-        return sprintf('EBAC-%04d-%d', $derniereSequence + 1, $annee);
     }
 
     private function genererNumeroDossier(string $nom, string $prenoms): string

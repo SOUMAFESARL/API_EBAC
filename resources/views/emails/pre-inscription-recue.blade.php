@@ -14,8 +14,7 @@
         <p style="font-size:16px;line-height:25px;">Bonjour <strong>{{ $nomComplet }}</strong>,</p>
         <p style="font-size:16px;line-height:25px;color:#475569;">Vous avez effectué une demande de pré-inscription auprès de l’EBAC. Nous vous confirmons que votre dossier a bien été reçu et qu’il est actuellement en cours d’analyse.</p>
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:24px 0;background:#f5f8fc;border-radius:10px;"><tr><td style="padding:20px 24px;">
-            <div style="font-size:13px;color:#64748b;">Matricule</div><div style="font-size:17px;font-weight:700;color:#123b8f;">{{ $matricule }}</div>
-            <div style="margin-top:14px;font-size:13px;color:#64748b;">Numéro de dossier</div><div style="font-size:17px;font-weight:700;color:#123b8f;">{{ $numeroDossier }}</div>
+            <div style="font-size:13px;color:#64748b;">Numéro de dossier</div><div style="font-size:17px;font-weight:700;color:#123b8f;">{{ $numeroDossier }}</div>
         </td></tr></table>
         <p style="font-size:16px;line-height:25px;color:#475569;">Nous vous invitons à patienter pendant le traitement. Vous serez contacté(e) dès qu’une décision ou une information complémentaire sera disponible.</p>
         <p style="margin-bottom:0;font-size:14px;line-height:22px;color:#64748b;">Ceci est un message automatique, merci de ne pas y répondre.</p>

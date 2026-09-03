@@ -3855,10 +3855,6 @@
                     "id": {
                         "type": "integer"
                     },
-                    "matricule": {
-                        "type": "string",
-                        "example": "EBAC-0001-2026"
-                    },
                     "numero_dossier": {
                         "type": "string",
                         "example": "ZRM0002026"
@@ -3894,8 +3890,10 @@
                         "nullable": true
                     },
                     "matricule": {
+                        "description": "Absent avant la création du compte étudiant",
                         "type": "string",
-                        "example": "EBAC-0001-2026"
+                        "example": "EBAC-0001-2026",
+                        "nullable": true
                     },
                     "nom": {
                         "type": "string"
@@ -4027,7 +4025,8 @@
                         "nullable": true
                     },
                     "matricule": {
-                        "type": "string"
+                        "type": "string",
+                        "nullable": true
                     },
                     "nom": {
                         "type": "string"

@@ -44,13 +44,13 @@ class PreInscriptionApiTest extends TestCase
             'pieces_requises' => ['Photo', 'Pièce d’identité'],
         ])->assertCreated()
             ->assertJsonPath('message', 'Pré-inscription enregistrée avec succès.')
-            ->assertJsonPath('pre_inscription.matricule', 'EBAC-0001-'.now()->year)
             ->assertJsonPath('pre_inscription.numero_dossier', 'KOJ000'.now()->year)
             ->assertJsonPath('pre_inscription.statut', 'Préinscrit')
             ->assertJsonPath('pre_inscription.statut_dossier', 'Incomplet')
             ->assertJsonPath('pre_inscription.situation_matrimonial', 'Marié')
             ->assertJsonPath('pre_inscription.nombre_enfant', 2);
         $reponse->assertJsonPath('pre_inscription.nombre_documents', 2);
+        $reponse->assertJsonMissingPath('pre_inscription.matricule');
 
         $this->assertDatabaseHas('etudiants', [
             'id' => $reponse->json('pre_inscription.id'), 'nom' => 'Kouassi', 'eglise_id' => $eglise->id,
@@ -71,7 +71,7 @@ class PreInscriptionApiTest extends TestCase
             PreInscriptionRecueNotification::class,
             fn (PreInscriptionRecueNotification $notification, array $canaux, object $destinataire) => in_array('mail', $canaux, true)
                 && $destinataire->routes['mail'] === 'jean@example.com'
-                && $notification->matricule === $reponse->json('pre_inscription.matricule'),
+                && $notification->numeroDossier === $reponse->json('pre_inscription.numero_dossier'),
         );
     }
 
@@ -85,7 +85,7 @@ class PreInscriptionApiTest extends TestCase
         $this->assertDatabaseCount('dossiers_etudiants', 0);
     }
 
-    public function test_le_matricule_est_sequentiel_pour_l_annee_courante(): void
+    public function test_la_preinscription_ne_genere_pas_de_matricule(): void
     {
         Notification::fake();
         Storage::fake('public');
@@ -93,20 +93,16 @@ class PreInscriptionApiTest extends TestCase
         $eglise = Eglise::query()->create([
             'code' => 'EGL-001', 'nom' => 'Église test', 'ville_commune' => 'Cocody',
         ]);
-        \DB::table('etudiants')->insert([
-            'matricule' => 'EBAC-0007-'.now()->year,
-            'nom' => 'Existant',
-            'prenoms' => 'Étudiant',
-            'date_inscription' => now()->toDateString(),
-        ]);
-
-        $this->postJson('/api/v1/etudiant/pre-inscription', [
+        $id = $this->postJson('/api/v1/etudiant/pre-inscription', [
             'nom' => 'Kouadio', 'prenoms' => 'Paul', 'email' => 'paul@example.com', 'telephone' => '+2250700000000',
             'eglise_id' => $eglise->id, 'civilite_id' => $civilite->id,
             'situation_matrimonial' => 'Célibataire',
             'photo_identite' => UploadedFile::fake()->image('identite.jpg'),
         ])->assertCreated()
-            ->assertJsonPath('pre_inscription.matricule', 'EBAC-0008-'.now()->year);
+            ->assertJsonMissingPath('pre_inscription.matricule')
+            ->json('pre_inscription.id');
+
+        $this->assertDatabaseHas('etudiants', ['id' => $id, 'matricule' => null]);
     }
 
     public function test_le_numero_de_dossier_est_sequentiel_pour_les_memes_initiales(): void
@@ -181,7 +177,6 @@ class PreInscriptionApiTest extends TestCase
     {
         $notification = new PreInscriptionRecueNotification(
             nomComplet: 'Marc Zran',
-            matricule: 'EBAC-0001-'.now()->year,
             numeroDossier: 'ZRM000'.now()->year,
         );
 
@@ -189,7 +184,7 @@ class PreInscriptionApiTest extends TestCase
 
         $this->assertStringContainsString('Demande de pré-inscription reçue', $contenu);
         $this->assertStringContainsString('en cours d’analyse', $contenu);
-        $this->assertStringContainsString('EBAC-0001-'.now()->year, $contenu);
+        $this->assertStringNotContainsString('Matricule', $contenu);
         $this->assertStringContainsString('ZRM000'.now()->year, $contenu);
         $this->assertStringContainsString('<img', $contenu);
         $this->assertStringContainsString('alt="Logo EBAC"', $contenu);

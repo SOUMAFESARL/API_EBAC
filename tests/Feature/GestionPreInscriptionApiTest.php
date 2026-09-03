@@ -110,7 +110,7 @@ class GestionPreInscriptionApiTest extends TestCase
         ]);
         Sanctum::actingAs(User::factory()->create(['id_role' => $adminRole->id]));
         $etudiant = Etudiant::query()->create([
-            'matricule' => 'EBAC-0099-'.now()->year,
+            'matricule' => null,
             'nom' => 'YAO',
             'prenoms' => 'Anne',
             'email' => 'anne.yao@example.net',
@@ -120,7 +120,9 @@ class GestionPreInscriptionApiTest extends TestCase
         ]);
 
         $url = "/api/v1/administration/preinscriptions/{$etudiant->id}/creer-compte";
-        $this->postJson($url)->assertOk();
+        $this->postJson($url)
+            ->assertOk()
+            ->assertJsonPath('compte.matricule', 'EBAC-0001-'.now()->year);
         $this->postJson($url)->assertUnprocessable();
         $this->assertSame(1, User::query()->where('email', $etudiant->email)->count());
     }
@@ -191,5 +193,44 @@ class GestionPreInscriptionApiTest extends TestCase
         $this->getJson('/api/v1/administration/preinscriptions')
             ->assertOk()
             ->assertJsonPath('data.0.statut', 'Rejeté');
+    }
+
+    public function test_un_matricule_deja_utilise_par_un_compte_est_regenere_automatiquement(): void
+    {
+        Notification::fake();
+        $roleAdmin = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        Role::query()->create(['code' => 'ETUDIANT', 'libelle' => 'Étudiant']);
+        AnneeAcademique::query()->create([
+            'libelle' => '2026-2027',
+            'date_debut' => '2026-09-01',
+            'date_fin' => '2027-07-31',
+            'active' => true,
+        ]);
+        $administrateur = User::factory()->create(['id_role' => $roleAdmin->id, 'matricule' => 'EBAC-0002-'.now()->year]);
+        Sanctum::actingAs($administrateur);
+        $etudiant = Etudiant::query()->create([
+            'matricule' => 'EBAC-0002-'.now()->year,
+            'nom' => 'ZRAN',
+            'prenoms' => 'Severin',
+            'email' => 'severin.unique@example.net',
+            'telephone' => '0140004509',
+            'date_inscription' => now()->toDateString(),
+            'statut' => 'Préinscrit',
+        ]);
+
+        $compteId = $this->postJson("/api/v1/administration/preinscriptions/{$etudiant->id}/creer-compte")
+            ->assertOk()
+            ->assertJsonPath('compte.matricule', 'EBAC-0003-'.now()->year)
+            ->json('compte.id');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $compteId,
+            'matricule' => 'EBAC-0003-'.now()->year,
+        ]);
+        $this->assertDatabaseHas('etudiants', [
+            'id' => $etudiant->id,
+            'matricule' => 'EBAC-0003-'.now()->year,
+            'user_id' => $compteId,
+        ]);
     }
 }
