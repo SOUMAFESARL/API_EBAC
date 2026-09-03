@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -23,6 +24,11 @@ class Etudiant extends Model
         return $this->belongsTo(Eglise::class, 'eglise_id');
     }
 
+    public function civilite(): BelongsTo
+    {
+        return $this->belongsTo(Civilite::class, 'civilite_id');
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -31,5 +37,10 @@ class Etudiant extends Model
     public function dossier(): HasOne
     {
         return $this->hasOne(DossierEtudiant::class, 'id_etudiant');
+    }
+
+    public function inscriptions(): HasMany
+    {
+        return $this->hasMany(Inscription::class, 'id_etudiant');
     }
 }

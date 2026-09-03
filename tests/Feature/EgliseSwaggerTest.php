@@ -100,6 +100,8 @@ class EgliseSwaggerTest extends TestCase
         $this->assertArrayHasKey('get', $documentation['paths']['/administration/preinscriptions']);
         $this->assertArrayHasKey('get', $documentation['paths']['/administration/preinscriptions/{preinscription}']);
         $this->assertArrayHasKey('post', $documentation['paths']['/administration/preinscriptions/{preinscription}/creer-compte']);
+        $this->assertArrayHasKey('get', $documentation['paths']['/administration/etudiants']);
+        $this->assertArrayHasKey('get', $documentation['paths']['/administration/dossiers-etudiants']);
         $this->assertSame(
             [['sanctum' => []]],
             $documentation['paths']['/administration/preinscriptions/{preinscription}/creer-compte']['post']['security'],
@@ -121,7 +123,7 @@ class EgliseSwaggerTest extends TestCase
         $this->assertArrayNotHasKey('rang', $promotion['properties']);
         $this->assertArrayNotHasKey('capacite', $promotion['properties']);
 
-        foreach (['AnneeAcademique', 'Promotion', 'Matiere', 'Module', 'Cours', 'PreInscriptionPayload', 'PreInscriptionResultat', 'PreInscriptionAdministration', 'CompteEtudiantCree'] as $schema) {
+        foreach (['AnneeAcademique', 'Promotion', 'Matiere', 'Module', 'Cours', 'PreInscriptionPayload', 'PreInscriptionResultat', 'PreInscriptionAdministration', 'CompteEtudiantCree', 'EtudiantListe', 'DossierEtudiantListe'] as $schema) {
             $this->assertArrayHasKey($schema, $documentation['components']['schemas']);
         }
     }

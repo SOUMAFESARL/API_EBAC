@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\V1\Administration\ProfilController;
 use App\Http\Controllers\Api\V1\Administration\RoleController;
 use App\Http\Controllers\Api\V1\Auth\AuthentificationController;
 use App\Http\Controllers\Api\V1\Eglise\EgliseController;
+use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantController;
+use App\Http\Controllers\Api\V1\Etudiant\EtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\GestionPreInscriptionController;
 use App\Http\Controllers\Api\V1\Etudiant\PreInscriptionController;
 use App\Http\Controllers\Api\V1\Navigation\SidebarController;
@@ -71,6 +73,14 @@ Route::prefix('v1/administration/preinscriptions')
         Route::post('/{preinscription}/creer-compte', [GestionPreInscriptionController::class, 'valider'])
             ->name('creer-compte');
     });
+
+Route::get('v1/administration/etudiants', [EtudiantController::class, 'index'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'permission:COMPTE_GERER'])
+    ->name('api.v1.administration.etudiants.index');
+
+Route::get('v1/administration/dossiers-etudiants', [DossierEtudiantController::class, 'index'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'permission:COMPTE_GERER'])
+    ->name('api.v1.administration.dossiers-etudiants.index');
 
 Route::prefix('v1/parametres')
     ->name('api.v1.parametres.')

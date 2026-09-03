@@ -452,6 +452,243 @@
                 }
             }
         },
+        "/administration/dossiers-etudiants": {
+            "get": {
+                "tags": [
+                    "Administration des étudiants"
+                ],
+                "summary": "Lister les dossiers étudiants par église et par statut",
+                "operationId": "listerDossiersEtudiants",
+                "parameters": [
+                    {
+                        "name": "eglise_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "description": "Exemple : Incomplet, Complet ou Validé",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "par_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée des dossiers",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DossierEtudiantListe"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Permission COMPTE_GERER requise"
+                    },
+                    "422": {
+                        "description": "Filtres invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/etudiants": {
+            "get": {
+                "tags": [
+                    "Administration des étudiants"
+                ],
+                "summary": "Lister tous les étudiants et préinscrits",
+                "operationId": "listerTousLesEtudiants",
+                "parameters": [
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "description": "Exemple : Préinscrit ou Inscrit",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "compte_cree",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "avec_dossier",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "dossier_statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "Incomplet"
+                        }
+                    },
+                    {
+                        "name": "niveau_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "promotion_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "annee_entree",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 2026
+                        }
+                    },
+                    {
+                        "name": "annee_academique_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "eglise_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "civilite_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "Date exacte de préinscription ou inscription",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_debut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_fin",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "par_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée des étudiants",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/EtudiantListe"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Permission COMPTE_GERER requise"
+                    },
+                    "422": {
+                        "description": "Filtres invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/administration/preinscriptions": {
             "get": {
                 "tags": [
@@ -3367,6 +3604,114 @@
                     }
                 },
                 "type": "object"
+            },
+            "EtudiantListe": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "matricule": {
+                        "type": "string"
+                    },
+                    "nom": {
+                        "type": "string"
+                    },
+                    "prenoms": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "telephone": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "date_inscription": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "statut": {
+                        "type": "string",
+                        "example": "Préinscrit"
+                    },
+                    "annee_academique": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/AnneeAcademique"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "eglise": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/Eglise"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "civilite": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "compte": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CompteEtudiantCree"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "dossier": {
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "DossierEtudiantListe": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "numero_dossier": {
+                        "type": "string"
+                    },
+                    "statut": {
+                        "type": "string",
+                        "example": "Incomplet"
+                    },
+                    "date_ouverture": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "pieces_requises": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "nullable": true
+                    },
+                    "observations": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "etudiant": {
+                        "$ref": "#/components/schemas/EtudiantListe"
+                    },
+                    "fichiers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -3382,6 +3727,10 @@
         {
             "name": "Églises",
             "description": "Églises"
+        },
+        {
+            "name": "Administration des étudiants",
+            "description": "Administration des étudiants"
         },
         {
             "name": "Administration des préinscriptions",
