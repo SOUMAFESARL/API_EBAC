@@ -29,41 +29,41 @@ class PreInscriptionController extends Controller
 
         try {
             $resultat = DB::transaction(function () use ($donnees, $request, &$cheminsEnregistres): array {
-            $dossier = [
-                'pieces_requises' => $donnees['pieces_requises'] ?? null,
-                'observations' => $donnees['observations'] ?? null,
-            ];
-            unset($donnees['pieces_requises'], $donnees['observations'], $donnees['documents']);
+                $dossier = [
+                    'pieces_requises' => $donnees['pieces_requises'] ?? null,
+                    'observations' => $donnees['observations'] ?? null,
+                ];
+                unset($donnees['pieces_requises'], $donnees['observations'], $donnees['documents']);
 
-            $etudiant = Etudiant::query()->create([
-                ...$donnees,
-                'matricule' => $this->genererMatricule(),
-                'date_inscription' => now()->toDateString(),
-                'statut' => 'Préinscrit',
-            ]);
-            $dossierEtudiant = DossierEtudiant::query()->create([
-                ...$dossier,
-                'id_etudiant' => $etudiant->id,
-                'numero_dossier' => $this->genererNumeroDossier($etudiant->nom, $etudiant->prenoms),
-                'statut' => 'Incomplet',
-                'date_ouverture' => now()->toDateString(),
-            ]);
-
-            foreach ($request->file('documents', []) as $document) {
-                $chemin = $document->store("etudiants/dossiers/{$dossierEtudiant->id}", 'public');
-                $cheminsEnregistres[] = $chemin;
-
-                FichierDossierEtudiant::query()->create([
-                    'id_dossier_etudiant' => $dossierEtudiant->id,
-                    'type_piece' => pathinfo($document->getClientOriginalName(), PATHINFO_FILENAME),
-                    'nom_original' => $document->getClientOriginalName(),
-                    'chemin' => $chemin,
-                    'mime_type' => $document->getMimeType(),
-                    'taille' => $document->getSize(),
+                $etudiant = Etudiant::query()->create([
+                    ...$donnees,
+                    'matricule' => $this->genererMatricule(),
+                    'date_inscription' => now()->toDateString(),
+                    'statut' => 'Préinscrit',
                 ]);
-            }
+                $dossierEtudiant = DossierEtudiant::query()->create([
+                    ...$dossier,
+                    'id_etudiant' => $etudiant->id,
+                    'numero_dossier' => $this->genererNumeroDossier($etudiant->nom, $etudiant->prenoms),
+                    'statut' => 'Incomplet',
+                    'date_ouverture' => now()->toDateString(),
+                ]);
 
-            return [$etudiant, $dossierEtudiant];
+                foreach ($request->file('documents', []) as $document) {
+                    $chemin = $document->store("etudiants/dossiers/{$dossierEtudiant->id}", 'public');
+                    $cheminsEnregistres[] = $chemin;
+
+                    FichierDossierEtudiant::query()->create([
+                        'id_dossier_etudiant' => $dossierEtudiant->id,
+                        'type_piece' => pathinfo($document->getClientOriginalName(), PATHINFO_FILENAME),
+                        'nom_original' => $document->getClientOriginalName(),
+                        'chemin' => $chemin,
+                        'mime_type' => $document->getMimeType(),
+                        'taille' => $document->getSize(),
+                    ]);
+                }
+
+                return [$etudiant, $dossierEtudiant];
             });
         } catch (\Throwable $exception) {
             Storage::disk('public')->delete($cheminsEnregistres);
@@ -89,6 +89,8 @@ class PreInscriptionController extends Controller
                 'statut' => $etudiant->statut,
                 'statut_dossier' => $dossier->statut,
                 'nombre_documents' => $dossier->fichiers()->count(),
+                'situation_matrimonial' => $etudiant->situation_matrimonial,
+                'nombre_enfant' => $etudiant->nombre_enfant,
             ],
         ], 201);
     }

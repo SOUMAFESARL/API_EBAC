@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Eglise;
 use App\Models\Civilite;
+use App\Models\Eglise;
 use App\Notifications\PreInscriptionRecueNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -38,6 +38,8 @@ class PreInscriptionApiTest extends TestCase
             'email' => 'jean@example.com',
             'telephone' => '+2250102030405',
             'adresse' => 'Cocody',
+            'situation_matrimonial' => 'Marié',
+            'nombre_enfant' => 2,
             'eglise_id' => $eglise->id,
             'pieces_requises' => ['Photo', 'Pièce d’identité'],
         ])->assertCreated()
@@ -45,12 +47,15 @@ class PreInscriptionApiTest extends TestCase
             ->assertJsonPath('pre_inscription.matricule', 'EBAC-0001-'.now()->year)
             ->assertJsonPath('pre_inscription.numero_dossier', 'KOJ000'.now()->year)
             ->assertJsonPath('pre_inscription.statut', 'Préinscrit')
-            ->assertJsonPath('pre_inscription.statut_dossier', 'Incomplet');
+            ->assertJsonPath('pre_inscription.statut_dossier', 'Incomplet')
+            ->assertJsonPath('pre_inscription.situation_matrimonial', 'Marié')
+            ->assertJsonPath('pre_inscription.nombre_enfant', 2);
         $reponse->assertJsonPath('pre_inscription.nombre_documents', 2);
 
         $this->assertDatabaseHas('etudiants', [
             'id' => $reponse->json('pre_inscription.id'), 'nom' => 'Kouassi', 'eglise_id' => $eglise->id,
             'civilite_id' => $civilite->id,
+            'situation_matrimonial' => 'Marié', 'nombre_enfant' => 2,
         ]);
         Storage::disk('public')->assertExists(
             \DB::table('etudiants')->where('id', $reponse->json('pre_inscription.id'))->value('photo_identite'),
@@ -64,8 +69,7 @@ class PreInscriptionApiTest extends TestCase
         }
         Notification::assertSentOnDemand(
             PreInscriptionRecueNotification::class,
-            fn (PreInscriptionRecueNotification $notification, array $canaux, object $destinataire) =>
-                in_array('mail', $canaux, true)
+            fn (PreInscriptionRecueNotification $notification, array $canaux, object $destinataire) => in_array('mail', $canaux, true)
                 && $destinataire->routes['mail'] === 'jean@example.com'
                 && $notification->matricule === $reponse->json('pre_inscription.matricule'),
         );
@@ -180,7 +184,7 @@ class PreInscriptionApiTest extends TestCase
             numeroDossier: 'ZRM000'.now()->year,
         );
 
-        $contenu = $notification->toMail(new \stdClass())->render();
+        $contenu = $notification->toMail(new \stdClass)->render();
 
         $this->assertStringContainsString('Demande de pré-inscription reçue', $contenu);
         $this->assertStringContainsString('en cours d’analyse', $contenu);

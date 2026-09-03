@@ -16,10 +16,16 @@ final readonly class PreInscriptionDTO
         if (isset($donnees['civilite_id'])) {
             $donnees['civilite_id'] = (int) $donnees['civilite_id'];
         }
+        if (isset($donnees['nombre_enfant'])) {
+            $donnees['nombre_enfant'] = (int) $donnees['nombre_enfant'];
+        }
 
         return new self($donnees);
     }
 
     /** @return array<string, mixed> */
-    public function toArray(): array { return $this->donnees; }
+    public function toArray(): array
+    {
+        return $this->donnees;
+    }
 }

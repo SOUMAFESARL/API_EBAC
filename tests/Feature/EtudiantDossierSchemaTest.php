@@ -15,6 +15,8 @@ class EtudiantDossierSchemaTest extends TestCase
         $this->assertTrue(Schema::hasColumns('etudiants', [
             'civilite_id',
             'statut_professionnel',
+            'situation_matrimonial',
+            'nombre_enfant',
             'photo_identite',
         ]));
 

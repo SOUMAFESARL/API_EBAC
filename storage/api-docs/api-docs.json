@@ -3709,6 +3709,19 @@
                         "type": "string",
                         "nullable": true
                     },
+                    "situation_matrimonial": {
+                        "type": "string",
+                        "example": "Marié",
+                        "nullable": true,
+                        "maxLength": 50
+                    },
+                    "nombre_enfant": {
+                        "type": "integer",
+                        "example": 2,
+                        "nullable": true,
+                        "maximum": 65535,
+                        "minimum": 0
+                    },
                     "eglise_id": {
                         "description": "Identifiant d’une église existante et non supprimée",
                         "type": "integer",
@@ -3763,6 +3776,16 @@
                     "statut_dossier": {
                         "type": "string",
                         "example": "Incomplet"
+                    },
+                    "situation_matrimonial": {
+                        "type": "string",
+                        "example": "Marié",
+                        "nullable": true
+                    },
+                    "nombre_enfant": {
+                        "type": "integer",
+                        "example": 2,
+                        "nullable": true
                     }
                 },
                 "type": "object"
@@ -3817,6 +3840,14 @@
                     },
                     "statut_professionnel": {
                         "type": "string",
+                        "nullable": true
+                    },
+                    "situation_matrimonial": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "nombre_enfant": {
+                        "type": "integer",
                         "nullable": true
                     },
                     "photo_identite": {

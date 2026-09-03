@@ -151,6 +151,8 @@ class GestionPreInscriptionController extends Controller
             'nationalite' => $etudiant->nationalite,
             'adresse' => $etudiant->adresse,
             'statut_professionnel' => $etudiant->statut_professionnel,
+            'situation_matrimonial' => $etudiant->situation_matrimonial,
+            'nombre_enfant' => $etudiant->nombre_enfant,
             'photo_identite' => $etudiant->photo_identite,
             'date_inscription' => $etudiant->date_inscription?->format('Y-m-d'),
             'statut' => $etudiant->statut,

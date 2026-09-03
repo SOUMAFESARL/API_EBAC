@@ -7,7 +7,10 @@ use Illuminate\Validation\Rule;
 
 class PreInscriptionRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool
+    {
+        return true;
+    }
 
     public function rules(): array
     {
@@ -23,6 +26,8 @@ class PreInscriptionRequest extends FormRequest
             'adresse' => ['nullable', 'string', 'max:255'],
             'eglise_id' => ['required', 'integer', Rule::exists('eglises', 'id')->whereNull('deleted_at')],
             'statut_professionnel' => ['nullable', 'string', 'max:100'],
+            'situation_matrimonial' => ['nullable', 'string', 'max:50'],
+            'nombre_enfant' => ['nullable', 'integer', 'min:0', 'max:65535'],
             'photo_identite' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'documents' => ['sometimes', 'array', 'max:10'],
             'documents.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
