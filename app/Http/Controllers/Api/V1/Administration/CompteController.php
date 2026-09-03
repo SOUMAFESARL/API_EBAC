@@ -13,6 +13,7 @@ use App\Models\Etudiant;
 use App\Models\Role;
 use App\Models\User;
 use App\Notifications\CompteCreeNotification;
+use App\Notifications\CompteEtudiantCreeNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -98,7 +99,16 @@ class CompteController extends Controller
             return $compte;
         });
 
-        $compte->notifyNow(new CompteCreeNotification($motDePasseTemporaire));
+        if ($compte->role?->code === 'ETUDIANT') {
+            $ficheEtudiant = Etudiant::query()->with('dossier')->where('user_id', $compte->id)->first();
+            $compte->notifyNow(new CompteEtudiantCreeNotification(
+                motDePasseTemporaire: $motDePasseTemporaire,
+                numeroDossier: $ficheEtudiant?->dossier?->numero_dossier,
+                statutDossier: $ficheEtudiant?->dossier?->statut,
+            ));
+        } else {
+            $compte->notifyNow(new CompteCreeNotification($motDePasseTemporaire));
+        }
 
         return response()->json([
             'message' => 'Compte créé avec succès. Le mot de passe temporaire a été envoyé par email.',
@@ -142,7 +152,12 @@ class CompteController extends Controller
             return $compte;
         });
 
-        $compte->notifyNow(new CompteCreeNotification($motDePasseTemporaire));
+        $ficheEtudiant = Etudiant::query()->with('dossier')->where('user_id', $compte->id)->first();
+        $compte->notifyNow(new CompteEtudiantCreeNotification(
+            motDePasseTemporaire: $motDePasseTemporaire,
+            numeroDossier: $ficheEtudiant?->dossier?->numero_dossier,
+            statutDossier: $ficheEtudiant?->dossier?->statut,
+        ));
 
         return response()->json([
             'message' => 'Compte étudiant créé avec succès. Le mot de passe temporaire a été envoyé par email.',

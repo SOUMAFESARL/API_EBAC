@@ -8,7 +8,7 @@ use App\Models\AnneeAcademique;
 use App\Models\Etudiant;
 use App\Models\Role;
 use App\Models\User;
-use App\Notifications\CompteCreeNotification;
+use App\Notifications\CompteEtudiantCreeNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -54,7 +54,7 @@ class GestionPreInscriptionController extends Controller
         ]);
     }
 
-    #[OA\Post(path: '/administration/preinscriptions/{id}/creer-compte', operationId: 'creerCompteDepuisPreinscription', summary: 'Valider une préinscription et créer automatiquement le compte étudiant', description: 'Attribue le rôle ETUDIANT sans choix côté client, rattache le compte à la fiche, valide le dossier et envoie par e-mail le mot de passe temporaire, le matricule, l’année académique et l’église.', tags: ['Administration des préinscriptions'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Compte étudiant créé et e-mail envoyé', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'compte', ref: '#/components/schemas/CompteEtudiantCree')])), new OA\Response(response: 401, description: 'Non authentifié'), new OA\Response(response: 403, description: 'Permission COMPTE_GERER requise'), new OA\Response(response: 404, description: 'Préinscription introuvable'), new OA\Response(response: 422, description: 'Préinscription déjà traitée, e-mail déjà utilisé, rôle absent ou aucune année académique active')])]
+    #[OA\Post(path: '/administration/preinscriptions/{id}/creer-compte', operationId: 'creerCompteDepuisPreinscription', summary: 'Valider une préinscription et créer automatiquement le compte étudiant', description: 'Attribue le rôle ETUDIANT sans choix côté client, rattache le compte à la fiche, valide le dossier et envoie par e-mail le mot de passe temporaire, le matricule, le numéro et le statut du dossier, l’année académique et l’église.', tags: ['Administration des préinscriptions'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Compte étudiant créé et e-mail envoyé', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'compte', ref: '#/components/schemas/CompteEtudiantCree')])), new OA\Response(response: 401, description: 'Non authentifié'), new OA\Response(response: 403, description: 'Permission COMPTE_GERER requise'), new OA\Response(response: 404, description: 'Préinscription introuvable'), new OA\Response(response: 422, description: 'Préinscription déjà traitée, e-mail déjà utilisé, rôle absent ou aucune année académique active')])]
     public function valider(Request $request, int $id): JsonResponse
     {
         $preinscription = Etudiant::query()->findOrFail($id);
@@ -118,10 +118,14 @@ class GestionPreInscriptionController extends Controller
             return $compte;
         });
 
-        $compte->notifyNow(new CompteCreeNotification(
+        $dossier = $preinscription->dossier()->first();
+
+        $compte->notifyNow(new CompteEtudiantCreeNotification(
             motDePasseTemporaire: $motDePasseTemporaire,
             anneeAcademique: $anneeAcademique->libelle,
             eglise: $preinscription->eglise?->nom ?? 'Non renseignée',
+            numeroDossier: $dossier?->numero_dossier,
+            statutDossier: $dossier?->statut,
         ));
 
         return response()->json([

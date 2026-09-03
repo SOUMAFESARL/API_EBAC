@@ -7,6 +7,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Notifications\CompteCreeNotification;
+use App\Notifications\CompteEtudiantCreeNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -132,8 +133,8 @@ class CompteCodeAutomatiqueTest extends TestCase
 
         Notification::assertSentTo(
             $compte,
-            CompteCreeNotification::class,
-            function (CompteCreeNotification $notification) use ($compte): bool {
+            CompteEtudiantCreeNotification::class,
+            function (CompteEtudiantCreeNotification $notification) use ($compte): bool {
                 $motDePasse = $notification->toMail($compte)->viewData['motDePasseTemporaire'] ?? null;
 
                 return is_string($motDePasse)
@@ -232,6 +233,45 @@ class CompteCodeAutomatiqueTest extends TestCase
         $this->assertStringContainsString('https://ebac.ci', $html);
         $this->assertStringNotContainsString('127.0.0.1', $html);
         $this->assertStringNotContainsString("If you're having trouble", $html);
+    }
+
+    public function test_le_message_etudiant_est_different_du_message_utilisateur(): void
+    {
+        $message = new class
+        {
+            public function embed(string $path): string
+            {
+                return 'cid:logo-ebac';
+            }
+        };
+
+        $donneesCommunes = [
+            'nomComplet' => 'Severin Zran',
+            'email' => 'severin.zran@soumafe.ci',
+            'motDePasseTemporaire' => 'Temporaire123',
+            'urlConnexion' => 'https://ebac.ci',
+            'message' => $message,
+        ];
+
+        $htmlUtilisateur = view('emails.compte-cree', $donneesCommunes + [
+            'role' => 'Administrateur',
+        ])->render();
+        $htmlEtudiant = view('emails.compte-etudiant-cree', $donneesCommunes + [
+            'matricule' => 'EBAC-0001-2026',
+            'anneeAcademique' => '2026-2027',
+            'eglise' => 'Église Alliance de Test',
+            'numeroDossier' => 'DOS-0001-2026',
+            'statutDossier' => 'Incomplet',
+        ])->render();
+
+        $this->assertStringContainsString('Rôle attribué', $htmlUtilisateur);
+        $this->assertStringNotContainsString('Votre préinscription a été validée', $htmlUtilisateur);
+        $this->assertStringContainsString('Votre préinscription a été validée', $htmlEtudiant);
+        $this->assertStringContainsString('Matricule étudiant', $htmlEtudiant);
+        $this->assertStringContainsString('2026-2027', $htmlEtudiant);
+        $this->assertStringContainsString('DOS-0001-2026', $htmlEtudiant);
+        $this->assertStringContainsString('Incomplet', $htmlEtudiant);
+        $this->assertNotSame($htmlUtilisateur, $htmlEtudiant);
     }
 
     public function test_la_photo_est_enregistree_et_accessible_par_son_url_api(): void

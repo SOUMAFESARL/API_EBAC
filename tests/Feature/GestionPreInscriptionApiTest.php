@@ -10,7 +10,7 @@ use App\Models\Etudiant;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
-use App\Notifications\CompteCreeNotification;
+use App\Notifications\CompteEtudiantCreeNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -77,7 +77,7 @@ class GestionPreInscriptionApiTest extends TestCase
         $this->assertDatabaseHas('dossiers_etudiants', ['id' => $dossier->id, 'user_id' => $compteId, 'statut' => 'Validé']);
 
         $compte = User::query()->findOrFail($compteId);
-        Notification::assertSentTo($compte, CompteCreeNotification::class, function ($notification) use ($compte, $etudiant, $anneeAcademique, $eglise): bool {
+        Notification::assertSentTo($compte, CompteEtudiantCreeNotification::class, function ($notification) use ($compte, $etudiant, $anneeAcademique, $eglise, $dossier): bool {
             $donneesEmail = $notification->toMail($compte)->viewData;
             $motDePasse = $donneesEmail['motDePasseTemporaire'] ?? null;
 
@@ -85,7 +85,9 @@ class GestionPreInscriptionApiTest extends TestCase
                 && Hash::check($motDePasse, $compte->password)
                 && $donneesEmail['matricule'] === $etudiant->matricule
                 && $donneesEmail['anneeAcademique'] === $anneeAcademique->libelle
-                && $donneesEmail['eglise'] === $eglise->nom;
+                && $donneesEmail['eglise'] === $eglise->nom
+                && $donneesEmail['numeroDossier'] === $dossier->numero_dossier
+                && $donneesEmail['statutDossier'] === 'Complet';
         });
     }
 
