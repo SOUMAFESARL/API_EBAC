@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api\V1\Etudiant;
 use App\Http\Controllers\Controller;
 use App\Models\AnneeAcademique;
 use App\Models\Etudiant;
+use App\Models\FichierDossierEtudiant;
 use App\Models\Inscription;
 use App\Models\Promotion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
 
@@ -29,6 +31,81 @@ class DossierEtudiantCompletController extends Controller
         $etudiant = Etudiant::query()->where('user_id', $utilisateur->id)->firstOrFail();
 
         return response()->json(['dossier' => $this->construireDossier($etudiant)]);
+    }
+
+    #[OA\Patch(path: '/etudiant/dossier', operationId: 'modifierMonDossierEtudiant', summary: 'Modifier les informations personnelles de son dossier', tags: ['Dossier étudiant'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object')), responses: [new OA\Response(response: 200, description: 'Dossier personnel modifié'), new OA\Response(response: 403, description: 'Réservé au rôle ETUDIANT'), new OA\Response(response: 422, description: 'Données invalides ou champ administratif interdit')])]
+    #[OA\Post(path: '/etudiant/dossier', operationId: 'modifierMonDossierEtudiantMultipart', summary: 'Modifier son dossier avec une photo ou des documents', tags: ['Dossier étudiant'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', properties: [new OA\Property(property: 'telephone', type: 'string'), new OA\Property(property: 'adresse', type: 'string'), new OA\Property(property: 'photo_identite', type: 'string', format: 'binary'), new OA\Property(property: 'documents', type: 'array', items: new OA\Items(type: 'string', format: 'binary'))]))), responses: [new OA\Response(response: 200, description: 'Dossier personnel et fichiers modifiés'), new OA\Response(response: 403, description: 'Réservé au rôle ETUDIANT'), new OA\Response(response: 422, description: 'Données invalides')])]
+    public function modifierMonDossier(Request $request): JsonResponse
+    {
+        $utilisateur = $request->user()->loadMissing('role');
+        if ($utilisateur->role?->code !== 'ETUDIANT') {
+            return response()->json(['message' => 'Cette ressource est réservée aux étudiants.'], 403);
+        }
+
+        $donnees = $request->validate([
+            'civilite_id' => ['sometimes', 'integer', 'exists:civilite,id'],
+            'date_naissance' => ['sometimes', 'nullable', 'date'],
+            'lieu_naissance' => ['sometimes', 'nullable', 'string', 'max:150'],
+            'nationalite' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'telephone' => ['sometimes', 'nullable', 'string', 'max:30'],
+            'adresse' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'eglise_id' => ['sometimes', 'nullable', 'integer', Rule::exists('eglises', 'id')->whereNull('deleted_at')],
+            'statut_professionnel' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'situation_matrimonial' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'nombre_enfant' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:65535'],
+            'photo_identite' => ['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'documents' => ['sometimes', 'array', 'max:10'],
+            'documents.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
+            'matricule' => ['prohibited'],
+            'statut' => ['prohibited'],
+            'id_promotion' => ['prohibited'],
+            'id_niveau' => ['prohibited'],
+            'decision_passage' => ['prohibited'],
+            'paiements' => ['prohibited'],
+        ]);
+
+        $etudiant = Etudiant::query()->with('dossier')->where('user_id', $utilisateur->id)->firstOrFail();
+        abort_if(! $etudiant->dossier, 404, 'Aucun dossier n’est rattaché à ce compte étudiant.');
+
+        $anciennePhoto = $etudiant->photo_identite;
+        $nouveauxChemins = [];
+        if ($request->hasFile('photo_identite')) {
+            $donnees['photo_identite'] = $request->file('photo_identite')->store('etudiants/photos-identite', 'public');
+            $nouveauxChemins[] = $donnees['photo_identite'];
+        }
+        unset($donnees['documents']);
+
+        try {
+            DB::transaction(function () use ($request, $utilisateur, $etudiant, $donnees, &$nouveauxChemins): void {
+                $etudiant->update([...$donnees, 'updated_by' => $utilisateur->id]);
+
+                foreach ($request->file('documents', []) as $document) {
+                    $chemin = $document->store("etudiants/dossiers/{$etudiant->dossier->id}", 'public');
+                    $nouveauxChemins[] = $chemin;
+                    FichierDossierEtudiant::query()->create([
+                        'id_dossier_etudiant' => $etudiant->dossier->id,
+                        'type_piece' => pathinfo($document->getClientOriginalName(), PATHINFO_FILENAME),
+                        'nom_original' => $document->getClientOriginalName(),
+                        'chemin' => $chemin,
+                        'mime_type' => $document->getMimeType(),
+                        'taille' => $document->getSize(),
+                        'statut_validation' => 'En attente',
+                    ]);
+                }
+            });
+        } catch (\Throwable $exception) {
+            Storage::disk('public')->delete($nouveauxChemins);
+            throw $exception;
+        }
+
+        if (isset($donnees['photo_identite']) && $anciennePhoto && $anciennePhoto !== $donnees['photo_identite']) {
+            Storage::disk('public')->delete($anciennePhoto);
+        }
+
+        return response()->json([
+            'message' => 'Votre dossier a été modifié avec succès. Les nouveaux documents sont en attente de validation.',
+            'dossier' => $this->construireDossier($etudiant->fresh()),
+        ]);
     }
 
     #[OA\Post(path: '/administration/etudiants/{id}/affecter-promotion', operationId: 'affecterEtudiantPromotion', summary: 'Affecter un étudiant ayant déjà un compte à une promotion', tags: ['Dossier étudiant'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'id', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['id_promotion'], properties: [new OA\Property(property: 'id_promotion', type: 'integer')])), responses: [new OA\Response(response: 201, description: 'Étudiant affecté et inscrit au niveau actuel de la promotion'), new OA\Response(response: 403, description: 'Accès interdit'), new OA\Response(response: 404, description: 'Étudiant ou promotion introuvable'), new OA\Response(response: 422, description: 'Compte absent, promotion inactive, année absente ou étudiant déjà inscrit')])]

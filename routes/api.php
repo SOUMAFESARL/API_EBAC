@@ -37,6 +37,9 @@ Route::post('v1/etudiant/pre-inscription', [PreInscriptionController::class, 'st
 Route::get('v1/etudiant/dossier', [DossierEtudiantCompletController::class, 'monDossier'])
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->name('api.v1.etudiant.dossier');
+Route::match(['patch', 'post'], 'v1/etudiant/dossier', [DossierEtudiantCompletController::class, 'modifierMonDossier'])
+    ->middleware(['auth:sanctum', 'compte.actif'])
+    ->name('api.v1.etudiant.dossier.update');
 
 Route::prefix('v1/auth')->name('api.v1.auth.')->group(function () {
     Route::post('/connexion', [AuthentificationController::class, 'connexion'])

@@ -25,6 +25,8 @@ Etudiant et navigation
 ----------------------
 POST       /api/v1/etudiant/pre-inscription
 GET        /api/v1/etudiant/dossier
+PATCH      /api/v1/etudiant/dossier
+POST       /api/v1/etudiant/dossier (multipart)
 GET        /api/v1/navigation/sidebar
 GET        /api/v1/utilisateurs/{compte}/photo
 

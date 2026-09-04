@@ -10,6 +10,8 @@ use App\Models\Promotion;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -19,6 +21,7 @@ class DossierEtudiantCompletApiTest extends TestCase
 
     public function test_un_etudiant_connecte_accede_uniquement_a_son_propre_dossier(): void
     {
+        Storage::fake('public');
         $role = Role::query()->create(['code' => 'ETUDIANT', 'libelle' => 'Étudiant']);
         $compte = User::factory()->create(['id_role' => $role->id]);
         $etudiant = Etudiant::query()->create([
@@ -43,6 +46,41 @@ class DossierEtudiantCompletApiTest extends TestCase
             ->assertJsonPath('dossier.numero_dossier', 'ANA0092026')
             ->assertJsonPath('dossier.informations_personnelles.id', $etudiant->id)
             ->assertJsonPath('dossier.informations_personnelles.matricule', 'EBAC-0009-2026');
+
+        $this->patchJson('/api/v1/etudiant/dossier', [
+            'telephone' => '+2250708091011',
+            'adresse' => 'Abidjan Cocody',
+            'situation_matrimonial' => 'Marié',
+            'nombre_enfant' => 1,
+        ])->assertOk()
+            ->assertJsonPath('dossier.informations_personnelles.telephone', '+2250708091011')
+            ->assertJsonPath('dossier.informations_personnelles.adresse', 'Abidjan Cocody')
+            ->assertJsonPath('dossier.informations_personnelles.nombre_enfant', 1);
+
+        $this->patchJson('/api/v1/etudiant/dossier', [
+            'matricule' => 'MATRICULE-INTERDIT',
+            'statut' => 'Diplômé',
+            'id_promotion' => 99,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['matricule', 'statut', 'id_promotion']);
+
+        $this->assertDatabaseHas('etudiants', [
+            'id' => $etudiant->id,
+            'matricule' => 'EBAC-0009-2026',
+            'statut' => 'En formation',
+            'telephone' => '+2250708091011',
+        ]);
+
+        $this->post('/api/v1/etudiant/dossier', [
+            'photo_identite' => UploadedFile::fake()->image('nouvelle-photo.jpg'),
+            'documents' => [UploadedFile::fake()->create('attestation.pdf', 250, 'application/pdf')],
+        ])->assertOk()
+            ->assertJsonPath('dossier.documents.0.nom_original', 'attestation.pdf')
+            ->assertJsonPath('dossier.documents.0.statut_validation', 'En attente');
+
+        Storage::disk('public')->assertExists(
+            Etudiant::query()->findOrFail($etudiant->id)->photo_identite,
+        );
 
         $this->getJson("/api/v1/administration/etudiants/{$etudiant->id}/dossier-complet")
             ->assertForbidden();

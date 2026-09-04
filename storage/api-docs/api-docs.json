@@ -478,6 +478,91 @@
                         "sanctum": []
                     }
                 ]
+            },
+            "post": {
+                "tags": [
+                    "Dossier étudiant"
+                ],
+                "summary": "Modifier son dossier avec une photo ou des documents",
+                "operationId": "modifierMonDossierEtudiantMultipart",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "telephone": {
+                                        "type": "string"
+                                    },
+                                    "adresse": {
+                                        "type": "string"
+                                    },
+                                    "photo_identite": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "documents": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Dossier personnel et fichiers modifiés"
+                    },
+                    "403": {
+                        "description": "Réservé au rôle ETUDIANT"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Dossier étudiant"
+                ],
+                "summary": "Modifier les informations personnelles de son dossier",
+                "operationId": "modifierMonDossierEtudiant",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Dossier personnel modifié"
+                    },
+                    "403": {
+                        "description": "Réservé au rôle ETUDIANT"
+                    },
+                    "422": {
+                        "description": "Données invalides ou champ administratif interdit"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/administration/etudiants/{id}/affecter-promotion": {
