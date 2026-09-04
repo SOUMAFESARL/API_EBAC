@@ -66,7 +66,7 @@ class PermissionMiddlewareTest extends TestCase
         }
     }
 
-    public function test_le_secretariat_academique_peut_creer_un_compte_sans_permission_supplementaire(): void
+    public function test_le_secretariat_academique_peut_gerer_les_comptes_sans_permission_supplementaire(): void
     {
         $role = Role::query()->create([
             'code' => 'SECRETAIRE_ACADEMIQUE',
@@ -74,10 +74,21 @@ class PermissionMiddlewareTest extends TestCase
         ]);
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
 
-        $this->getJson('/api/v1/administration/comptes')->assertForbidden();
+        $this->getJson('/api/v1/administration/comptes')->assertOk();
         $this->getJson('/api/v1/administration/comptes/create')->assertOk();
         $this->postJson('/api/v1/administration/comptes', [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['nom', 'email', 'id_role']);
+    }
+
+    public function test_tout_autre_role_actif_peut_acceder_a_la_gestion_des_comptes(): void
+    {
+        $role = Role::query()->create([
+            'code' => 'DIRECTION',
+            'libelle' => 'Direction',
+        ]);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+
+        $this->getJson('/api/v1/administration/comptes')->assertOk();
     }
 }
