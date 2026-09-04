@@ -20,11 +20,16 @@ class FichierDossierEtudiant extends Model
         'chemin',
         'mime_type',
         'taille',
+        'statut_validation',
+        'date_validation',
+        'date_expiration',
+        'motif_rejet',
+        'valide_par',
     ];
 
     protected function casts(): array
     {
-        return ['taille' => 'integer'];
+        return ['taille' => 'integer', 'date_validation' => 'datetime', 'date_expiration' => 'date:Y-m-d'];
     }
 
     protected function url(): Attribute

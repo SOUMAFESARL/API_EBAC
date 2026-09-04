@@ -58,4 +58,14 @@ class Etudiant extends Model
     {
         return $this->hasMany(Inscription::class, 'id_etudiant');
     }
+
+    public function paiements(): HasMany
+    {
+        return $this->hasMany(PaiementEtudiant::class, 'id_etudiant');
+    }
+
+    public function parcoursAcademiques(): HasMany
+    {
+        return $this->hasMany(ParcoursAcademique::class, 'id_etudiant');
+    }
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\Auth\AuthentificationController;
 use App\Http\Controllers\Api\V1\Eglise\EgliseController;
 use App\Http\Controllers\Api\V1\FichierPreinscriptionController;
 use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantController;
+use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantCompletController;
 use App\Http\Controllers\Api\V1\Etudiant\EtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\GestionPreInscriptionController;
 use App\Http\Controllers\Api\V1\Etudiant\PreInscriptionController;
@@ -91,6 +92,16 @@ Route::prefix('v1/administration/preinscriptions')
 Route::get('v1/administration/etudiants', [EtudiantController::class, 'index'])
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.interdits:ENSEIGNANT,ETUDIANT'])
     ->name('api.v1.administration.etudiants.index');
+
+Route::prefix('v1/administration/etudiants/{etudiant}')
+    ->name('api.v1.administration.etudiants.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.interdits:ENSEIGNANT,ETUDIANT'])
+    ->group(function () {
+        Route::post('affecter-promotion', [DossierEtudiantCompletController::class, 'affecter'])
+            ->name('affecter-promotion');
+        Route::get('dossier-complet', [DossierEtudiantCompletController::class, 'show'])
+            ->name('dossier-complet');
+    });
 
 Route::get('v1/administration/dossiers-etudiants', [DossierEtudiantController::class, 'index'])
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.interdits:ENSEIGNANT,ETUDIANT'])

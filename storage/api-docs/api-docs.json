@@ -452,6 +452,97 @@
                 }
             }
         },
+        "/administration/etudiants/{etudiant}/affecter-promotion": {
+            "post": {
+                "tags": [
+                    "Dossier étudiant"
+                ],
+                "summary": "Affecter un étudiant ayant déjà un compte à une promotion",
+                "operationId": "affecterEtudiantPromotion",
+                "parameters": [
+                    {
+                        "name": "etudiant",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_promotion"
+                                ],
+                                "properties": {
+                                    "id_promotion": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Étudiant affecté et inscrit au niveau actuel de la promotion"
+                    },
+                    "403": {
+                        "description": "Accès interdit"
+                    },
+                    "404": {
+                        "description": "Étudiant ou promotion introuvable"
+                    },
+                    "422": {
+                        "description": "Compte absent, promotion inactive, année absente ou étudiant déjà inscrit"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/etudiants/{etudiant}/dossier-complet": {
+            "get": {
+                "tags": [
+                    "Dossier étudiant"
+                ],
+                "summary": "Ouvrir le dossier étudiant complet",
+                "operationId": "afficherDossierEtudiantComplet",
+                "parameters": [
+                    {
+                        "name": "etudiant",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dossier, informations personnelles, pièces, finances, parcours et bulletins"
+                    },
+                    "403": {
+                        "description": "Accès interdit"
+                    },
+                    "404": {
+                        "description": "Étudiant introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/administration/dossiers-etudiants": {
             "get": {
                 "tags": [
@@ -6359,6 +6450,10 @@
         {
             "name": "Églises",
             "description": "Églises"
+        },
+        {
+            "name": "Dossier étudiant",
+            "description": "Dossier étudiant"
         },
         {
             "name": "Administration des étudiants",

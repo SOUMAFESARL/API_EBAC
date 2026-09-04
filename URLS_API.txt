@@ -36,6 +36,8 @@ POST       /api/v1/administration/preinscriptions/{id}/creer-compte
 POST       /api/v1/administration/preinscriptions/{id}/rejeter
 GET        /api/v1/administration/etudiants
 GET        /api/v1/administration/dossiers-etudiants
+POST       /api/v1/administration/etudiants/{etudiant}/affecter-promotion
+GET        /api/v1/administration/etudiants/{etudiant}/dossier-complet
 
 Comptes
 -------
