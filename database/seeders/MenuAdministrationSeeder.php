@@ -49,7 +49,7 @@ class MenuAdministrationSeeder extends Seeder
             ->syncWithoutDetaching(array_fill_keys($permissionIds, ['actif' => true]));
 
         $roleSecretaire = Role::query()->firstOrCreate(
-            ['code' => 'SECRETAIRE_ACADEMIQUE'],
+            ['code' => 'SECRETARIAT'],
             [
                 'libelle' => 'Secrétaire académique',
                 'description' => 'Gestion administrative et académique des étudiants',

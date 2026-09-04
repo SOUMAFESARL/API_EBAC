@@ -88,7 +88,7 @@ class DossierEtudiantCompletApiTest extends TestCase
 
     public function test_le_secretariat_affecte_un_etudiant_et_ouvre_son_dossier_complet(): void
     {
-        $role = Role::query()->create(['code' => 'SECRETAIRE_ACADEMIQUE', 'libelle' => 'Secrétaire académique']);
+        $role = Role::query()->create(['code' => 'SECRETARIAT', 'libelle' => 'Secrétariat académique']);
         $secretaire = User::factory()->create(['id_role' => $role->id]);
         $compteEtudiant = User::factory()->create();
         Sanctum::actingAs($secretaire);

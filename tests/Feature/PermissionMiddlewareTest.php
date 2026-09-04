@@ -69,7 +69,7 @@ class PermissionMiddlewareTest extends TestCase
     public function test_le_secretariat_academique_peut_gerer_les_comptes_sans_permission_supplementaire(): void
     {
         $role = Role::query()->create([
-            'code' => 'SECRETAIRE_ACADEMIQUE',
+            'code' => 'SECRETARIAT',
             'libelle' => 'Secrétaire académique',
         ]);
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));

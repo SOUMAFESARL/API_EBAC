@@ -22,7 +22,7 @@ class EtudiantApiTest extends TestCase
 
     public function test_le_secretariat_liste_et_filtre_tous_les_etudiants(): void
     {
-        $role = Role::query()->create(['code' => 'SECRETAIRE_ACADEMIQUE', 'libelle' => 'Secrétaire académique']);
+        $role = Role::query()->create(['code' => 'SECRETARIAT', 'libelle' => 'Secrétariat académique']);
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
 
         $monsieur = Civilite::query()->create(['code' => 'M', 'name' => 'Monsieur']);

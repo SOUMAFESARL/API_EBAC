@@ -24,7 +24,7 @@ class GestionPreInscriptionApiTest extends TestCase
     public function test_le_secretariat_liste_et_valide_une_preinscription(): void
     {
         Notification::fake();
-        $roleSecretaire = Role::query()->create(['code' => 'SECRETAIRE_ACADEMIQUE', 'libelle' => 'Secrétaire académique']);
+        $roleSecretaire = Role::query()->create(['code' => 'SECRETARIAT', 'libelle' => 'Secrétariat académique']);
         Role::query()->create(['code' => 'ETUDIANT', 'libelle' => 'Étudiant']);
         $permission = Permission::query()->create(['code' => 'COMPTE_GERER', 'libelle' => 'Gérer les comptes']);
         $roleSecretaire->permissions()->attach($permission->id, ['actif' => true]);

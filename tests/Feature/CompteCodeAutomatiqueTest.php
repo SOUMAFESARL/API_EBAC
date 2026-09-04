@@ -96,7 +96,7 @@ class CompteCodeAutomatiqueTest extends TestCase
         Notification::fake();
 
         $roleSecretaire = Role::query()->create([
-            'code' => 'SECRETAIRE_ACADEMIQUE',
+            'code' => 'SECRETARIAT',
             'libelle' => 'Secrétaire académique',
         ]);
         $roleEtudiant = Role::query()->create([

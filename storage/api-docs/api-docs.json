@@ -643,7 +643,7 @@
                         "description": "Dossier, informations personnelles, pièces, finances, parcours et bulletins"
                     },
                     "403": {
-                        "description": "Réservé à ADMIN et SECRETAIRE_ACADEMIQUE"
+                        "description": "Réservé à ADMIN et SECRETARIAT"
                     },
                     "404": {
                         "description": "Étudiant introuvable"
@@ -678,7 +678,7 @@
                         "description": "Dossier, informations personnelles, pièces, finances, parcours et bulletins"
                     },
                     "403": {
-                        "description": "Réservé à ADMIN et SECRETAIRE_ACADEMIQUE"
+                        "description": "Réservé à ADMIN et SECRETARIAT"
                     },
                     "404": {
                         "description": "Étudiant introuvable"
@@ -1314,7 +1314,7 @@
                         "description": "Statistiques et liste paginée du registre"
                     },
                     "403": {
-                        "description": "Réservé à ADMIN et SECRETAIRE_ACADEMIQUE"
+                        "description": "Réservé à ADMIN et SECRETARIAT"
                     },
                     "422": {
                         "description": "Filtres invalides"
@@ -1384,7 +1384,7 @@
                         "description": "Affectation mise à jour"
                     },
                     "403": {
-                        "description": "Réservé à ADMIN et SECRETAIRE_ACADEMIQUE"
+                        "description": "Réservé à ADMIN et SECRETARIAT"
                     },
                     "404": {
                         "description": "Étudiant ou inscription introuvable"
