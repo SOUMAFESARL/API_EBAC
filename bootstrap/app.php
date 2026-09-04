@@ -4,6 +4,7 @@ use App\Http\Middleware\InterdireRoles;
 use App\Http\Middleware\VerifierAdministrateur;
 use App\Http\Middleware\VerifierCompteActif;
 use App\Http\Middleware\VerifierPermission;
+use App\Http\Middleware\VerifierPermissionOuRoles;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'administrateur' => VerifierAdministrateur::class,
             'compte.actif' => VerifierCompteActif::class,
             'permission' => VerifierPermission::class,
+            'permission.ou.roles' => VerifierPermissionOuRoles::class,
             'roles.interdits' => InterdireRoles::class,
         ]);
     })

@@ -65,4 +65,19 @@ class PermissionMiddlewareTest extends TestCase
             $this->getJson('/api/v1/administration/comptes')->assertForbidden();
         }
     }
+
+    public function test_le_secretariat_academique_peut_creer_un_compte_sans_permission_supplementaire(): void
+    {
+        $role = Role::query()->create([
+            'code' => 'SECRETAIRE_ACADEMIQUE',
+            'libelle' => 'Secrétaire académique',
+        ]);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+
+        $this->getJson('/api/v1/administration/comptes')->assertForbidden();
+        $this->getJson('/api/v1/administration/comptes/create')->assertOk();
+        $this->postJson('/api/v1/administration/comptes', [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['nom', 'email', 'id_role']);
+    }
 }

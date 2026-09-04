@@ -135,19 +135,23 @@ Route::prefix('v1/administration/comptes')
         'auth:sanctum',
         'compte.actif',
         'roles.interdits:ENSEIGNANT,ETUDIANT',
-        'permission:COMPTE_GERER',
     ])
     ->group(function () {
-        Route::get('/', [CompteController::class, 'index'])->name('index');
-        Route::get('/create', [CompteController::class, 'create'])->name('create');
-        Route::post('/etudiants', [CompteController::class, 'storeEtudiant'])->name('etudiants.store');
-        Route::post('/', [CompteController::class, 'store'])->name('store');
-        Route::get('/{compte}', [CompteController::class, 'show'])->name('show');
-        Route::get('/{compte}/edit', [CompteController::class, 'edit'])->name('edit');
-        Route::put('/{compte}', [CompteController::class, 'update'])->name('update');
-        Route::patch('/{compte}', [CompteController::class, 'update'])->name('patch');
-        Route::post('/{compte}', [CompteController::class, 'update'])->name('update-multipart');
-        Route::delete('/{compte}', [CompteController::class, 'destroy'])->name('destroy');
+        Route::middleware('permission.ou.roles:COMPTE_GERER,SECRETAIRE_ACADEMIQUE')->group(function () {
+            Route::get('/create', [CompteController::class, 'create'])->name('create');
+            Route::post('/etudiants', [CompteController::class, 'storeEtudiant'])->name('etudiants.store');
+            Route::post('/', [CompteController::class, 'store'])->name('store');
+        });
+
+        Route::middleware('permission:COMPTE_GERER')->group(function () {
+            Route::get('/', [CompteController::class, 'index'])->name('index');
+            Route::get('/{compte}', [CompteController::class, 'show'])->name('show');
+            Route::get('/{compte}/edit', [CompteController::class, 'edit'])->name('edit');
+            Route::put('/{compte}', [CompteController::class, 'update'])->name('update');
+            Route::patch('/{compte}', [CompteController::class, 'update'])->name('patch');
+            Route::post('/{compte}', [CompteController::class, 'update'])->name('update-multipart');
+            Route::delete('/{compte}', [CompteController::class, 'destroy'])->name('destroy');
+        });
     });
 
 Route::prefix('v1/administration/profil')->name('api.v1.administration.profil.')->middleware(['auth:sanctum', 'compte.actif'])->group(function () {

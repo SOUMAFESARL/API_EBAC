@@ -6338,7 +6338,7 @@
         },
         {
             "name": "Comptes",
-            "description": "Gestion des comptes. Accès réservé aux comptes actifs ayant COMPTE_GERER. Les rôles ETUDIANT et ENSEIGNANT sont toujours refusés."
+            "description": "Création accessible avec COMPTE_GERER ou au rôle SECRETAIRE_ACADEMIQUE. Les rôles ETUDIANT et ENSEIGNANT sont interdits. Les autres opérations exigent COMPTE_GERER."
         },
         {
             "name": "Navigation",

@@ -6,7 +6,7 @@ use OpenApi\Attributes as OA;
 
 #[OA\Tag(
     name: 'Comptes',
-    description: 'Gestion des comptes. Accès réservé aux comptes actifs ayant COMPTE_GERER. Les rôles ETUDIANT et ENSEIGNANT sont toujours refusés.',
+    description: 'Création accessible avec COMPTE_GERER ou au rôle SECRETAIRE_ACADEMIQUE. Les rôles ETUDIANT et ENSEIGNANT sont interdits. Les autres opérations exigent COMPTE_GERER.',
 )]
 #[OA\Get(path: '/administration/comptes', tags: ['Comptes'], security: [['sanctum' => []]], responses: [new OA\Response(response: 200, description: 'Liste des comptes'), new OA\Response(response: 403, description: 'Permission absente ou rôle ETUDIANT/ENSEIGNANT interdit')])]
 #[OA\Post(path: '/administration/comptes', tags: ['Comptes'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object')), responses: [new OA\Response(response: 201, description: 'Compte créé'), new OA\Response(response: 403, description: 'Permission absente ou rôle ETUDIANT/ENSEIGNANT interdit'), new OA\Response(response: 422, description: 'Données invalides')])]
