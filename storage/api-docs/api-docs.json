@@ -1007,7 +1007,7 @@
                 "tags": [
                     "Fichiers"
                 ],
-                "summary": "Afficher une photo ou un document de préinscription",
+                "summary": "Afficher une photo ou un document de préinscription avec une URL signée temporaire",
                 "operationId": "afficherFichierPreinscription",
                 "parameters": [
                     {
@@ -1018,27 +1018,35 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "expires",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "signature",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Contenu binaire du fichier"
                     },
-                    "401": {
-                        "description": "Non authentifié"
-                    },
                     "403": {
-                        "description": "Compte inactif ou rôle interdit"
+                        "description": "Signature invalide ou expirée"
                     },
                     "404": {
                         "description": "Fichier introuvable"
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             }
         },
         "/parametres/annees-academiques": {

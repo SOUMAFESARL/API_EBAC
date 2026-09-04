@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\URL;
 
 class Etudiant extends Model
 {
@@ -25,7 +26,11 @@ class Etudiant extends Model
     protected function photoIdentiteUrl(): Attribute
     {
         return Attribute::get(fn (): ?string => $this->photo_identite
-            ? route('api.v1.fichiers-preinscriptions.show', ['chemin' => $this->photo_identite])
+            ? URL::temporarySignedRoute(
+                'api.v1.fichiers-preinscriptions.show',
+                now()->addMinutes(15),
+                ['chemin' => $this->photo_identite],
+            )
             : null);
     }
 

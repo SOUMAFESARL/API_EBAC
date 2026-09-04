@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\URL;
 
 class FichierDossierEtudiant extends Model
 {
@@ -29,7 +30,11 @@ class FichierDossierEtudiant extends Model
     protected function url(): Attribute
     {
         return Attribute::get(fn (): ?string => $this->chemin
-            ? route('api.v1.fichiers-preinscriptions.show', ['chemin' => $this->chemin])
+            ? URL::temporarySignedRoute(
+                'api.v1.fichiers-preinscriptions.show',
+                now()->addMinutes(15),
+                ['chemin' => $this->chemin],
+            )
             : null);
     }
 

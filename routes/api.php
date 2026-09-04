@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('v1/fichiers-preinscriptions/{chemin}', FichierPreinscriptionController::class)
     ->where('chemin', '.*')
-    ->middleware(['auth:sanctum', 'compte.actif', 'roles.interdits:ENSEIGNANT,ETUDIANT'])
+    ->middleware('signed')
     ->name('api.v1.fichiers-preinscriptions.show');
 
 Route::post('v1/etudiant/pre-inscription', [PreInscriptionController::class, 'store'])

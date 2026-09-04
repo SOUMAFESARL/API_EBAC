@@ -62,9 +62,13 @@ class PreInscriptionApiTest extends TestCase
         }
 
         $this->get($reponse->json('pre_inscription.photo_identite_url'))
-            ->assertUnauthorized();
+            ->assertOk()
+            ->assertHeader('content-type', 'image/jpeg');
         $this->get($reponse->json('pre_inscription.documents.0.url'))
-            ->assertUnauthorized();
+            ->assertOk()
+            ->assertHeader('x-content-type-options', 'nosniff');
+        $this->get(parse_url($reponse->json('pre_inscription.photo_identite_url'), PHP_URL_PATH))
+            ->assertForbidden();
 
         $this->assertDatabaseHas('etudiants', [
             'id' => $reponse->json('pre_inscription.id'), 'nom' => 'Kouassi', 'eglise_id' => $eglise->id,
