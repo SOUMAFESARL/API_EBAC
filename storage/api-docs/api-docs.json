@@ -452,6 +452,34 @@
                 }
             }
         },
+        "/etudiant/dossier": {
+            "get": {
+                "tags": [
+                    "Dossier étudiant"
+                ],
+                "summary": "Ouvrir le dossier de l’étudiant connecté",
+                "operationId": "afficherMonDossierEtudiant",
+                "responses": {
+                    "200": {
+                        "description": "Dossier complet de l’étudiant connecté"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Route réservée au rôle ETUDIANT"
+                    },
+                    "404": {
+                        "description": "Aucun dossier étudiant rattaché au compte"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/administration/etudiants/{id}/affecter-promotion": {
             "post": {
                 "tags": [

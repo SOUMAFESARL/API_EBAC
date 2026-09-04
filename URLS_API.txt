@@ -24,6 +24,7 @@ POST       /api/v1/auth/deconnexion-globale
 Etudiant et navigation
 ----------------------
 POST       /api/v1/etudiant/pre-inscription
+GET        /api/v1/etudiant/dossier
 GET        /api/v1/navigation/sidebar
 GET        /api/v1/utilisateurs/{compte}/photo
 

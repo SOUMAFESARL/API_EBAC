@@ -17,6 +17,37 @@ class DossierEtudiantCompletApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_un_etudiant_connecte_accede_uniquement_a_son_propre_dossier(): void
+    {
+        $role = Role::query()->create(['code' => 'ETUDIANT', 'libelle' => 'Étudiant']);
+        $compte = User::factory()->create(['id_role' => $role->id]);
+        $etudiant = Etudiant::query()->create([
+            'user_id' => $compte->id,
+            'matricule' => 'EBAC-0009-2026',
+            'nom' => 'ANGE',
+            'prenoms' => 'ANGE',
+            'email' => $compte->email,
+            'date_inscription' => now()->toDateString(),
+            'statut' => 'En formation',
+        ]);
+        DossierEtudiant::query()->create([
+            'id_etudiant' => $etudiant->id,
+            'numero_dossier' => 'ANA0092026',
+            'statut' => 'Incomplet',
+            'date_ouverture' => now()->toDateString(),
+        ]);
+        Sanctum::actingAs($compte);
+
+        $this->getJson('/api/v1/etudiant/dossier')
+            ->assertOk()
+            ->assertJsonPath('dossier.numero_dossier', 'ANA0092026')
+            ->assertJsonPath('dossier.informations_personnelles.id', $etudiant->id)
+            ->assertJsonPath('dossier.informations_personnelles.matricule', 'EBAC-0009-2026');
+
+        $this->getJson("/api/v1/administration/etudiants/{$etudiant->id}/dossier-complet")
+            ->assertForbidden();
+    }
+
     public function test_le_secretariat_affecte_un_etudiant_et_ouvre_son_dossier_complet(): void
     {
         $role = Role::query()->create(['code' => 'SECRETAIRE_ACADEMIQUE', 'libelle' => 'Secrétaire académique']);

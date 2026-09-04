@@ -33,6 +33,10 @@ Route::post('v1/etudiant/pre-inscription', [PreInscriptionController::class, 'st
     ->middleware('throttle:5,1')
     ->name('api.v1.etudiant.pre-inscription');
 
+Route::get('v1/etudiant/dossier', [DossierEtudiantCompletController::class, 'monDossier'])
+    ->middleware(['auth:sanctum', 'compte.actif'])
+    ->name('api.v1.etudiant.dossier');
+
 Route::prefix('v1/auth')->name('api.v1.auth.')->group(function () {
     Route::post('/connexion', [AuthentificationController::class, 'connexion'])
         ->middleware('throttle:5,1')

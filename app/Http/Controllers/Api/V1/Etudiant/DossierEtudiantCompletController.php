@@ -15,6 +15,22 @@ use OpenApi\Attributes as OA;
 
 class DossierEtudiantCompletController extends Controller
 {
+    #[OA\Get(path: '/etudiant/dossier', operationId: 'afficherMonDossierEtudiant', summary: 'Ouvrir le dossier de l’étudiant connecté', tags: ['Dossier étudiant'], security: [['sanctum' => []]], responses: [new OA\Response(response: 200, description: 'Dossier complet de l’étudiant connecté'), new OA\Response(response: 401, description: 'Non authentifié'), new OA\Response(response: 403, description: 'Route réservée au rôle ETUDIANT'), new OA\Response(response: 404, description: 'Aucun dossier étudiant rattaché au compte')])]
+    public function monDossier(Request $request): JsonResponse
+    {
+        $utilisateur = $request->user()->loadMissing('role');
+
+        if ($utilisateur->role?->code !== 'ETUDIANT') {
+            return response()->json([
+                'message' => 'Cette ressource est réservée aux étudiants.',
+            ], 403);
+        }
+
+        $etudiant = Etudiant::query()->where('user_id', $utilisateur->id)->firstOrFail();
+
+        return response()->json(['dossier' => $this->construireDossier($etudiant)]);
+    }
+
     #[OA\Post(path: '/administration/etudiants/{id}/affecter-promotion', operationId: 'affecterEtudiantPromotion', summary: 'Affecter un étudiant ayant déjà un compte à une promotion', tags: ['Dossier étudiant'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'id', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['id_promotion'], properties: [new OA\Property(property: 'id_promotion', type: 'integer')])), responses: [new OA\Response(response: 201, description: 'Étudiant affecté et inscrit au niveau actuel de la promotion'), new OA\Response(response: 403, description: 'Accès interdit'), new OA\Response(response: 404, description: 'Étudiant ou promotion introuvable'), new OA\Response(response: 422, description: 'Compte absent, promotion inactive, année absente ou étudiant déjà inscrit')])]
     public function affecter(Request $request, int $id): JsonResponse
     {
