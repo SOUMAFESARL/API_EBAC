@@ -1,0 +1,17 @@
+<?php
+
+namespace App\OpenApi;
+
+use OpenApi\Attributes as OA;
+
+#[OA\Tag(name: 'Permissions', description: 'Gestion des permissions, permission PERMISSION_GERER requise.')]
+#[OA\Get(path: '/administration/permissions', tags: ['Permissions'], security: [['sanctum' => []]], responses: [new OA\Response(response: 200, description: 'Liste des permissions'), new OA\Response(response: 403, description: 'Accès refusé')])]
+#[OA\Post(path: '/administration/permissions', tags: ['Permissions'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object')), responses: [new OA\Response(response: 201, description: 'Permission créée'), new OA\Response(response: 403, description: 'Accès refusé'), new OA\Response(response: 422, description: 'Données invalides')])]
+#[OA\Get(path: '/administration/permissions/{permission}', tags: ['Permissions'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'permission', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Détail de la permission'), new OA\Response(response: 403, description: 'Accès refusé'), new OA\Response(response: 404, description: 'Permission introuvable')])]
+#[OA\Put(path: '/administration/permissions/{permission}', tags: ['Permissions'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'permission', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object')), responses: [new OA\Response(response: 200, description: 'Permission modifiée'), new OA\Response(response: 403, description: 'Accès refusé'), new OA\Response(response: 422, description: 'Données invalides')])]
+#[OA\Patch(path: '/administration/permissions/{permission}', tags: ['Permissions'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'permission', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object')), responses: [new OA\Response(response: 200, description: 'Permission modifiée'), new OA\Response(response: 403, description: 'Accès refusé'), new OA\Response(response: 422, description: 'Données invalides')])]
+#[OA\Delete(path: '/administration/permissions/{permission}', tags: ['Permissions'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'permission', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Permission supprimée'), new OA\Response(response: 403, description: 'Accès refusé'), new OA\Response(response: 404, description: 'Permission introuvable')])]
+#[OA\Put(path: '/administration/permissions/{permission}/actions', tags: ['Permissions'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'permission', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['action_ids'], properties: [new OA\Property(property: 'action_ids', type: 'array', items: new OA\Items(type: 'integer'))])), responses: [new OA\Response(response: 200, description: 'Actions de la permission synchronisées'), new OA\Response(response: 403, description: 'Accès refusé'), new OA\Response(response: 422, description: 'Données invalides')])]
+final class PermissionDocumentation
+{
+}

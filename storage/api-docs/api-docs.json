@@ -2,7 +2,7 @@
     "openapi": "3.0.0",
     "info": {
         "title": "API EBAC",
-        "description": "Documentation OpenAPI des API EBAC : églises, paramètres académiques et pré-inscription.",
+        "description": "Documentation OpenAPI complète des API EBAC : authentification, administration, comptes, rôles, permissions, navigation, étudiants, églises et paramètres académiques.",
         "version": "1.0.0"
     },
     "servers": [
@@ -2727,6 +2727,767 @@
                 ]
             }
         },
+        "/administration/actions": {
+            "get": {
+                "tags": [
+                    "Actions"
+                ],
+                "operationId": "98f4646b2a87930c62a81e921865226b",
+                "responses": {
+                    "200": {
+                        "description": "Liste des actions"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Actions"
+                ],
+                "operationId": "fa453f3ce7d79fe029743227447fe53b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Action créée"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/actions/{action}": {
+            "get": {
+                "tags": [
+                    "Actions"
+                ],
+                "operationId": "30c892df47650333ea7ca2f30c6c211d",
+                "parameters": [
+                    {
+                        "name": "action",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détail de l’action"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "404": {
+                        "description": "Action introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Actions"
+                ],
+                "operationId": "2bb50b02771a151e4b45909db8671c4c",
+                "parameters": [
+                    {
+                        "name": "action",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Action modifiée"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Actions"
+                ],
+                "operationId": "e201203ac1a413a696c11dcfeedd0437",
+                "parameters": [
+                    {
+                        "name": "action",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Action supprimée"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "404": {
+                        "description": "Action introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Actions"
+                ],
+                "operationId": "86d77420271893baddd5f6969908c9b4",
+                "parameters": [
+                    {
+                        "name": "action",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Action modifiée"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/menus": {
+            "get": {
+                "tags": [
+                    "Menus"
+                ],
+                "operationId": "cb14023b18a58332f489ed68045d66ac",
+                "responses": {
+                    "200": {
+                        "description": "Liste des menus"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Menus"
+                ],
+                "operationId": "d162ac3856741d1a2ec18a8c42c637cd",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Menu créé"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/menus/{menu}": {
+            "get": {
+                "tags": [
+                    "Menus"
+                ],
+                "operationId": "e5d137de95f95e0acf6b1aac18502fe7",
+                "parameters": [
+                    {
+                        "name": "menu",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détail du menu"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "404": {
+                        "description": "Menu introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Menus"
+                ],
+                "operationId": "2969c4a57576fe399dd3a33cdcfee590",
+                "parameters": [
+                    {
+                        "name": "menu",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Menu modifié"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Menus"
+                ],
+                "operationId": "051261e97ed0d180a3e8c4eb09a93770",
+                "parameters": [
+                    {
+                        "name": "menu",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Menu supprimé"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "404": {
+                        "description": "Menu introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Menus"
+                ],
+                "operationId": "48d114effecefc5b9edce203b826ab54",
+                "parameters": [
+                    {
+                        "name": "menu",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Menu modifié"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/auth/connexion": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "operationId": "c91a70cf46436b4a98ef2f57c79b37b6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "nom_appareil": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Connexion directe réussie"
+                    },
+                    "202": {
+                        "description": "Code OTP envoyé"
+                    },
+                    "403": {
+                        "description": "Compte inactif"
+                    },
+                    "422": {
+                        "description": "Identifiants invalides"
+                    },
+                    "429": {
+                        "description": "Trop de tentatives"
+                    }
+                }
+            }
+        },
+        "/auth/confirmer-otp": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "operationId": "e9af9a900373b209b0a61abbb35636ee",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_tentative",
+                                    "code_otp"
+                                ],
+                                "properties": {
+                                    "id_tentative": {
+                                        "type": "integer"
+                                    },
+                                    "code_otp": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OTP validé et jeton retourné"
+                    },
+                    "403": {
+                        "description": "Compte inactif"
+                    },
+                    "422": {
+                        "description": "OTP invalide ou expiré"
+                    },
+                    "429": {
+                        "description": "Trop de tentatives"
+                    }
+                }
+            }
+        },
+        "/auth/mot-de-passe-oublie": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "operationId": "e658689d02c8503777319e7dabd0d28b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Demande prise en compte"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    },
+                    "429": {
+                        "description": "Trop de tentatives"
+                    },
+                    "503": {
+                        "description": "Envoi du courriel impossible"
+                    }
+                }
+            }
+        },
+        "/auth/verifier-code-reinitialisation": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "operationId": "eb56b1f0c3147106fd2ab5f190455f3e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "code_otp"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "code_otp": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Code vérifié et jeton de réinitialisation retourné"
+                    },
+                    "422": {
+                        "description": "Code invalide ou expiré"
+                    },
+                    "429": {
+                        "description": "Trop de tentatives"
+                    }
+                }
+            }
+        },
+        "/auth/reinitialiser-mot-de-passe": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "operationId": "c0f84c33e1a033bddc9fdeff90c7151a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "reset_token",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "reset_token": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Mot de passe réinitialisé"
+                    },
+                    "422": {
+                        "description": "Données ou jeton invalides"
+                    },
+                    "429": {
+                        "description": "Trop de tentatives"
+                    }
+                }
+            }
+        },
+        "/auth/modifier-mot-de-passe": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "operationId": "8eb0e540bee6a9c9dbc50ec1d8127008",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "mot_de_passe_actuel",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "mot_de_passe_actuel": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Mot de passe modifié"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    },
+                    "429": {
+                        "description": "Trop de tentatives"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/auth/profil": {
+            "get": {
+                "tags": [
+                    "Authentification"
+                ],
+                "operationId": "01ffe77a7b196f202d852455321cb801",
+                "responses": {
+                    "200": {
+                        "description": "Profil de l’utilisateur connecté"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Compte inactif"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/auth/deconnexion": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "operationId": "d5c15a38bb99b24a3738e4fbc042b691",
+                "responses": {
+                    "200": {
+                        "description": "Session courante déconnectée"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/auth/deconnexion-globale": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "operationId": "1f310154eaddb1cf87907ca911dc8bdc",
+                "responses": {
+                    "200": {
+                        "description": "Toutes les sessions sont déconnectées"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/administration/comptes": {
             "get": {
                 "tags": [
@@ -3053,6 +3814,936 @@
                     },
                     "404": {
                         "description": "Compte introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/navigation/sidebar": {
+            "get": {
+                "tags": [
+                    "Navigation"
+                ],
+                "operationId": "83c514b1ec01fb1103ea1b7ae2bd7671",
+                "responses": {
+                    "200": {
+                        "description": "Menus et actions autorisés"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Compte inactif"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/utilisateurs/{compte}/photo": {
+            "get": {
+                "tags": [
+                    "Comptes"
+                ],
+                "operationId": "1e7466bb3dac9c1e92ffb1a486612882",
+                "parameters": [
+                    {
+                        "name": "compte",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier de la photo du compte"
+                    },
+                    "404": {
+                        "description": "Photo ou compte introuvable"
+                    }
+                }
+            }
+        },
+        "/administration/profil": {
+            "get": {
+                "tags": [
+                    "Profil administratif"
+                ],
+                "operationId": "a8da73a953030f3566f63e96fdf525ab",
+                "responses": {
+                    "200": {
+                        "description": "Profil connecté"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Compte inactif"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Profil administratif"
+                ],
+                "operationId": "59946f1509b1a321f78fa81ac960bbb6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profil modifié"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Profil administratif"
+                ],
+                "description": "Modification multipart/form-data.",
+                "operationId": "c550e20ac7ba790ba538a3790fcdf215",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profil modifié"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Profil administratif"
+                ],
+                "operationId": "0a2b1f5b594132c6bd049267cba6486d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profil modifié"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/profil/edit": {
+            "get": {
+                "tags": [
+                    "Profil administratif"
+                ],
+                "operationId": "8476a57666e5d4e9e1413db36ccc9d17",
+                "responses": {
+                    "200": {
+                        "description": "Profil et données du formulaire de modification"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/permissions": {
+            "get": {
+                "tags": [
+                    "Permissions"
+                ],
+                "operationId": "88d41c3f9c64e75f70b77655a7373ae7",
+                "responses": {
+                    "200": {
+                        "description": "Liste des permissions"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Permissions"
+                ],
+                "operationId": "3d00ee4017497e8966eddf9f294c44a4",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Permission créée"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/permissions/{permission}": {
+            "get": {
+                "tags": [
+                    "Permissions"
+                ],
+                "operationId": "4790c8a61a8273479cff2e501d5bd2bf",
+                "parameters": [
+                    {
+                        "name": "permission",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détail de la permission"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "404": {
+                        "description": "Permission introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Permissions"
+                ],
+                "operationId": "8cb0b6dde3f7803cad07225af6fcecbd",
+                "parameters": [
+                    {
+                        "name": "permission",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Permission modifiée"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Permissions"
+                ],
+                "operationId": "c92ff95fceac80513803812586352d55",
+                "parameters": [
+                    {
+                        "name": "permission",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Permission supprimée"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "404": {
+                        "description": "Permission introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Permissions"
+                ],
+                "operationId": "8bb06fd153773b54e05decee3eb0629f",
+                "parameters": [
+                    {
+                        "name": "permission",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Permission modifiée"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/permissions/{permission}/actions": {
+            "put": {
+                "tags": [
+                    "Permissions"
+                ],
+                "operationId": "a83eb4722780dc0be7cf63b216e3ea8d",
+                "parameters": [
+                    {
+                        "name": "permission",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "action_ids"
+                                ],
+                                "properties": {
+                                    "action_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Actions de la permission synchronisées"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/roles": {
+            "get": {
+                "tags": [
+                    "Rôles"
+                ],
+                "operationId": "8e1c7d57c4de96e4c63ce6df0368347a",
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée des rôles"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Rôles"
+                ],
+                "operationId": "3d0471b3d8071d1afddf6770a5ed7663",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Rôle créé"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/roles/catalogue-droits": {
+            "get": {
+                "tags": [
+                    "Rôles"
+                ],
+                "operationId": "27d24b641f1293004c8dede58ed0bc25",
+                "responses": {
+                    "200": {
+                        "description": "Catalogue des droits par rôle"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/roles/matrice-autorisations": {
+            "get": {
+                "tags": [
+                    "Rôles"
+                ],
+                "operationId": "97ae9f2cdab8ea6f0a0184477173f8cc",
+                "responses": {
+                    "200": {
+                        "description": "Matrice complète des autorisations"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/roles/{role}": {
+            "get": {
+                "tags": [
+                    "Rôles"
+                ],
+                "operationId": "278826a3f6330ad0f53cc20b8f502a68",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détail du rôle"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "404": {
+                        "description": "Rôle introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Rôles"
+                ],
+                "operationId": "65f2832973be879a9c85c628ed0f7a86",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Rôle modifié"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Rôles"
+                ],
+                "operationId": "5706eac3bf989b1de27fc04f6b9f6845",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rôle supprimé"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "404": {
+                        "description": "Rôle introuvable"
+                    },
+                    "422": {
+                        "description": "Rôle protégé ou encore utilisé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Rôles"
+                ],
+                "operationId": "45c0356003ee5e76d90e6f965dcf04a6",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Rôle modifié"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/roles/{role}/droits": {
+            "get": {
+                "tags": [
+                    "Rôles"
+                ],
+                "operationId": "c478d3752b871e9c50586d3f230b15d6",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Droits du rôle"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/roles/{role}/droits/{permission}": {
+            "patch": {
+                "tags": [
+                    "Rôles"
+                ],
+                "operationId": "16b5f6caa0993cc973e6cac1a1186a45",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "permission",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "accordee"
+                                ],
+                                "properties": {
+                                    "accordee": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Droit modifié"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/roles/{role}/matrice-autorisations": {
+            "get": {
+                "tags": [
+                    "Rôles"
+                ],
+                "operationId": "d429c36e5c0fbee5b2297a5037596a3d",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Matrice des autorisations du rôle"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/roles/{role}/autorisations": {
+            "put": {
+                "tags": [
+                    "Rôles"
+                ],
+                "operationId": "d855b28435afff14768e417ffd0accca",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "autorisations"
+                                ],
+                                "properties": {
+                                    "autorisations": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Autorisations synchronisées"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/roles/{role}/permissions": {
+            "put": {
+                "tags": [
+                    "Rôles"
+                ],
+                "operationId": "a8a3eed7f378cdc392f6b52a2c220707",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "permission_ids"
+                                ],
+                                "properties": {
+                                    "permission_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Permissions synchronisées"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "422": {
+                        "description": "Données invalides"
                     }
                 },
                 "security": [
@@ -4537,8 +6228,36 @@
     },
     "tags": [
         {
+            "name": "Actions",
+            "description": "Gestion des actions, permission ACTION_GERER requise."
+        },
+        {
+            "name": "Menus",
+            "description": "Gestion des menus, permission MENU_GERER requise."
+        },
+        {
+            "name": "Authentification",
+            "description": "Connexion, double authentification, profil de session et gestion du mot de passe."
+        },
+        {
             "name": "Comptes",
             "description": "Gestion des comptes. Accès réservé aux comptes actifs ayant COMPTE_GERER. Les rôles ETUDIANT et ENSEIGNANT sont toujours refusés."
+        },
+        {
+            "name": "Navigation",
+            "description": "Navigation autorisée pour l’utilisateur connecté."
+        },
+        {
+            "name": "Profil administratif",
+            "description": "Consultation et modification du profil connecté."
+        },
+        {
+            "name": "Permissions",
+            "description": "Gestion des permissions, permission PERMISSION_GERER requise."
+        },
+        {
+            "name": "Rôles",
+            "description": "Gestion des rôles, droits et autorisations. Permission ROLE_GERER requise."
         },
         {
             "name": "Églises",

@@ -2,10 +2,37 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class EgliseSwaggerTest extends TestCase
 {
+    public function test_swagger_documente_toutes_les_routes_api_v1(): void
+    {
+        $documentation = json_decode(
+            file_get_contents(storage_path('api-docs/api-docs.json')),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+
+        $manquantes = [];
+
+        foreach (Route::getRoutes() as $route) {
+            if (! str_starts_with($route->uri(), 'api/v1/')) {
+                continue;
+            }
+
+            $chemin = '/'.substr($route->uri(), strlen('api/v1/'));
+            foreach (array_diff($route->methods(), ['HEAD']) as $methode) {
+                if (! isset($documentation['paths'][$chemin][strtolower($methode)])) {
+                    $manquantes[] = "{$methode} {$chemin}";
+                }
+            }
+        }
+
+        $this->assertSame([], $manquantes, 'Opérations absentes de Swagger : '.implode(', ', $manquantes));
+    }
+
     public function test_la_documentation_swagger_decrit_tout_le_crud_des_eglises(): void
     {
         $chemin = storage_path('api-docs/api-docs.json');
