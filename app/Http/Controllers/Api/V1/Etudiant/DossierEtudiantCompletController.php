@@ -15,12 +15,14 @@ use OpenApi\Attributes as OA;
 
 class DossierEtudiantCompletController extends Controller
 {
-    #[OA\Post(path: '/administration/etudiants/{etudiant}/affecter-promotion', operationId: 'affecterEtudiantPromotion', summary: 'Affecter un étudiant ayant déjà un compte à une promotion', tags: ['Dossier étudiant'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'etudiant', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['id_promotion'], properties: [new OA\Property(property: 'id_promotion', type: 'integer')])), responses: [new OA\Response(response: 201, description: 'Étudiant affecté et inscrit au niveau actuel de la promotion'), new OA\Response(response: 403, description: 'Accès interdit'), new OA\Response(response: 404, description: 'Étudiant ou promotion introuvable'), new OA\Response(response: 422, description: 'Compte absent, promotion inactive, année absente ou étudiant déjà inscrit')])]
-    public function affecter(Request $request, Etudiant $etudiant): JsonResponse
+    #[OA\Post(path: '/administration/etudiants/{id}/affecter-promotion', operationId: 'affecterEtudiantPromotion', summary: 'Affecter un étudiant ayant déjà un compte à une promotion', tags: ['Dossier étudiant'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'id', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['id_promotion'], properties: [new OA\Property(property: 'id_promotion', type: 'integer')])), responses: [new OA\Response(response: 201, description: 'Étudiant affecté et inscrit au niveau actuel de la promotion'), new OA\Response(response: 403, description: 'Accès interdit'), new OA\Response(response: 404, description: 'Étudiant ou promotion introuvable'), new OA\Response(response: 422, description: 'Compte absent, promotion inactive, année absente ou étudiant déjà inscrit')])]
+    public function affecter(Request $request, int $id): JsonResponse
     {
         $donnees = $request->validate([
             'id_promotion' => ['required', 'integer', Rule::exists('promotions', 'id')->whereNull('deleted_at')],
         ]);
+
+        $etudiant = Etudiant::query()->findOrFail($id);
 
         if (! $etudiant->user_id) {
             return response()->json(['message' => 'Le compte étudiant doit être créé avant l’affectation.'], 422);
@@ -70,9 +72,11 @@ class DossierEtudiantCompletController extends Controller
         ], 201);
     }
 
-    #[OA\Get(path: '/administration/etudiants/{etudiant}/dossier-complet', operationId: 'afficherDossierEtudiantComplet', summary: 'Ouvrir le dossier étudiant complet', tags: ['Dossier étudiant'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'etudiant', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Dossier, informations personnelles, pièces, finances, parcours et bulletins'), new OA\Response(response: 403, description: 'Accès interdit'), new OA\Response(response: 404, description: 'Étudiant introuvable')])]
-    public function show(Etudiant $etudiant): JsonResponse
+    #[OA\Get(path: '/administration/etudiants/{id}/dossier-complet', operationId: 'afficherDossierEtudiantComplet', summary: 'Ouvrir le dossier étudiant complet', tags: ['Dossier étudiant'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'id', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Dossier, informations personnelles, pièces, finances, parcours et bulletins'), new OA\Response(response: 403, description: 'Accès interdit'), new OA\Response(response: 404, description: 'Étudiant introuvable')])]
+    public function show(int $id): JsonResponse
     {
+        $etudiant = Etudiant::query()->findOrFail($id);
+
         return response()->json(['dossier' => $this->construireDossier($etudiant)]);
     }
 

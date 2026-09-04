@@ -93,13 +93,15 @@ Route::get('v1/administration/etudiants', [EtudiantController::class, 'index'])
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.interdits:ENSEIGNANT,ETUDIANT'])
     ->name('api.v1.administration.etudiants.index');
 
-Route::prefix('v1/administration/etudiants/{etudiant}')
+Route::prefix('v1/administration/etudiants/{id}')
     ->name('api.v1.administration.etudiants.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.interdits:ENSEIGNANT,ETUDIANT'])
     ->group(function () {
         Route::post('affecter-promotion', [DossierEtudiantCompletController::class, 'affecter'])
+            ->whereNumber('id')
             ->name('affecter-promotion');
         Route::get('dossier-complet', [DossierEtudiantCompletController::class, 'show'])
+            ->whereNumber('id')
             ->name('dossier-complet');
     });
 

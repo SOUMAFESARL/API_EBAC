@@ -452,7 +452,7 @@
                 }
             }
         },
-        "/administration/etudiants/{etudiant}/affecter-promotion": {
+        "/administration/etudiants/{id}/affecter-promotion": {
             "post": {
                 "tags": [
                     "Dossier étudiant"
@@ -461,7 +461,7 @@
                 "operationId": "affecterEtudiantPromotion",
                 "parameters": [
                     {
-                        "name": "etudiant",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -508,7 +508,7 @@
                 ]
             }
         },
-        "/administration/etudiants/{etudiant}/dossier-complet": {
+        "/administration/etudiants/{id}/dossier-complet": {
             "get": {
                 "tags": [
                     "Dossier étudiant"
@@ -517,7 +517,7 @@
                 "operationId": "afficherDossierEtudiantComplet",
                 "parameters": [
                     {
-                        "name": "etudiant",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
