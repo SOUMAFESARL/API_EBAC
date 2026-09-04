@@ -50,7 +50,21 @@ class PreInscriptionApiTest extends TestCase
             ->assertJsonPath('pre_inscription.situation_matrimonial', 'Marié')
             ->assertJsonPath('pre_inscription.nombre_enfant', 2);
         $reponse->assertJsonPath('pre_inscription.nombre_documents', 2);
+        $reponse->assertJsonCount(2, 'pre_inscription.documents');
         $reponse->assertJsonMissingPath('pre_inscription.matricule');
+        $this->assertStringContainsString(
+            '/api/v1/fichiers-preinscriptions/etudiants/photos-identite/',
+            $reponse->json('pre_inscription.photo_identite_url'),
+        );
+        foreach ($reponse->json('pre_inscription.documents') as $document) {
+            $this->assertStringContainsString('/api/v1/fichiers-preinscriptions/etudiants/dossiers/', $document['url']);
+            $this->assertNotEmpty($document['nom_original']);
+        }
+
+        $this->get($reponse->json('pre_inscription.photo_identite_url'))
+            ->assertUnauthorized();
+        $this->get($reponse->json('pre_inscription.documents.0.url'))
+            ->assertUnauthorized();
 
         $this->assertDatabaseHas('etudiants', [
             'id' => $reponse->json('pre_inscription.id'), 'nom' => 'Kouassi', 'eglise_id' => $eglise->id,

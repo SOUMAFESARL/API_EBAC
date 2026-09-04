@@ -1002,6 +1002,45 @@
                 }
             }
         },
+        "/fichiers-preinscriptions/{chemin}": {
+            "get": {
+                "tags": [
+                    "Fichiers"
+                ],
+                "summary": "Afficher une photo ou un document de préinscription",
+                "operationId": "afficherFichierPreinscription",
+                "parameters": [
+                    {
+                        "name": "chemin",
+                        "in": "path",
+                        "description": "Chemin complet retourné par photo_identite_url ou documents[].url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contenu binaire du fichier"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Compte inactif ou rôle interdit"
+                    },
+                    "404": {
+                        "description": "Fichier introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/parametres/annees-academiques": {
             "get": {
                 "tags": [
@@ -5893,6 +5932,24 @@
                         "type": "string",
                         "example": "Incomplet"
                     },
+                    "photo_identite": {
+                        "description": "Chemin interne du fichier",
+                        "type": "string"
+                    },
+                    "photo_identite_url": {
+                        "description": "URL publique complète de la photo",
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "nombre_documents": {
+                        "type": "integer"
+                    },
+                    "documents": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/FichierDossierEtudiant"
+                        }
+                    },
                     "situation_matrimonial": {
                         "type": "string",
                         "example": "Marié",
@@ -5902,6 +5959,33 @@
                         "type": "integer",
                         "example": 2,
                         "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "FichierDossierEtudiant": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "nom_original": {
+                        "type": "string"
+                    },
+                    "mime_type": {
+                        "type": "string"
+                    },
+                    "taille": {
+                        "description": "Taille en octets",
+                        "type": "integer"
+                    },
+                    "chemin": {
+                        "description": "Chemin interne du fichier",
+                        "type": "string"
+                    },
+                    "url": {
+                        "description": "URL publique complète du fichier",
+                        "type": "string",
+                        "format": "uri"
                     }
                 },
                 "type": "object"
@@ -5970,6 +6054,11 @@
                     },
                     "photo_identite": {
                         "type": "string",
+                        "nullable": true
+                    },
+                    "photo_identite_url": {
+                        "type": "string",
+                        "format": "uri",
                         "nullable": true
                     },
                     "date_inscription": {
@@ -6274,6 +6363,10 @@
         {
             "name": "Pré-inscription",
             "description": "Pré-inscription"
+        },
+        {
+            "name": "Fichiers",
+            "description": "Fichiers"
         },
         {
             "name": "Années académiques",

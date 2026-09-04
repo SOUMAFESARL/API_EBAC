@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FichierDossierEtudiant extends Model
 {
     protected $table = 'fichiers_dossiers_etudiants';
+
+    protected $appends = ['url'];
 
     protected $fillable = [
         'id_dossier_etudiant',
@@ -21,6 +24,13 @@ class FichierDossierEtudiant extends Model
     protected function casts(): array
     {
         return ['taille' => 'integer'];
+    }
+
+    protected function url(): Attribute
+    {
+        return Attribute::get(fn (): ?string => $this->chemin
+            ? route('api.v1.fichiers-preinscriptions.show', ['chemin' => $this->chemin])
+            : null);
     }
 
     public function dossier(): BelongsTo

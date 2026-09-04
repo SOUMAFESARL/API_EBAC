@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Administration\ProfilController;
 use App\Http\Controllers\Api\V1\Administration\RoleController;
 use App\Http\Controllers\Api\V1\Auth\AuthentificationController;
 use App\Http\Controllers\Api\V1\Eglise\EgliseController;
+use App\Http\Controllers\Api\V1\FichierPreinscriptionController;
 use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\EtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\GestionPreInscriptionController;
@@ -21,6 +22,11 @@ use App\Http\Controllers\Api\V1\Parametre\ModuleController;
 use App\Http\Controllers\Api\V1\Parametre\NiveauController;
 use App\Http\Controllers\Api\V1\Parametre\PromotionController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('v1/fichiers-preinscriptions/{chemin}', FichierPreinscriptionController::class)
+    ->where('chemin', '.*')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.interdits:ENSEIGNANT,ETUDIANT'])
+    ->name('api.v1.fichiers-preinscriptions.show');
 
 Route::post('v1/etudiant/pre-inscription', [PreInscriptionController::class, 'store'])
     ->middleware('throttle:5,1')

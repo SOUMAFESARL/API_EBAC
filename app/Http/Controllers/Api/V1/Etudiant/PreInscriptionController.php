@@ -74,6 +74,8 @@ class PreInscriptionController extends Controller
 
         [$etudiant, $dossier] = $resultat;
 
+        $dossier->load('fichiers');
+
         Notification::route('mail', $etudiant->email)->notify(
             new PreInscriptionRecueNotification(
                 nomComplet: trim("{$etudiant->prenoms} {$etudiant->nom}"),
@@ -88,7 +90,17 @@ class PreInscriptionController extends Controller
                 'numero_dossier' => $dossier->numero_dossier,
                 'statut' => $etudiant->statut,
                 'statut_dossier' => $dossier->statut,
-                'nombre_documents' => $dossier->fichiers()->count(),
+                'photo_identite' => $etudiant->photo_identite,
+                'photo_identite_url' => $etudiant->photo_identite_url,
+                'nombre_documents' => $dossier->fichiers->count(),
+                'documents' => $dossier->fichiers->map(fn (FichierDossierEtudiant $fichier) => [
+                    'id' => $fichier->id,
+                    'nom_original' => $fichier->nom_original,
+                    'mime_type' => $fichier->mime_type,
+                    'taille' => $fichier->taille,
+                    'chemin' => $fichier->chemin,
+                    'url' => $fichier->url,
+                ])->values(),
                 'situation_matrimonial' => $etudiant->situation_matrimonial,
                 'nombre_enfant' => $etudiant->nombre_enfant,
             ],

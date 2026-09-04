@@ -227,6 +227,7 @@ class GestionPreInscriptionController extends Controller
             'situation_matrimonial' => $etudiant->situation_matrimonial,
             'nombre_enfant' => $etudiant->nombre_enfant,
             'photo_identite' => $etudiant->photo_identite,
+            'photo_identite_url' => $etudiant->photo_identite_url,
             'date_inscription' => $etudiant->date_inscription?->format('Y-m-d'),
             'statut' => $etudiant->statut,
             'eglise' => $etudiant->relationLoaded('eglise') ? $etudiant->eglise : null,
