@@ -37,6 +37,9 @@ class PreInscriptionController extends Controller
 
                 $etudiant = Etudiant::query()->create([
                     ...$donnees,
+                    // Compatibilité avec les bases non encore migrées où la colonne est NOT NULL.
+                    // Cette référence technique n'est jamais exposée comme matricule étudiant.
+                    'matricule' => 'PRE-'.Str::uuid(),
                     'date_inscription' => now()->toDateString(),
                     'statut' => 'Préinscrit',
                 ]);

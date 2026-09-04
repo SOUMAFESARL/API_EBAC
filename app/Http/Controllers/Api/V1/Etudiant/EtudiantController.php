@@ -8,6 +8,7 @@ use App\Models\Etudiant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
 
@@ -76,7 +77,7 @@ class EtudiantController extends Controller
                 return [
                     'id' => $etudiant->id,
                     'user_id' => $etudiant->user_id,
-                    'matricule' => $etudiant->matricule,
+                    'matricule' => Str::startsWith((string) $etudiant->matricule, 'PRE-') ? null : $etudiant->matricule,
                     'nom' => $etudiant->nom,
                     'prenoms' => $etudiant->prenoms,
                     'email' => $etudiant->email,

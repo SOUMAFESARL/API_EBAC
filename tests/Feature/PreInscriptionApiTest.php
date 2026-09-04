@@ -102,7 +102,9 @@ class PreInscriptionApiTest extends TestCase
             ->assertJsonMissingPath('pre_inscription.matricule')
             ->json('pre_inscription.id');
 
-        $this->assertDatabaseHas('etudiants', ['id' => $id, 'matricule' => null]);
+        $matriculeTechnique = \DB::table('etudiants')->where('id', $id)->value('matricule');
+        $this->assertIsString($matriculeTechnique);
+        $this->assertStringStartsWith('PRE-', $matriculeTechnique);
     }
 
     public function test_le_numero_de_dossier_est_sequentiel_pour_les_memes_initiales(): void

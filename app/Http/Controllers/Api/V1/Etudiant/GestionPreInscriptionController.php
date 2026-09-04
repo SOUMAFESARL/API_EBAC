@@ -109,7 +109,7 @@ class GestionPreInscriptionController extends Controller
             }
 
             $matricule = $etudiant->matricule;
-            if (! $matricule || User::withTrashed()->where('matricule', $matricule)->exists()) {
+            if (! $matricule || Str::startsWith($matricule, 'PRE-') || User::withTrashed()->where('matricule', $matricule)->exists()) {
                 $matricule = $this->genererMatricule();
                 $etudiant->update([
                     'matricule' => $matricule,
@@ -212,7 +212,7 @@ class GestionPreInscriptionController extends Controller
             'id' => $etudiant->id,
             'user_id' => $etudiant->user_id,
             'compte_cree' => $etudiant->user_id !== null,
-            'matricule' => $etudiant->matricule,
+            'matricule' => Str::startsWith((string) $etudiant->matricule, 'PRE-') ? null : $etudiant->matricule,
             'nom' => $etudiant->nom,
             'prenoms' => $etudiant->prenoms,
             'email' => $etudiant->email,
