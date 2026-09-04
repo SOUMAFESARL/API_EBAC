@@ -278,6 +278,7 @@ class CompteController extends Controller
         if ($fiche) {
             $fiche->update([
                 'user_id' => $compte->id,
+                'matricule' => $compte->matricule,
                 'updated_by' => $createur->id,
             ]);
 

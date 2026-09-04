@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Civilite;
+use App\Models\Etudiant;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -165,6 +166,40 @@ class CompteCodeAutomatiqueTest extends TestCase
             'user_id' => $compteId,
             'email' => 'anne.yao@example.net',
             'statut' => 'En formation',
+        ]);
+    }
+
+    public function test_la_creation_du_compte_copie_le_matricule_dans_la_preinscription_existante(): void
+    {
+        Notification::fake();
+        $roleAdmin = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        $roleEtudiant = Role::query()->create(['code' => 'ETUDIANT', 'libelle' => 'Étudiant']);
+        $admin = User::factory()->create(['id_role' => $roleAdmin->id]);
+        Sanctum::actingAs($admin);
+        $civilite = Civilite::query()->create(['code' => 'M', 'name' => 'Monsieur']);
+        $fiche = Etudiant::query()->create([
+            'matricule' => null,
+            'nom' => 'KOFFI',
+            'prenoms' => 'Jean',
+            'civilite_id' => $civilite->id,
+            'email' => 'jean.koffi@example.net',
+            'date_inscription' => now()->toDateString(),
+            'statut' => 'Préinscrit',
+        ]);
+
+        $compteId = $this->postJson('/api/v1/administration/comptes', [
+            'civilite_id' => $civilite->id,
+            'nom' => 'KOFFI',
+            'prenoms' => 'Jean',
+            'email' => 'jean.koffi@example.net',
+            'id_role' => $roleEtudiant->id,
+        ])->assertCreated()->json('compte.id');
+
+        $compte = User::query()->findOrFail($compteId);
+        $this->assertDatabaseHas('etudiants', [
+            'id' => $fiche->id,
+            'user_id' => $compte->id,
+            'matricule' => $compte->matricule,
         ]);
     }
 
