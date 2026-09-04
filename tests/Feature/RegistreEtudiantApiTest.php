@@ -67,7 +67,8 @@ class RegistreEtudiantApiTest extends TestCase
         $this->getJson("/api/v1/administration/registre-etudiants/{$affecte->id}/dossier")
             ->assertOk()
             ->assertJsonPath('dossier.numero_dossier', 'ANA0172026')
-            ->assertJsonPath('dossier.informations_personnelles.id', $affecte->id);
+            ->assertJsonPath('id', $affecte->id)
+            ->assertJsonMissingPath('dossier.informations_personnelles.id');
 
         $this->patchJson("/api/v1/administration/registre-etudiants/{$affecte->id}", [
             'id_promotion' => $promotion16->id,

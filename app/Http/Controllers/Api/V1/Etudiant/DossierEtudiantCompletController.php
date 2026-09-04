@@ -30,7 +30,10 @@ class DossierEtudiantCompletController extends Controller
 
         $etudiant = Etudiant::query()->where('user_id', $utilisateur->id)->firstOrFail();
 
-        return response()->json(['dossier' => $this->construireDossier($etudiant)]);
+        return response()->json([
+            'id' => $etudiant->id,
+            'dossier' => $this->construireDossier($etudiant),
+        ]);
     }
 
     #[OA\Patch(path: '/etudiant/dossier', operationId: 'modifierMonDossierEtudiant', summary: 'Modifier les informations personnelles de son dossier', tags: ['Dossier étudiant'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(type: 'object')), responses: [new OA\Response(response: 200, description: 'Dossier personnel modifié'), new OA\Response(response: 403, description: 'Réservé au rôle ETUDIANT'), new OA\Response(response: 422, description: 'Données invalides ou champ administratif interdit')])]
@@ -104,6 +107,7 @@ class DossierEtudiantCompletController extends Controller
 
         return response()->json([
             'message' => 'Votre dossier a été modifié avec succès. Les nouveaux documents sont en attente de validation.',
+            'id' => $etudiant->id,
             'dossier' => $this->construireDossier($etudiant->fresh()),
         ]);
     }
@@ -160,6 +164,7 @@ class DossierEtudiantCompletController extends Controller
 
         return response()->json([
             'message' => 'Étudiant affecté à la promotion et inscrit avec succès.',
+            'id' => $etudiant->id,
             'inscription' => $inscription->load(['promotion.niveau', 'anneeAcademique']),
             'dossier' => $this->construireDossier($etudiant->fresh()),
         ], 201);
@@ -171,7 +176,10 @@ class DossierEtudiantCompletController extends Controller
     {
         $etudiant = Etudiant::query()->findOrFail($id);
 
-        return response()->json(['dossier' => $this->construireDossier($etudiant)]);
+        return response()->json([
+            'id' => $etudiant->id,
+            'dossier' => $this->construireDossier($etudiant),
+        ]);
     }
 
     private function construireDossier(Etudiant $etudiant): array
@@ -213,7 +221,6 @@ class DossierEtudiantCompletController extends Controller
             'pieces_manquantes' => $piecesManquantes,
             'documents' => $fichiers,
             'informations_personnelles' => [
-                'id' => $etudiant->id,
                 'matricule' => $etudiant->matricule,
                 'nom' => $etudiant->nom,
                 'prenoms' => $etudiant->prenoms,

@@ -44,7 +44,8 @@ class DossierEtudiantCompletApiTest extends TestCase
         $this->getJson('/api/v1/etudiant/dossier')
             ->assertOk()
             ->assertJsonPath('dossier.numero_dossier', 'ANA0092026')
-            ->assertJsonPath('dossier.informations_personnelles.id', $etudiant->id)
+            ->assertJsonPath('id', $etudiant->id)
+            ->assertJsonMissingPath('dossier.informations_personnelles.id')
             ->assertJsonPath('dossier.informations_personnelles.matricule', 'EBAC-0009-2026');
 
         $this->patchJson('/api/v1/etudiant/dossier', [
