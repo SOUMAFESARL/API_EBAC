@@ -1121,6 +1121,165 @@
                 }
             }
         },
+        "/administration/registre-etudiants": {
+            "get": {
+                "tags": [
+                    "Registre étudiants"
+                ],
+                "summary": "Lister les étudiants déjà affectés à une promotion",
+                "operationId": "listerRegistreEtudiants",
+                "parameters": [
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "niveau_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "promotion_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "annee_entree",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "annee_academique_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "dossier_statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "par_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Statistiques et liste paginée du registre"
+                    },
+                    "403": {
+                        "description": "Réservé à ADMIN et SECRETAIRE_ACADEMIQUE"
+                    },
+                    "422": {
+                        "description": "Filtres invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/registre-etudiants/{id}": {
+            "patch": {
+                "tags": [
+                    "Registre étudiants"
+                ],
+                "summary": "Modifier l’affectation, le statut ou le dossier d’un étudiant",
+                "description": "Le niveau ne peut pas être envoyé : il est automatiquement déterminé par la promotion.",
+                "operationId": "modifierEtudiantAffecte",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "id_promotion": {
+                                        "type": "integer"
+                                    },
+                                    "statut": {
+                                        "type": "string"
+                                    },
+                                    "decision_passage": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "date_decision": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "nullable": true
+                                    },
+                                    "dossier_statut": {
+                                        "type": "string"
+                                    },
+                                    "observations": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Affectation mise à jour"
+                    },
+                    "403": {
+                        "description": "Réservé à ADMIN et SECRETAIRE_ACADEMIQUE"
+                    },
+                    "404": {
+                        "description": "Étudiant ou inscription introuvable"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/fichiers-preinscriptions/{chemin}": {
             "get": {
                 "tags": [
@@ -6494,6 +6653,10 @@
         {
             "name": "Pré-inscription",
             "description": "Pré-inscription"
+        },
+        {
+            "name": "Registre étudiants",
+            "description": "Registre étudiants"
         },
         {
             "name": "Fichiers",

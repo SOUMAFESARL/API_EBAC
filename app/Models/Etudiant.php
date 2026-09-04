@@ -59,6 +59,11 @@ class Etudiant extends Model
         return $this->hasMany(Inscription::class, 'id_etudiant');
     }
 
+    public function inscriptionActuelle(): HasOne
+    {
+        return $this->hasOne(Inscription::class, 'id_etudiant')->latestOfMany('date_inscription');
+    }
+
     public function paiements(): HasMany
     {
         return $this->hasMany(PaiementEtudiant::class, 'id_etudiant');

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AutoriserRoles;
 use App\Http\Middleware\InterdireRoles;
 use App\Http\Middleware\VerifierAdministrateur;
 use App\Http\Middleware\VerifierCompteActif;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'administrateur' => VerifierAdministrateur::class,
+            'roles.autorises' => AutoriserRoles::class,
             'compte.actif' => VerifierCompteActif::class,
             'permission' => VerifierPermission::class,
             'roles.interdits' => InterdireRoles::class,

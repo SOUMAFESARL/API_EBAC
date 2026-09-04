@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantCompletController;
 use App\Http\Controllers\Api\V1\Etudiant\EtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\GestionPreInscriptionController;
 use App\Http\Controllers\Api\V1\Etudiant\PreInscriptionController;
+use App\Http\Controllers\Api\V1\Etudiant\RegistreEtudiantController;
 use App\Http\Controllers\Api\V1\Navigation\SidebarController;
 use App\Http\Controllers\Api\V1\Parametre\AnneeAcademiqueController;
 use App\Http\Controllers\Api\V1\Parametre\CiviliteController;
@@ -112,6 +113,14 @@ Route::prefix('v1/administration/etudiants/{id}')
 Route::get('v1/administration/dossiers-etudiants', [DossierEtudiantController::class, 'index'])
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.interdits:ENSEIGNANT,ETUDIANT'])
     ->name('api.v1.administration.dossiers-etudiants.index');
+
+Route::prefix('v1/administration/registre-etudiants')
+    ->name('api.v1.administration.registre-etudiants.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE'])
+    ->group(function () {
+        Route::get('/', [RegistreEtudiantController::class, 'index'])->name('index');
+        Route::patch('/{id}', [RegistreEtudiantController::class, 'update'])->whereNumber('id')->name('update');
+    });
 
 Route::get('v1/parametres/civilites', [CiviliteController::class, 'index'])
     ->name('api.v1.parametres.civilites.index');
