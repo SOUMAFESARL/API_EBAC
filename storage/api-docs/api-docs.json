@@ -2726,6 +2726,341 @@
                     }
                 ]
             }
+        },
+        "/administration/comptes": {
+            "get": {
+                "tags": [
+                    "Comptes"
+                ],
+                "operationId": "1f18d0002afc28db95538edbfc7fe8c0",
+                "responses": {
+                    "200": {
+                        "description": "Liste des comptes"
+                    },
+                    "403": {
+                        "description": "Permission absente ou rôle ETUDIANT/ENSEIGNANT interdit"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Comptes"
+                ],
+                "operationId": "943f5e8d0b30baad1c8544dab80a1340",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Compte créé"
+                    },
+                    "403": {
+                        "description": "Permission absente ou rôle ETUDIANT/ENSEIGNANT interdit"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/comptes/create": {
+            "get": {
+                "tags": [
+                    "Comptes"
+                ],
+                "operationId": "fe3a40071616c054db32eb6483d58827",
+                "responses": {
+                    "200": {
+                        "description": "Données nécessaires au formulaire de création"
+                    },
+                    "403": {
+                        "description": "Permission absente ou rôle ETUDIANT/ENSEIGNANT interdit"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/comptes/etudiants": {
+            "post": {
+                "tags": [
+                    "Comptes"
+                ],
+                "operationId": "52e1c7957dbd7195cf60744439f3579d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Compte étudiant créé"
+                    },
+                    "403": {
+                        "description": "Permission absente ou rôle ETUDIANT/ENSEIGNANT interdit"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/comptes/{compte}": {
+            "get": {
+                "tags": [
+                    "Comptes"
+                ],
+                "operationId": "7810f7683a130e0b3af2b5e738a635ba",
+                "parameters": [
+                    {
+                        "name": "compte",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détail du compte"
+                    },
+                    "403": {
+                        "description": "Permission absente ou rôle ETUDIANT/ENSEIGNANT interdit"
+                    },
+                    "404": {
+                        "description": "Compte introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Comptes"
+                ],
+                "operationId": "2e1f0b0ce4c26e8286c25cb600905811",
+                "parameters": [
+                    {
+                        "name": "compte",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Compte modifié"
+                    },
+                    "403": {
+                        "description": "Permission absente ou rôle ETUDIANT/ENSEIGNANT interdit"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Comptes"
+                ],
+                "description": "Modification multipart/form-data.",
+                "operationId": "b3f21d6a8e82545d1b6d18a0525c00ba",
+                "parameters": [
+                    {
+                        "name": "compte",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Compte modifié"
+                    },
+                    "403": {
+                        "description": "Permission absente ou rôle ETUDIANT/ENSEIGNANT interdit"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Comptes"
+                ],
+                "operationId": "aac5703f49d3b9988fb07549089a4a55",
+                "parameters": [
+                    {
+                        "name": "compte",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Compte supprimé"
+                    },
+                    "403": {
+                        "description": "Permission absente ou rôle ETUDIANT/ENSEIGNANT interdit"
+                    },
+                    "404": {
+                        "description": "Compte introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Comptes"
+                ],
+                "operationId": "7546cea410025a5a7b11824dc0b8d514",
+                "parameters": [
+                    {
+                        "name": "compte",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Compte modifié"
+                    },
+                    "403": {
+                        "description": "Permission absente ou rôle ETUDIANT/ENSEIGNANT interdit"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/comptes/{compte}/edit": {
+            "get": {
+                "tags": [
+                    "Comptes"
+                ],
+                "operationId": "fb7dde3d08d5d0939e54b64dca331eb2",
+                "parameters": [
+                    {
+                        "name": "compte",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Données nécessaires au formulaire de modification"
+                    },
+                    "403": {
+                        "description": "Permission absente ou rôle ETUDIANT/ENSEIGNANT interdit"
+                    },
+                    "404": {
+                        "description": "Compte introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -4201,6 +4536,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Comptes",
+            "description": "Gestion des comptes. Accès réservé aux comptes actifs ayant COMPTE_GERER. Les rôles ETUDIANT et ENSEIGNANT sont toujours refusés."
+        },
         {
             "name": "Églises",
             "description": "Églises"

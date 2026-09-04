@@ -125,7 +125,12 @@ Route::apiResource('v1/eglises', EgliseController::class)
 
 Route::prefix('v1/administration/comptes')
     ->name('api.v1.administration.comptes.')
-    ->middleware(['auth:sanctum', 'compte.actif', 'permission:COMPTE_GERER'])
+    ->middleware([
+        'auth:sanctum',
+        'compte.actif',
+        'roles.interdits:ENSEIGNANT,ETUDIANT',
+        'permission:COMPTE_GERER',
+    ])
     ->group(function () {
         Route::get('/', [CompteController::class, 'index'])->name('index');
         Route::get('/create', [CompteController::class, 'create'])->name('create');

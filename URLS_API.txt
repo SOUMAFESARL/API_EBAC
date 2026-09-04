@@ -1,0 +1,185 @@
+LISTE DES URLS DE L'API EBAC
+============================
+
+URL de base : {APP_URL}
+Exemple local : http://localhost:8000
+
+Documentation
+-------------
+GET        /api/documentation
+GET        /api/oauth2-callback
+
+Authentification
+----------------
+POST       /api/v1/auth/connexion
+POST       /api/v1/auth/confirmer-otp
+POST       /api/v1/auth/mot-de-passe-oublie
+POST       /api/v1/auth/verifier-code-reinitialisation
+POST       /api/v1/auth/reinitialiser-mot-de-passe
+POST       /api/v1/auth/modifier-mot-de-passe
+GET        /api/v1/auth/profil
+POST       /api/v1/auth/deconnexion
+POST       /api/v1/auth/deconnexion-globale
+
+Etudiant et navigation
+----------------------
+POST       /api/v1/etudiant/pre-inscription
+GET        /api/v1/navigation/sidebar
+GET        /api/v1/utilisateurs/{compte}/photo
+
+Gestion des preinscriptions et etudiants
+-----------------------------------------
+GET        /api/v1/administration/preinscriptions
+GET        /api/v1/administration/preinscriptions/{id}
+GET        /api/v1/administration/preinscriptions/{id}/creer-compte
+POST       /api/v1/administration/preinscriptions/{id}/creer-compte
+POST       /api/v1/administration/preinscriptions/{id}/rejeter
+GET        /api/v1/administration/etudiants
+GET        /api/v1/administration/dossiers-etudiants
+
+Comptes
+-------
+GET        /api/v1/administration/comptes
+POST       /api/v1/administration/comptes
+GET        /api/v1/administration/comptes/create
+POST       /api/v1/administration/comptes/etudiants
+GET        /api/v1/administration/comptes/{compte}
+PUT        /api/v1/administration/comptes/{compte}
+PATCH      /api/v1/administration/comptes/{compte}
+POST       /api/v1/administration/comptes/{compte} (multipart)
+DELETE     /api/v1/administration/comptes/{compte}
+GET        /api/v1/administration/comptes/{compte}/edit
+
+Profil d'administration
+-----------------------
+GET        /api/v1/administration/profil
+PUT        /api/v1/administration/profil
+PATCH      /api/v1/administration/profil
+POST       /api/v1/administration/profil (multipart)
+GET        /api/v1/administration/profil/edit
+
+Roles
+-----
+GET        /api/v1/administration/roles
+POST       /api/v1/administration/roles
+GET        /api/v1/administration/roles/{role}
+PUT        /api/v1/administration/roles/{role}
+PATCH      /api/v1/administration/roles/{role}
+DELETE     /api/v1/administration/roles/{role}
+GET        /api/v1/administration/roles/catalogue-droits
+GET        /api/v1/administration/roles/matrice-autorisations
+GET        /api/v1/administration/roles/{role}/droits
+PATCH      /api/v1/administration/roles/{role}/droits/{permission}
+GET        /api/v1/administration/roles/{role}/matrice-autorisations
+PUT        /api/v1/administration/roles/{role}/autorisations
+PUT        /api/v1/administration/roles/{role}/permissions
+
+Permissions
+-----------
+GET        /api/v1/administration/permissions
+POST       /api/v1/administration/permissions
+GET        /api/v1/administration/permissions/{permission}
+PUT        /api/v1/administration/permissions/{permission}
+PATCH      /api/v1/administration/permissions/{permission}
+DELETE     /api/v1/administration/permissions/{permission}
+PUT        /api/v1/administration/permissions/{permission}/actions
+
+Actions
+-------
+GET        /api/v1/administration/actions
+POST       /api/v1/administration/actions
+GET        /api/v1/administration/actions/{action}
+PUT        /api/v1/administration/actions/{action}
+PATCH      /api/v1/administration/actions/{action}
+DELETE     /api/v1/administration/actions/{action}
+
+Menus
+-----
+GET        /api/v1/administration/menus
+POST       /api/v1/administration/menus
+GET        /api/v1/administration/menus/{menu}
+PUT        /api/v1/administration/menus/{menu}
+PATCH      /api/v1/administration/menus/{menu}
+DELETE     /api/v1/administration/menus/{menu}
+
+Eglises
+-------
+GET        /api/v1/eglises
+POST       /api/v1/eglises
+GET        /api/v1/eglises/{id}
+PUT        /api/v1/eglises/{id}
+PATCH      /api/v1/eglises/{id}
+DELETE     /api/v1/eglises/{id}
+
+Civilites
+---------
+GET        /api/v1/parametres/civilites
+POST       /api/v1/parametres/civilites
+GET        /api/v1/parametres/civilites/create
+GET        /api/v1/parametres/civilites/{id}
+PUT        /api/v1/parametres/civilites/{id}
+PATCH      /api/v1/parametres/civilites/{id}
+DELETE     /api/v1/parametres/civilites/{id}
+GET        /api/v1/parametres/civilites/{id}/edit
+
+Annees academiques
+------------------
+GET        /api/v1/parametres/annees-academiques
+POST       /api/v1/parametres/annees-academiques
+GET        /api/v1/parametres/annees-academiques/{id}
+PUT        /api/v1/parametres/annees-academiques/{id}
+PATCH      /api/v1/parametres/annees-academiques/{id}
+DELETE     /api/v1/parametres/annees-academiques/{id}
+
+Niveaux
+-------
+GET        /api/v1/parametres/niveaux
+POST       /api/v1/parametres/niveaux
+GET        /api/v1/parametres/niveaux/{id}
+PUT        /api/v1/parametres/niveaux/{id}
+PATCH      /api/v1/parametres/niveaux/{id}
+DELETE     /api/v1/parametres/niveaux/{id}
+
+Promotions
+----------
+GET        /api/v1/parametres/promotions
+POST       /api/v1/parametres/promotions
+GET        /api/v1/parametres/promotions/{id}
+PUT        /api/v1/parametres/promotions/{id}
+PATCH      /api/v1/parametres/promotions/{id}
+DELETE     /api/v1/parametres/promotions/{id}
+
+Matieres
+--------
+GET        /api/v1/parametres/matieres
+POST       /api/v1/parametres/matieres
+GET        /api/v1/parametres/matieres/{id}
+PUT        /api/v1/parametres/matieres/{id}
+PATCH      /api/v1/parametres/matieres/{id}
+DELETE     /api/v1/parametres/matieres/{id}
+
+Modules
+-------
+GET        /api/v1/parametres/modules
+POST       /api/v1/parametres/modules
+GET        /api/v1/parametres/modules/{id}
+PUT        /api/v1/parametres/modules/{id}
+PATCH      /api/v1/parametres/modules/{id}
+DELETE     /api/v1/parametres/modules/{id}
+
+Cours
+-----
+GET        /api/v1/parametres/cours
+POST       /api/v1/parametres/cours
+GET        /api/v1/parametres/cours/{id}
+PUT        /api/v1/parametres/cours/{id}
+PATCH      /api/v1/parametres/cours/{id}
+DELETE     /api/v1/parametres/cours/{id}
+
+Notes
+-----
+- Remplacer {APP_URL} par l'adresse du serveur.
+- Remplacer {id}, {compte}, {role}, {permission}, {action} et {menu} par une valeur reelle.
+- Les routes protegees necessitent generalement : Authorization: Bearer {token}
+- Source verifiee avec : php artisan route:list --path=api
+- Total Laravel : 106 routes HTTP (les methodes GET incluent automatiquement HEAD).

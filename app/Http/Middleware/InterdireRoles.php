@@ -21,7 +21,7 @@ class InterdireRoles
 
         if (in_array($utilisateur->role?->code, $rolesInterdits, true)) {
             return response()->json([
-                'message' => 'Votre rôle ne permet pas d’accéder à la gestion des préinscriptions.',
+                'message' => 'Votre rôle ne permet pas d’accéder à cette ressource.',
             ], 403);
         }
 

@@ -46,4 +46,23 @@ class PermissionMiddlewareTest extends TestCase
         $this->getJson('/api/v1/administration/menus')->assertOk();
         $this->getJson('/api/v1/administration/comptes')->assertOk();
     }
+
+    public function test_les_roles_etudiant_et_enseignant_ne_peuvent_pas_acceder_aux_comptes_meme_avec_la_permission(): void
+    {
+        $permission = Permission::query()->create([
+            'code' => 'COMPTE_GERER',
+            'libelle' => 'Gérer les comptes',
+        ]);
+
+        foreach (['ETUDIANT', 'ENSEIGNANT'] as $codeRole) {
+            $role = Role::query()->create([
+                'code' => $codeRole,
+                'libelle' => $codeRole,
+            ]);
+            $role->permissions()->attach($permission->id, ['actif' => true]);
+            Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+
+            $this->getJson('/api/v1/administration/comptes')->assertForbidden();
+        }
+    }
 }
