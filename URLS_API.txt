@@ -38,6 +38,7 @@ POST       /api/v1/administration/preinscriptions/{id}/rejeter
 GET        /api/v1/administration/etudiants
 GET        /api/v1/administration/dossiers-etudiants
 GET        /api/v1/administration/registre-etudiants
+GET        /api/v1/administration/registre-etudiants/{id}/dossier
 PATCH      /api/v1/administration/registre-etudiants/{id}
 POST       /api/v1/administration/etudiants/{id}/affecter-promotion
 GET        /api/v1/administration/etudiants/{id}/dossier-complet

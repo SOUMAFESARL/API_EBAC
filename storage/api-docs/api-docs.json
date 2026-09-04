@@ -536,6 +536,41 @@
                 ]
             }
         },
+        "/administration/registre-etudiants/{id}/dossier": {
+            "get": {
+                "tags": [
+                    "Registre étudiants"
+                ],
+                "summary": "Ouvrir le dossier complet d’un étudiant depuis le registre",
+                "operationId": "ouvrirDossierDepuisRegistre",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dossier, informations personnelles, pièces, finances, parcours et bulletins"
+                    },
+                    "403": {
+                        "description": "Réservé à ADMIN et SECRETAIRE_ACADEMIQUE"
+                    },
+                    "404": {
+                        "description": "Étudiant introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/administration/etudiants/{id}/dossier-complet": {
             "get": {
                 "tags": [
@@ -558,7 +593,7 @@
                         "description": "Dossier, informations personnelles, pièces, finances, parcours et bulletins"
                     },
                     "403": {
-                        "description": "Accès interdit"
+                        "description": "Réservé à ADMIN et SECRETAIRE_ACADEMIQUE"
                     },
                     "404": {
                         "description": "Étudiant introuvable"
@@ -6643,6 +6678,10 @@
             "description": "Dossier étudiant"
         },
         {
+            "name": "Registre étudiants",
+            "description": "Registre étudiants"
+        },
+        {
             "name": "Administration des étudiants",
             "description": "Administration des étudiants"
         },
@@ -6653,10 +6692,6 @@
         {
             "name": "Pré-inscription",
             "description": "Pré-inscription"
-        },
-        {
-            "name": "Registre étudiants",
-            "description": "Registre étudiants"
         },
         {
             "name": "Fichiers",

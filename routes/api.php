@@ -100,7 +100,7 @@ Route::get('v1/administration/etudiants', [EtudiantController::class, 'index'])
 
 Route::prefix('v1/administration/etudiants/{id}')
     ->name('api.v1.administration.etudiants.')
-    ->middleware(['auth:sanctum', 'compte.actif', 'roles.interdits:ENSEIGNANT,ETUDIANT'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE'])
     ->group(function () {
         Route::post('affecter-promotion', [DossierEtudiantCompletController::class, 'affecter'])
             ->whereNumber('id')
@@ -119,6 +119,9 @@ Route::prefix('v1/administration/registre-etudiants')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE'])
     ->group(function () {
         Route::get('/', [RegistreEtudiantController::class, 'index'])->name('index');
+        Route::get('/{id}/dossier', [DossierEtudiantCompletController::class, 'show'])
+            ->whereNumber('id')
+            ->name('dossier');
         Route::patch('/{id}', [RegistreEtudiantController::class, 'update'])->whereNumber('id')->name('update');
     });
 

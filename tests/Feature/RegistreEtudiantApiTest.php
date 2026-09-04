@@ -64,6 +64,11 @@ class RegistreEtudiantApiTest extends TestCase
             ->assertJsonPath('registre.data.0.niveau.libelle', '1ère Année')
             ->assertJsonPath('registre.data.0.dossier.nombre_pieces_manquantes', 2);
 
+        $this->getJson("/api/v1/administration/registre-etudiants/{$affecte->id}/dossier")
+            ->assertOk()
+            ->assertJsonPath('dossier.numero_dossier', 'ANA0172026')
+            ->assertJsonPath('dossier.informations_personnelles.id', $affecte->id);
+
         $this->patchJson("/api/v1/administration/registre-etudiants/{$affecte->id}", [
             'id_promotion' => $promotion16->id,
             'statut' => 'Départ de la formation',
@@ -84,6 +89,7 @@ class RegistreEtudiantApiTest extends TestCase
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
 
         $this->getJson('/api/v1/administration/registre-etudiants')->assertForbidden();
+        $this->getJson('/api/v1/administration/registre-etudiants/1/dossier')->assertForbidden();
         $this->patchJson('/api/v1/administration/registre-etudiants/1', [])->assertForbidden();
     }
 }
