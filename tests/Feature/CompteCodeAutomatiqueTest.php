@@ -328,7 +328,7 @@ class CompteCodeAutomatiqueTest extends TestCase
 
         $reponse->assertCreated()->assertJsonPath('compte.photo_url', route(
             'api.v1.utilisateurs.photo',
-            ['compte' => $reponse->json('compte.id')],
+            ['compte' => $reponse->json('compte.id'), 'v' => hash('sha256', $reponse->json('compte.photo'))],
         ));
 
         Storage::disk('public')->assertExists($reponse->json('compte.photo'));

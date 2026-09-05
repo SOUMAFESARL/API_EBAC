@@ -259,7 +259,7 @@ class DossierEtudiantCompletController extends Controller
                 'nombre_enfant' => $etudiant->nombre_enfant,
                 'photo_identite_url' => $etudiant->photo_identite_url,
                 'statut_actuel' => $etudiant->statut,
-                'compte' => $etudiant->user,
+                'compte' => $etudiant->user?->append('photo_url'),
             ],
             'eglise_recommandante' => $etudiant->eglise,
             'situation_financiere' => [

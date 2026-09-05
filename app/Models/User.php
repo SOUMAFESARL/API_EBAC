@@ -7,6 +7,7 @@ use App\Notifications\ReinitialisationMotDePasseNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -45,6 +46,16 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     public $timestamps = false;
+
+    protected function photoUrl(): Attribute
+    {
+        return Attribute::get(fn (): ?string => $this->photo
+            ? route('api.v1.utilisateurs.photo', [
+                'compte' => $this->id,
+                'v' => hash('sha256', $this->photo),
+            ])
+            : null);
+    }
 
     /**
      * Get the attributes that should be cast.

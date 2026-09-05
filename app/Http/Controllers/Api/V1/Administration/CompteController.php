@@ -179,8 +179,8 @@ class CompteController extends Controller
         }
 
         return response()->file(Storage::disk('public')->path($compte->photo), [
-            'Cache-Control' => 'public, max-age=86400',
-        ]);
+            'Cache-Control' => 'private, no-cache, must-revalidate',
+        ])->setPrivate();
     }
 
     public function edit(User $compte): JsonResponse

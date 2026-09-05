@@ -34,15 +34,24 @@ class PhotoEtudiantProfilTest extends TestCase
             Storage::disk('public')->put($chemin, 'ancienne photo');
         }
         Sanctum::actingAs($compte);
+        $ancienneUrl = $this->getJson('/api/v1/administration/profil')->assertOk()->json('profil.photo_url');
 
-        $this->post('/api/v1/etudiant/dossier', [
+        $reponse = $this->post('/api/v1/etudiant/dossier', [
             'photo_identite' => UploadedFile::fake()->image('identite.jpg'),
         ])->assertOk();
         $photo = $etudiant->fresh()->photo_identite;
+        $url = $reponse->json('dossier.informations_personnelles.compte.photo_url');
+        $this->assertNotNull($url);
+        $this->assertNotSame($ancienneUrl, $url);
+        $image = $this->get($url)->assertOk();
+        $this->assertTrue($image->headers->hasCacheControlDirective('no-cache'));
+        $this->assertFalse($image->headers->hasCacheControlDirective('public'));
+        $this->assertSame(Storage::disk('public')->get($photo), file_get_contents($image->getFile()->getPathname()));
         $this->assertSame($photo, $compte->fresh()->photo);
         Storage::disk('public')->assertExists($photo);
         Storage::disk('public')->assertMissing(['comptes/ancienne.jpg', 'etudiants/ancienne.jpg']);
-        $this->getJson('/api/v1/administration/profil')->assertOk()->assertJsonPath('profil.photo', $photo);
+        $this->getJson('/api/v1/administration/profil')->assertOk()
+            ->assertJsonPath('profil.photo', $photo)->assertJsonPath('profil.photo_url', $url);
 
         $this->patchJson('/api/v1/administration/profil', ['nom' => 'KOUAME'])->assertOk();
         $this->assertSame($photo, $etudiant->fresh()->photo_identite);
@@ -52,6 +61,10 @@ class PhotoEtudiantProfilTest extends TestCase
             'photo' => UploadedFile::fake()->image('profil.jpg'),
         ])->assertOk();
         $nouvellePhoto = $compte->fresh()->photo;
+        $nouvelleUrl = $this->getJson('/api/v1/administration/profil')->assertOk()->json('profil.photo_url');
+        $this->assertNotSame($url, $nouvelleUrl);
+        $image = $this->get($nouvelleUrl)->assertOk();
+        $this->assertSame(Storage::disk('public')->get($nouvellePhoto), file_get_contents($image->getFile()->getPathname()));
         $this->assertNotSame($photo, $nouvellePhoto);
         $this->assertSame($nouvellePhoto, $etudiant->fresh()->photo_identite);
         Storage::disk('public')->assertExists($nouvellePhoto);
@@ -67,7 +80,7 @@ class PhotoEtudiantProfilTest extends TestCase
         Storage::disk('public')->assertExists($nouvellePhoto);
 
         $this->patchJson('/api/v1/administration/profil', ['photo' => null])->assertOk()
-            ->assertJsonPath('profil.photo', null);
+            ->assertJsonPath('profil.photo', null)->assertJsonPath('profil.photo_url', null);
         $this->assertNull($etudiant->fresh()->photo_identite);
         Storage::disk('public')->assertMissing($nouvellePhoto);
         $this->assertSame('comptes/autre.jpg', $autreCompte->fresh()->photo);

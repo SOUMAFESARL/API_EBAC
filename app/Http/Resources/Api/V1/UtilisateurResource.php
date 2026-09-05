@@ -22,9 +22,7 @@ class UtilisateurResource extends JsonResource
             'nom' => $this->nom,
             'prenoms' => $this->prenoms,
             'photo' => $this->photo,
-            'photo_url' => $this->photo
-                ? route('api.v1.utilisateurs.photo', ['compte' => $this->id])
-                : null,
+            'photo_url' => $this->photo_url,
             'email' => $this->email,
             'id_role' => $this->id_role,
             'is_active' => $this->is_active,
