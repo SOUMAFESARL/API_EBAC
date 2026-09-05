@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
 class DossierEtudiantCompletController extends Controller
@@ -46,6 +47,8 @@ class DossierEtudiantCompletController extends Controller
         }
 
         $donnees = $request->validate([
+            'nom' => ['sometimes', 'required', 'string', 'max:150'],
+            'prenoms' => ['sometimes', 'required', 'string', 'max:150'],
             'civilite_id' => ['sometimes', 'integer', 'exists:civilite,id'],
             'date_naissance' => ['sometimes', 'nullable', 'date'],
             'lieu_naissance' => ['sometimes', 'nullable', 'string', 'max:150'],
@@ -67,6 +70,12 @@ class DossierEtudiantCompletController extends Controller
             'paiements' => ['prohibited'],
         ]);
 
+        if (collect($donnees)->except('documents')->isEmpty() && ! $request->hasFile('documents')) {
+            throw ValidationException::withMessages([
+                'dossier' => 'Aucun champ modifiable reçu. Envoyez les champs à la racine du JSON (exemple : telephone, adresse). Pour une photo ou des documents, utilisez POST en multipart/form-data avec photo_identite ou documents[].',
+            ]);
+        }
+
         $etudiant = Etudiant::query()->with('dossier')->where('user_id', $utilisateur->id)->firstOrFail();
         abort_if(! $etudiant->dossier, 404, 'Aucun dossier n’est rattaché à ce compte étudiant.');
 
@@ -81,6 +90,11 @@ class DossierEtudiantCompletController extends Controller
         try {
             DB::transaction(function () use ($request, $utilisateur, $etudiant, $donnees, &$nouveauxChemins): void {
                 $etudiant->update([...$donnees, 'updated_by' => $utilisateur->id]);
+
+                $identite = array_intersect_key($donnees, array_flip(['nom', 'prenoms']));
+                if ($identite !== []) {
+                    $utilisateur->update([...$identite, 'updated_by' => $utilisateur->id]);
+                }
 
                 foreach ($request->file('documents', []) as $document) {
                     $chemin = $document->store("etudiants/dossiers/{$etudiant->dossier->id}", 'public');
@@ -106,7 +120,9 @@ class DossierEtudiantCompletController extends Controller
         }
 
         return response()->json([
-            'message' => 'Votre dossier a été modifié avec succès. Les nouveaux documents sont en attente de validation.',
+            'message' => $request->hasFile('documents')
+                ? 'Votre dossier a été modifié avec succès. Les nouveaux documents sont en attente de validation.'
+                : 'Votre dossier a été modifié avec succès.',
             'id' => $etudiant->id,
             'dossier' => $this->construireDossier($etudiant->fresh()),
         ]);
@@ -231,6 +247,7 @@ class DossierEtudiantCompletController extends Controller
                 'email' => $etudiant->email,
                 'telephone' => $etudiant->telephone,
                 'adresse' => $etudiant->adresse,
+                'statut_professionnel' => $etudiant->statut_professionnel,
                 'situation_matrimonial' => $etudiant->situation_matrimonial,
                 'nombre_enfant' => $etudiant->nombre_enfant,
                 'photo_identite_url' => $etudiant->photo_identite_url,

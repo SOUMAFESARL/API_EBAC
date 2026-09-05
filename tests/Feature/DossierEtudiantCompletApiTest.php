@@ -41,6 +41,34 @@ class DossierEtudiantCompletApiTest extends TestCase
         ]);
         Sanctum::actingAs($compte);
 
+        foreach ([[], ['documents' => []], ['champ_inconnu' => 'IGNORÉ'], ['dossier' => ['informations_personnelles' => ['telephone' => '0102030405']]]] as $corps) {
+            $this->patchJson('/api/v1/etudiant/dossier', $corps)
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('dossier');
+        }
+        $this->assertNull($etudiant->fresh()->updated_by);
+
+        $this->patchJson('/api/v1/etudiant/dossier', ['nom' => 'KOUAME', 'prenoms' => 'Anne Marie'])
+            ->assertOk()
+            ->assertJsonPath('dossier.informations_personnelles.nom', 'KOUAME')
+            ->assertJsonPath('dossier.informations_personnelles.prenoms', 'Anne Marie')
+            ->assertJsonPath('dossier.informations_personnelles.compte.nom', 'KOUAME')
+            ->assertJsonPath('dossier.informations_personnelles.compte.prenoms', 'Anne Marie');
+        $this->assertDatabaseHas('etudiants', ['id' => $etudiant->id, 'nom' => 'KOUAME', 'prenoms' => 'Anne Marie']);
+        $this->assertDatabaseHas('users', ['id' => $compte->id, 'nom' => 'KOUAME', 'prenoms' => 'Anne Marie']);
+
+        $this->postJson('/api/v1/etudiant/dossier', ['nom' => 'YAO'])
+            ->assertOk()
+            ->assertJsonPath('dossier.informations_personnelles.nom', 'YAO')
+            ->assertJsonPath('dossier.informations_personnelles.compte.nom', 'YAO')
+            ->assertJsonPath('dossier.informations_personnelles.prenoms', 'Anne Marie');
+
+        foreach ([['nom' => ''], ['prenoms' => null], ['nom' => str_repeat('a', 151)], ['prenoms' => ['Anne']]] as $corps) {
+            $this->patchJson('/api/v1/etudiant/dossier', $corps)
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors(array_keys($corps));
+        }
+
         $this->getJson('/api/v1/etudiant/dossier')
             ->assertOk()
             ->assertJsonPath('dossier.numero_dossier', 'ANA0092026')
@@ -53,7 +81,10 @@ class DossierEtudiantCompletApiTest extends TestCase
             'adresse' => 'Abidjan Cocody',
             'situation_matrimonial' => 'Marié',
             'nombre_enfant' => 1,
+            'statut_professionnel' => 'Enseignant',
         ])->assertOk()
+            ->assertJsonPath('message', 'Votre dossier a été modifié avec succès.')
+            ->assertJsonPath('dossier.informations_personnelles.statut_professionnel', 'Enseignant')
             ->assertJsonPath('dossier.informations_personnelles.telephone', '+2250708091011')
             ->assertJsonPath('dossier.informations_personnelles.adresse', 'Abidjan Cocody')
             ->assertJsonPath('dossier.informations_personnelles.nombre_enfant', 1);
@@ -70,13 +101,24 @@ class DossierEtudiantCompletApiTest extends TestCase
             'matricule' => 'EBAC-0009-2026',
             'statut' => 'En formation',
             'telephone' => '+2250708091011',
+            'statut_professionnel' => 'Enseignant',
         ]);
+
+        $this->patchJson('/api/v1/etudiant/dossier', ['adresse' => null, 'nombre_enfant' => 0])
+            ->assertOk()
+            ->assertJsonPath('dossier.informations_personnelles.adresse', null)
+            ->assertJsonPath('dossier.informations_personnelles.nombre_enfant', 0);
+
+        $this->post('/api/v1/etudiant/dossier', [
+            'documents' => [UploadedFile::fake()->create('diplome.pdf', 100, 'application/pdf')],
+        ])->assertOk()
+            ->assertJsonPath('dossier.documents.0.nom_original', 'diplome.pdf');
 
         $this->post('/api/v1/etudiant/dossier', [
             'photo_identite' => UploadedFile::fake()->image('nouvelle-photo.jpg'),
             'documents' => [UploadedFile::fake()->create('attestation.pdf', 250, 'application/pdf')],
         ])->assertOk()
-            ->assertJsonPath('dossier.documents.0.nom_original', 'attestation.pdf')
+            ->assertJsonPath('dossier.documents.1.nom_original', 'attestation.pdf')
             ->assertJsonPath('dossier.documents.0.statut_validation', 'En attente');
 
         Storage::disk('public')->assertExists(
