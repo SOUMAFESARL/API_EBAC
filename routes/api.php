@@ -40,6 +40,10 @@ Route::get('v1/etudiant/dossier', [DossierEtudiantCompletController::class, 'mon
 Route::match(['patch', 'post'], 'v1/etudiant/dossier', [DossierEtudiantCompletController::class, 'modifierMonDossier'])
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->name('api.v1.etudiant.dossier.update');
+Route::post('v1/etudiant/dossier/documents/{document}', [DossierEtudiantCompletController::class, 'remplacerMonDocument'])
+    ->whereNumber('document')
+    ->middleware(['auth:sanctum', 'compte.actif'])
+    ->name('api.v1.etudiant.dossier.documents.update');
 
 Route::prefix('v1/auth')->name('api.v1.auth.')->group(function () {
     Route::post('/connexion', [AuthentificationController::class, 'connexion'])

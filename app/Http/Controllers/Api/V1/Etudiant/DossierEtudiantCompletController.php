@@ -205,6 +205,56 @@ class DossierEtudiantCompletController extends Controller
         ]);
     }
 
+    #[OA\Post(path: '/etudiant/dossier/documents/{document}', operationId: 'remplacerMonDocumentEtudiant', summary: 'Remplacer un document de son dossier en conservant son identifiant', tags: ['Dossier étudiant'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'document', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['document'], properties: [new OA\Property(property: 'document', type: 'string', format: 'binary')]))), responses: [new OA\Response(response: 200, description: 'Document remplacé et remis en attente de validation'), new OA\Response(response: 403, description: 'Réservé au rôle ETUDIANT'), new OA\Response(response: 404, description: 'Document absent du dossier de cet étudiant'), new OA\Response(response: 422, description: 'Fichier invalide')])]
+    public function remplacerMonDocument(Request $request, int $document): JsonResponse
+    {
+        $utilisateur = $request->user()->loadMissing('role');
+        abort_unless($utilisateur->role?->code === 'ETUDIANT', 403, 'Cette ressource est réservée aux étudiants.');
+
+        $etudiant = Etudiant::query()->with('dossier')->where('user_id', $utilisateur->id)->firstOrFail();
+        abort_if(! $etudiant->dossier, 404, 'Aucun dossier n’est rattaché à ce compte étudiant.');
+        $request->validate([
+            'document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
+        ]);
+
+        $nouveauChemin = null;
+        $ancienChemin = null;
+        try {
+            DB::transaction(function () use ($request, $document, $etudiant, &$nouveauChemin, &$ancienChemin): void {
+                $fichier = $etudiant->dossier->fichiers()->lockForUpdate()->findOrFail($document);
+                $ancienChemin = $fichier->chemin;
+                $nouveauFichier = $request->file('document');
+                $nouveauChemin = $nouveauFichier->store("etudiants/dossiers/{$etudiant->dossier->id}", 'public');
+                $fichier->update([
+                    'nom_original' => $nouveauFichier->getClientOriginalName(),
+                    'chemin' => $nouveauChemin,
+                    'mime_type' => $nouveauFichier->getMimeType(),
+                    'taille' => $nouveauFichier->getSize(),
+                    'statut_validation' => 'En attente',
+                    'date_validation' => null,
+                    'date_expiration' => null,
+                    'motif_rejet' => null,
+                    'valide_par' => null,
+                ]);
+            });
+        } catch (\Throwable $exception) {
+            if ($nouveauChemin) {
+                Storage::disk('public')->delete($nouveauChemin);
+            }
+            throw $exception;
+        }
+
+        if ($ancienChemin && $ancienChemin !== $nouveauChemin) {
+            Storage::disk('public')->delete($ancienChemin);
+        }
+
+        return response()->json([
+            'message' => 'Votre document a été remplacé. Il est en attente de validation.',
+            'id' => $etudiant->id,
+            'dossier' => $this->construireDossier($etudiant->fresh()),
+        ]);
+    }
+
     private function construireDossier(Etudiant $etudiant): array
     {
         $etudiant->load([
