@@ -80,6 +80,7 @@ class DossierEtudiantCompletController extends Controller
         abort_if(! $etudiant->dossier, 404, 'Aucun dossier n’est rattaché à ce compte étudiant.');
 
         $anciennePhoto = $etudiant->photo_identite;
+        $anciennePhotoProfil = $utilisateur->photo;
         $nouveauxChemins = [];
         if ($request->hasFile('photo_identite')) {
             $donnees['photo_identite'] = $request->file('photo_identite')->store('etudiants/photos-identite', 'public');
@@ -92,6 +93,9 @@ class DossierEtudiantCompletController extends Controller
                 $etudiant->update([...$donnees, 'updated_by' => $utilisateur->id]);
 
                 $identite = array_intersect_key($donnees, array_flip(['nom', 'prenoms']));
+                if (isset($donnees['photo_identite'])) {
+                    $identite['photo'] = $donnees['photo_identite'];
+                }
                 if ($identite !== []) {
                     $utilisateur->update([...$identite, 'updated_by' => $utilisateur->id]);
                 }
@@ -115,8 +119,11 @@ class DossierEtudiantCompletController extends Controller
             throw $exception;
         }
 
-        if (isset($donnees['photo_identite']) && $anciennePhoto && $anciennePhoto !== $donnees['photo_identite']) {
-            Storage::disk('public')->delete($anciennePhoto);
+        if (isset($donnees['photo_identite'])) {
+            Storage::disk('public')->delete(array_values(array_unique(array_filter(
+                [$anciennePhoto, $anciennePhotoProfil],
+                fn ($chemin) => $chemin && $chemin !== $donnees['photo_identite'],
+            ))));
         }
 
         return response()->json([
