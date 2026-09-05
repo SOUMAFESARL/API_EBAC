@@ -483,33 +483,15 @@
                 "tags": [
                     "Dossier étudiant"
                 ],
-                "summary": "Modifier son dossier avec une photo ou des documents",
+                "summary": "Remplacer sa photo ou ajouter des documents",
+                "description": "POST multipart/form-data. Dans Postman, choisir Body > form-data et le type File. photo_identite remplace la photo d’identité et du profil ; documents[] ajoute des fichiers au dossier existant. Aucun ID étudiant requis.",
                 "operationId": "modifierMonDossierEtudiantMultipart",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "multipart/form-data": {
                             "schema": {
-                                "properties": {
-                                    "telephone": {
-                                        "type": "string"
-                                    },
-                                    "adresse": {
-                                        "type": "string"
-                                    },
-                                    "photo_identite": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    },
-                                    "documents": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string",
-                                            "format": "binary"
-                                        }
-                                    }
-                                },
-                                "type": "object"
+                                "$ref": "#/components/schemas/ModifierDossierEtudiantMultipart"
                             }
                         }
                     }
@@ -536,13 +518,19 @@
                     "Dossier étudiant"
                 ],
                 "summary": "Modifier les informations personnelles de son dossier",
+                "description": "JSON à la racine. Pour les fichiers, utiliser POST en multipart/form-data. Matricule, statut, promotion, niveau, décision et paiements ne sont pas modifiables ici.",
                 "operationId": "modifierMonDossierEtudiant",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object"
+                                "$ref": "#/components/schemas/ModifierDossierEtudiantPayload"
+                            },
+                            "example": {
+                                "nom": "KOUAME",
+                                "prenoms": "Anne Marie",
+                                "telephone": "0102030405"
                             }
                         }
                     }
@@ -682,6 +670,68 @@
                     },
                     "404": {
                         "description": "Étudiant introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/etudiant/dossier/documents/{document}": {
+            "post": {
+                "tags": [
+                    "Dossier étudiant"
+                ],
+                "summary": "Remplacer un document existant par son ID",
+                "description": "Récupérer dossier.documents[].id avec GET /etudiant/dossier et le placer dans le chemin. Il s’agit de l’ID du document, pas de l’étudiant. Body > form-data : clé document, type File. Le document doit appartenir au compte connecté. Son ID et son type sont conservés ; la validation est réinitialisée et l’ancien fichier est supprimé après enregistrement.",
+                "operationId": "remplacerMonDocumentEtudiant",
+                "parameters": [
+                    {
+                        "name": "document",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "document"
+                                ],
+                                "properties": {
+                                    "document": {
+                                        "description": "Nouveau fichier PDF, JPG, JPEG, PNG ou WEBP, 10 Mo maximum. Sélectionner le fichier, ne pas saisir un chemin.",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Document remplacé et remis en attente de validation"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Réservé au rôle ETUDIANT"
+                    },
+                    "404": {
+                        "description": "Document absent du dossier de cet étudiant"
+                    },
+                    "422": {
+                        "description": "Fichier invalide"
                     }
                 },
                 "security": [
@@ -5201,6 +5251,101 @@
     },
     "components": {
         "schemas": {
+            "ModifierDossierEtudiantPayload": {
+                "description": "Envoyer au moins un champ modifiable à la racine, sans enveloppe dossier. Les champs omis sont conservés. Le nom et les prénoms sont aussi synchronisés avec le compte.",
+                "properties": {
+                    "nom": {
+                        "type": "string",
+                        "example": "KOUAME",
+                        "maxLength": 150,
+                        "minLength": 1
+                    },
+                    "prenoms": {
+                        "type": "string",
+                        "example": "Anne Marie",
+                        "maxLength": 150,
+                        "minLength": 1
+                    },
+                    "civilite_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "date_naissance": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "lieu_naissance": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 150
+                    },
+                    "nationalite": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 80
+                    },
+                    "telephone": {
+                        "type": "string",
+                        "example": "0102030405",
+                        "nullable": true,
+                        "maxLength": 30
+                    },
+                    "adresse": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
+                    "eglise_id": {
+                        "description": "ID d’une église existante non supprimée",
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "statut_professionnel": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 100
+                    },
+                    "situation_matrimonial": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 50
+                    },
+                    "nombre_enfant": {
+                        "type": "integer",
+                        "nullable": true,
+                        "maximum": 65535,
+                        "minimum": 0
+                    }
+                },
+                "type": "object"
+            },
+            "ModifierDossierEtudiantMultipart": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/ModifierDossierEtudiantPayload"
+                    },
+                    {
+                        "properties": {
+                            "photo_identite": {
+                                "description": "Fichier JPG, JPEG, PNG ou WEBP, 2 Mo maximum. Remplace aussi la photo de profil. Actualiser la photo affichée avec dossier.informations_personnelles.compte.photo_url dans la réponse.",
+                                "type": "string",
+                                "format": "binary"
+                            },
+                            "documents[]": {
+                                "description": "Ajouter de nouveaux documents : fichiers PDF, JPG, JPEG, PNG ou WEBP, 10 Mo maximum chacun. Répéter la clé documents[] en multipart. Sélectionner les fichiers, ne pas envoyer leurs chemins. Pour remplacer un document, utiliser POST /etudiant/dossier/documents/{document}.",
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "format": "binary"
+                                },
+                                "maxItems": 10
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
             "RepresentantEglise": {
                 "required": [
                     "nom"
@@ -6739,6 +6884,10 @@
             "description": "Gestion accessible à tous les rôles authentifiés ayant un compte actif, sauf ETUDIANT et ENSEIGNANT qui sont toujours interdits."
         },
         {
+            "name": "Dossier étudiant",
+            "description": "Dossier du compte étudiant connecté. Utiliser Authorize avec son token Bearer. Aucun ID étudiant à envoyer. Les documents ajoutés ou remplacés sont en attente de validation."
+        },
+        {
             "name": "Navigation",
             "description": "Navigation autorisée pour l’utilisateur connecté."
         },
@@ -6757,10 +6906,6 @@
         {
             "name": "Églises",
             "description": "Églises"
-        },
-        {
-            "name": "Dossier étudiant",
-            "description": "Dossier étudiant"
         },
         {
             "name": "Registre étudiants",
