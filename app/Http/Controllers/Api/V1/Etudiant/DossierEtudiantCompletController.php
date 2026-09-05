@@ -205,8 +205,8 @@ class DossierEtudiantCompletController extends Controller
         ]);
     }
 
-    #[OA\Post(path: '/etudiant/dossier/documents/{document}', operationId: 'remplacerMonDocumentEtudiant', summary: 'Remplacer un document existant par son ID', description: 'Récupérer dossier.documents[].id avec GET /etudiant/dossier et le placer dans le chemin. Il s’agit de l’ID du document, pas de l’étudiant. Body > form-data : clé document, type File. Le document doit appartenir au compte connecté. Son ID et son type sont conservés ; la validation est réinitialisée et l’ancien fichier est supprimé après enregistrement.', tags: ['Dossier étudiant'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'document', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['document'], properties: [new OA\Property(property: 'document', type: 'string', format: 'binary', description: 'Nouveau fichier PDF, JPG, JPEG, PNG ou WEBP, 10 Mo maximum. Sélectionner le fichier, ne pas saisir un chemin.')]))), responses: [new OA\Response(response: 200, description: 'Document remplacé et remis en attente de validation'), new OA\Response(response: 401, description: 'Non authentifié'), new OA\Response(response: 403, description: 'Réservé au rôle ETUDIANT'), new OA\Response(response: 404, description: 'Document absent du dossier de cet étudiant'), new OA\Response(response: 422, description: 'Fichier invalide')])]
-    public function remplacerMonDocument(Request $request, int $document): JsonResponse
+    #[OA\Post(path: '/etudiant/dossier/documents/{id}', operationId: 'remplacerMonDocumentEtudiant', summary: 'Remplacer un document existant par son ID', description: 'Récupérer dossier.documents[].id avec GET /etudiant/dossier et le placer dans le chemin. Il s’agit de l’ID du document, pas de l’étudiant. Body > form-data : clé document, type File. Le document doit appartenir au compte connecté. Son ID et son type sont conservés ; la validation est réinitialisée et l’ancien fichier est supprimé après enregistrement.', tags: ['Dossier étudiant'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'id', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(type: 'object', required: ['document'], properties: [new OA\Property(property: 'document', type: 'string', format: 'binary', description: 'Nouveau fichier PDF, JPG, JPEG, PNG ou WEBP, 10 Mo maximum. Sélectionner le fichier, ne pas saisir un chemin.')]))), responses: [new OA\Response(response: 200, description: 'Document remplacé et remis en attente de validation'), new OA\Response(response: 401, description: 'Non authentifié'), new OA\Response(response: 403, description: 'Réservé au rôle ETUDIANT'), new OA\Response(response: 404, description: 'Document absent du dossier de cet étudiant'), new OA\Response(response: 422, description: 'Fichier invalide')])]
+    public function remplacerMonDocument(Request $request, int $id): JsonResponse
     {
         $utilisateur = $request->user()->loadMissing('role');
         abort_unless($utilisateur->role?->code === 'ETUDIANT', 403, 'Cette ressource est réservée aux étudiants.');
@@ -220,8 +220,8 @@ class DossierEtudiantCompletController extends Controller
         $nouveauChemin = null;
         $ancienChemin = null;
         try {
-            DB::transaction(function () use ($request, $document, $etudiant, &$nouveauChemin, &$ancienChemin): void {
-                $fichier = $etudiant->dossier->fichiers()->lockForUpdate()->findOrFail($document);
+            DB::transaction(function () use ($request, $id, $etudiant, &$nouveauChemin, &$ancienChemin): void {
+                $fichier = $etudiant->dossier->fichiers()->lockForUpdate()->findOrFail($id);
                 $ancienChemin = $fichier->chemin;
                 $nouveauFichier = $request->file('document');
                 $nouveauChemin = $nouveauFichier->store("etudiants/dossiers/{$etudiant->dossier->id}", 'public');

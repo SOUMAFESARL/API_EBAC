@@ -40,8 +40,8 @@ Route::get('v1/etudiant/dossier', [DossierEtudiantCompletController::class, 'mon
 Route::match(['patch', 'post'], 'v1/etudiant/dossier', [DossierEtudiantCompletController::class, 'modifierMonDossier'])
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->name('api.v1.etudiant.dossier.update');
-Route::post('v1/etudiant/dossier/documents/{document}', [DossierEtudiantCompletController::class, 'remplacerMonDocument'])
-    ->whereNumber('document')
+Route::post('v1/etudiant/dossier/documents/{id}', [DossierEtudiantCompletController::class, 'remplacerMonDocument'])
+    ->whereNumber('id')
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->name('api.v1.etudiant.dossier.documents.update');
 

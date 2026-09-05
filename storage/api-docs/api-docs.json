@@ -679,7 +679,7 @@
                 ]
             }
         },
-        "/etudiant/dossier/documents/{document}": {
+        "/etudiant/dossier/documents/{id}": {
             "post": {
                 "tags": [
                     "Dossier étudiant"
@@ -689,7 +689,7 @@
                 "operationId": "remplacerMonDocumentEtudiant",
                 "parameters": [
                     {
-                        "name": "document",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -5333,7 +5333,7 @@
                                 "format": "binary"
                             },
                             "documents[]": {
-                                "description": "Ajouter de nouveaux documents : fichiers PDF, JPG, JPEG, PNG ou WEBP, 10 Mo maximum chacun. Répéter la clé documents[] en multipart. Sélectionner les fichiers, ne pas envoyer leurs chemins. Pour remplacer un document, utiliser POST /etudiant/dossier/documents/{document}.",
+                                "description": "Ajouter de nouveaux documents : fichiers PDF, JPG, JPEG, PNG ou WEBP, 10 Mo maximum chacun. Répéter la clé documents[] en multipart. Sélectionner les fichiers, ne pas envoyer leurs chemins. Pour remplacer un document, utiliser POST /etudiant/dossier/documents/{id}.",
                                 "type": "array",
                                 "items": {
                                     "type": "string",
