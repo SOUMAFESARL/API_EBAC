@@ -47,13 +47,9 @@ class ProfilController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($utilisateur, $donnees, $etudiant): void {
+            DB::transaction(function () use ($utilisateur, $donnees): void {
                 $utilisateur->update([
                     ...$donnees,
-                    'updated_by' => $utilisateur->id,
-                ]);
-                $etudiant?->update([
-                    'photo_identite' => $donnees['photo'],
                     'updated_by' => $utilisateur->id,
                 ]);
             });
@@ -66,8 +62,8 @@ class ProfilController extends Controller
 
         if ($supprimerAnciennePhoto) {
             Storage::disk('public')->delete(array_values(array_unique(array_filter(
-                [$anciennePhoto, $anciennePhotoIdentite],
-                fn ($chemin) => $chemin && $chemin !== $donnees['photo'],
+                [$anciennePhoto],
+                fn ($chemin) => $chemin && $chemin !== $donnees['photo'] && $chemin !== $anciennePhotoIdentite,
             ))));
         }
 

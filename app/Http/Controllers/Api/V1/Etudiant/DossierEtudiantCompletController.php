@@ -38,7 +38,7 @@ class DossierEtudiantCompletController extends Controller
     }
 
     #[OA\Patch(path: '/etudiant/dossier', operationId: 'modifierMonDossierEtudiant', summary: 'Modifier les informations personnelles de son dossier', description: 'JSON à la racine. Pour les fichiers, utiliser POST en multipart/form-data. Matricule, statut, promotion, niveau, décision et paiements ne sont pas modifiables ici.', tags: ['Dossier étudiant'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ModifierDossierEtudiantPayload', example: ['nom' => 'KOUAME', 'prenoms' => 'Anne Marie', 'telephone' => '0102030405'])), responses: [new OA\Response(response: 200, description: 'Dossier personnel modifié'), new OA\Response(response: 403, description: 'Réservé au rôle ETUDIANT'), new OA\Response(response: 422, description: 'Données invalides ou champ administratif interdit')])]
-    #[OA\Post(path: '/etudiant/dossier', operationId: 'modifierMonDossierEtudiantMultipart', summary: 'Remplacer sa photo ou ajouter des documents', description: 'POST multipart/form-data. Dans Postman, choisir Body > form-data et le type File. photo_identite remplace la photo d’identité et du profil ; documents[] ajoute des fichiers au dossier existant. Aucun ID étudiant requis.', tags: ['Dossier étudiant'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(ref: '#/components/schemas/ModifierDossierEtudiantMultipart'))), responses: [new OA\Response(response: 200, description: 'Dossier personnel et fichiers modifiés'), new OA\Response(response: 403, description: 'Réservé au rôle ETUDIANT'), new OA\Response(response: 422, description: 'Données invalides')])]
+    #[OA\Post(path: '/etudiant/dossier', operationId: 'modifierMonDossierEtudiantMultipart', summary: 'Remplacer sa photo ou ajouter des documents', description: 'POST multipart/form-data. Dans Postman, choisir Body > form-data et le type File. photo_identite remplace uniquement la photo d’identité du dossier ; documents[] ajoute des fichiers au dossier existant. Aucun ID étudiant requis.', tags: ['Dossier étudiant'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(ref: '#/components/schemas/ModifierDossierEtudiantMultipart'))), responses: [new OA\Response(response: 200, description: 'Dossier personnel et fichiers modifiés'), new OA\Response(response: 403, description: 'Réservé au rôle ETUDIANT'), new OA\Response(response: 422, description: 'Données invalides')])]
     public function modifierMonDossier(Request $request): JsonResponse
     {
         $utilisateur = $request->user()->loadMissing('role');
@@ -93,9 +93,6 @@ class DossierEtudiantCompletController extends Controller
                 $etudiant->update([...$donnees, 'updated_by' => $utilisateur->id]);
 
                 $identite = array_intersect_key($donnees, array_flip(['nom', 'prenoms']));
-                if (isset($donnees['photo_identite'])) {
-                    $identite['photo'] = $donnees['photo_identite'];
-                }
                 if ($identite !== []) {
                     $utilisateur->update([...$identite, 'updated_by' => $utilisateur->id]);
                 }
@@ -121,8 +118,8 @@ class DossierEtudiantCompletController extends Controller
 
         if (isset($donnees['photo_identite'])) {
             Storage::disk('public')->delete(array_values(array_unique(array_filter(
-                [$anciennePhoto, $anciennePhotoProfil],
-                fn ($chemin) => $chemin && $chemin !== $donnees['photo_identite'],
+                [$anciennePhoto],
+                fn ($chemin) => $chemin && $chemin !== $donnees['photo_identite'] && $chemin !== $anciennePhotoProfil,
             ))));
         }
 

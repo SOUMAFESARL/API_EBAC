@@ -29,7 +29,7 @@ use OpenApi\Attributes as OA;
     allOf: [
         new OA\Schema(ref: '#/components/schemas/ModifierDossierEtudiantPayload'),
         new OA\Schema(type: 'object', properties: [
-            new OA\Property(property: 'photo_identite', type: 'string', format: 'binary', description: 'Fichier JPG, JPEG, PNG ou WEBP, 2 Mo maximum. Remplace aussi la photo de profil. Actualiser la photo affichée avec dossier.informations_personnelles.compte.photo_url dans la réponse.'),
+            new OA\Property(property: 'photo_identite', type: 'string', format: 'binary', description: 'Fichier JPG, JPEG, PNG ou WEBP, 2 Mo maximum. Remplace uniquement la photo d’identité du dossier. La photo de profil est indépendante.'),
             new OA\Property(property: 'documents[]', type: 'array', maxItems: 10, items: new OA\Items(type: 'string', format: 'binary'), description: 'Ajouter de nouveaux documents : fichiers PDF, JPG, JPEG, PNG ou WEBP, 10 Mo maximum chacun. Répéter la clé documents[] en multipart. Sélectionner les fichiers, ne pas envoyer leurs chemins. Pour remplacer un document, utiliser POST /etudiant/dossier/documents/{id}.'),
         ]),
     ],
