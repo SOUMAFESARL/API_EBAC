@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantCompletController;
 use App\Http\Controllers\Api\V1\Etudiant\EtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\GestionPreInscriptionController;
+use App\Http\Controllers\Api\V1\Etudiant\NouvelleAdmissionController;
 use App\Http\Controllers\Api\V1\Etudiant\PreInscriptionController;
 use App\Http\Controllers\Api\V1\Etudiant\RegistreEtudiantController;
 use App\Http\Controllers\Api\V1\Navigation\SidebarController;
@@ -24,6 +25,17 @@ use App\Http\Controllers\Api\V1\Parametre\ModuleController;
 use App\Http\Controllers\Api\V1\Parametre\NiveauController;
 use App\Http\Controllers\Api\V1\Parametre\PromotionController;
 use Illuminate\Support\Facades\Route;
+
+Route::prefix('v1/administration/nouvelles-admissions')
+    ->name('api.v1.administration.nouvelles-admissions.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE'])
+    ->group(function () {
+        Route::get('/', [NouvelleAdmissionController::class, 'index'])->name('index');
+        Route::post('/importer', [NouvelleAdmissionController::class, 'importer'])->middleware('throttle:10,1')->name('importer');
+        Route::get('/pdf', [NouvelleAdmissionController::class, 'pdf'])->name('pdf');
+        Route::get('/imports/{id}/arrete', [NouvelleAdmissionController::class, 'arrete'])->whereNumber('id')->name('arrete');
+        Route::patch('/{id}', [NouvelleAdmissionController::class, 'update'])->whereNumber('id')->name('update');
+    });
 
 Route::get('v1/fichiers-preinscriptions/{chemin}', FichierPreinscriptionController::class)
     ->where('chemin', '.*')

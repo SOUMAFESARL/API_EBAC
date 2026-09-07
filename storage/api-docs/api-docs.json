@@ -484,7 +484,7 @@
                     "Dossier étudiant"
                 ],
                 "summary": "Remplacer sa photo ou ajouter des documents",
-                "description": "POST multipart/form-data. Dans Postman, choisir Body > form-data et le type File. photo_identite remplace la photo d’identité et du profil ; documents[] ajoute des fichiers au dossier existant. Aucun ID étudiant requis.",
+                "description": "POST multipart/form-data. Dans Postman, choisir Body > form-data et le type File. photo_identite remplace uniquement la photo d’identité du dossier ; documents[] ajoute des fichiers au dossier existant. Aucun ID étudiant requis.",
                 "operationId": "modifierMonDossierEtudiantMultipart",
                 "requestBody": {
                     "required": true,
@@ -1237,6 +1237,237 @@
                     },
                     "422": {
                         "description": "Motif invalide ou préinscription déjà traitée"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/nouvelles-admissions": {
+            "get": {
+                "tags": [
+                    "Nouvelles admissions"
+                ],
+                "summary": "Liste paginée, statistiques et arrêtés des admis par rentrée",
+                "operationId": "60c3bede1b44ed708a80308fdec03c7d",
+                "parameters": [
+                    {
+                        "name": "annee_entree",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "par_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste et statistiques de la rentrée"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/nouvelles-admissions/importer": {
+            "post": {
+                "tags": [
+                    "Nouvelles admissions"
+                ],
+                "summary": "Importer les admis depuis Excel ou CSV",
+                "operationId": "088173a36c22559ade4413e0bb7a064b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "annee_entree",
+                                    "liste"
+                                ],
+                                "properties": {
+                                    "annee_entree": {
+                                        "type": "integer",
+                                        "example": 2026
+                                    },
+                                    "liste": {
+                                        "description": "XLSX, XLS ou CSV ; 10 Mo, 5000 lignes maximum. Colonnes : Nom et Prénoms, Région, Paroisse, Situation matrimoniale.",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "arrete": {
+                                        "description": "PDF signé facultatif, 10 Mo maximum",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Import terminé, nombres importés et doublons ignorés"
+                    },
+                    "422": {
+                        "description": "Fichier ou ligne invalide ; aucun admis enregistré"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/nouvelles-admissions/{id}": {
+            "patch": {
+                "tags": [
+                    "Nouvelles admissions"
+                ],
+                "summary": "Compléter les coordonnées et le dépôt du dossier",
+                "operationId": "7010b40bb42791a94043351b795dad7b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "telephone": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "adresse": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "nullable": true
+                                    },
+                                    "dossier_depose": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Admis mis à jour"
+                    },
+                    "404": {
+                        "description": "Admis introuvable"
+                    },
+                    "422": {
+                        "description": "Coordonnées invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/nouvelles-admissions/imports/{id}/arrete": {
+            "get": {
+                "tags": [
+                    "Nouvelles admissions"
+                ],
+                "summary": "Télécharger l’arrêté signé d’un import",
+                "operationId": "b6230aa59d9c4a09fc3a7ac9c0bd9792",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDF signé"
+                    },
+                    "404": {
+                        "description": "Arrêté absent"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/nouvelles-admissions/pdf": {
+            "get": {
+                "tags": [
+                    "Nouvelles admissions"
+                ],
+                "summary": "Exporter la liste des admis en PDF",
+                "operationId": "b357e3151b6e84947c93dde0595cccaa",
+                "parameters": [
+                    {
+                        "name": "annee_entree",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste PDF"
                     }
                 },
                 "security": [
@@ -5328,7 +5559,7 @@
                     {
                         "properties": {
                             "photo_identite": {
-                                "description": "Fichier JPG, JPEG, PNG ou WEBP, 2 Mo maximum. Remplace aussi la photo de profil. Actualiser la photo affichée avec dossier.informations_personnelles.compte.photo_url dans la réponse.",
+                                "description": "Fichier JPG, JPEG, PNG ou WEBP, 2 Mo maximum. Remplace uniquement la photo d’identité du dossier. La photo de profil est indépendante.",
                                 "type": "string",
                                 "format": "binary"
                             },
@@ -6918,6 +7149,10 @@
         {
             "name": "Administration des préinscriptions",
             "description": "Administration des préinscriptions"
+        },
+        {
+            "name": "Nouvelles admissions",
+            "description": "Nouvelles admissions"
         },
         {
             "name": "Pré-inscription",
