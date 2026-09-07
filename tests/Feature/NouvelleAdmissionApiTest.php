@@ -48,9 +48,15 @@ class NouvelleAdmissionApiTest extends TestCase
         $this->connecter($role);
         $reponse = $this->postJson(self::URL.'/importer', [
             'annee_entree' => 2026, 'liste' => $this->liste(),
-            'arrete' => UploadedFile::fake()->createWithContent('arrete.pdf', "%PDF-1.4\n%%EOF"),
+            'document_pdf' => UploadedFile::fake()->createWithContent('arrete.pdf', "%PDF-1.4\n%%EOF"),
         ])->assertCreated()->assertJsonPath('importes', 2)->assertJsonPath('doublons_ignores', 0);
         $idImport = $reponse->json('import_id');
+        $affichage = $this->get($reponse->json('document_pdf_url'))->assertOk()->assertHeader('content-type', 'application/pdf');
+        $this->assertStringStartsWith('inline;', $affichage->headers->get('content-disposition'));
+        $this->assertSame("%PDF-1.4\n%%EOF", $affichage->streamedContent());
+        $telechargement = $this->get($reponse->json('document_pdf_telechargement_url'))->assertOk();
+        $this->assertStringStartsWith('attachment;', $telechargement->headers->get('content-disposition'));
+        $this->assertSame("%PDF-1.4\n%%EOF", $telechargement->streamedContent());
         $this->assertDatabaseCount('etudiants', 0);
         $liste = $this->getJson(self::URL.'?annee_entree=2026')->assertOk()
             ->assertJsonPath('rentree', '2026-2027')->assertJsonPath('statistiques.total', 2)
@@ -115,8 +121,8 @@ class NouvelleAdmissionApiTest extends TestCase
         }
         $this->postJson(self::URL.'/importer', [
             'annee_entree' => 2026, 'liste' => $this->liste(),
-            'arrete' => UploadedFile::fake()->createWithContent('arrete.pdf', 'pas un PDF')->mimeType('text/plain'),
-        ])->assertUnprocessable()->assertJsonValidationErrors('arrete');
+            'document_pdf' => UploadedFile::fake()->createWithContent('arrete.pdf', 'pas un PDF')->mimeType('text/plain'),
+        ])->assertUnprocessable()->assertJsonValidationErrors('document_pdf');
         $this->assertDatabaseCount('nouvelles_admissions', 0);
         $this->assertDatabaseCount('imports_admissions', 0);
         $this->assertSame([], Storage::disk('local')->allFiles());
@@ -133,7 +139,7 @@ class NouvelleAdmissionApiTest extends TestCase
 
     public function test_acces_protege_sur_toutes_les_routes(): void
     {
-        $routes = [['GET', ''], ['POST', '/importer'], ['PATCH', '/1'], ['GET', '/pdf'], ['GET', '/imports/1/arrete']];
+        $routes = [['GET', ''], ['POST', '/importer'], ['PATCH', '/1'], ['GET', '/pdf'], ['GET', '/imports/1/arrete'], ['GET', '/imports/1/document-pdf'], ['GET', '/imports/1/document-pdf/telecharger']];
         foreach ($routes as [$methode, $suffixe]) {
             $this->json($methode, self::URL.$suffixe)->assertUnauthorized();
         }
@@ -156,6 +162,8 @@ class NouvelleAdmissionApiTest extends TestCase
         $this->patchJson(self::URL.'/'.$id, ['email' => 'invalide'])->assertUnprocessable();
         $this->patchJson(self::URL.'/99999', ['adresse' => 'Abidjan'])->assertNotFound();
         $this->getJson(self::URL.'/imports/'.DB::table('imports_admissions')->value('id').'/arrete')->assertNotFound();
+        $this->getJson(self::URL.'/imports/'.DB::table('imports_admissions')->value('id').'/document-pdf')->assertNotFound();
+        $this->getJson(self::URL.'/imports/99999/document-pdf/telecharger')->assertNotFound();
         $this->getJson(self::URL.'?annee_entree=abc')->assertUnprocessable();
     }
 }

@@ -1318,7 +1318,7 @@
                                         "type": "string",
                                         "format": "binary"
                                     },
-                                    "arrete": {
+                                    "document_pdf": {
                                         "description": "PDF signé facultatif, 10 Mo maximum",
                                         "type": "string",
                                         "format": "binary"
@@ -1433,6 +1433,70 @@
                     },
                     "404": {
                         "description": "Arrêté absent"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/nouvelles-admissions/imports/{id}/document-pdf": {
+            "get": {
+                "tags": [
+                    "Nouvelles admissions"
+                ],
+                "summary": "Afficher le PDF enregistré",
+                "operationId": "c13a77ee4b897ecfbe44b953d08075a8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDF affiché dans le navigateur"
+                    },
+                    "404": {
+                        "description": "Document absent"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/nouvelles-admissions/imports/{id}/document-pdf/telecharger": {
+            "get": {
+                "tags": [
+                    "Nouvelles admissions"
+                ],
+                "summary": "Télécharger le PDF enregistré",
+                "operationId": "5a38392609e49a2783115de9cf2c8d10",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF à télécharger"
+                    },
+                    "404": {
+                        "description": "Document absent"
                     }
                 },
                 "security": [

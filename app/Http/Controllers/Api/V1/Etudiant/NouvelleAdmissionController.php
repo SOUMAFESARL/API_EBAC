@@ -42,6 +42,8 @@ class NouvelleAdmissionController extends Controller
             ->map(fn ($import) => [
                 'id' => $import->id, 'nom_fichier' => $import->nom_fichier, 'created_at' => $import->created_at,
                 'arrete_url' => $import->arrete_chemin ? route('api.v1.administration.nouvelles-admissions.arrete', ['id' => $import->id]) : null,
+                'document_pdf_url' => $import->arrete_chemin ? route('api.v1.administration.nouvelles-admissions.document_pdf', ['id' => $import->id]) : null,
+                'document_pdf_telechargement_url' => $import->arrete_chemin ? route('api.v1.administration.nouvelles-admissions.document_pdf.telecharger', ['id' => $import->id]) : null,
             ]);
 
         return response()->json([
@@ -58,19 +60,19 @@ class NouvelleAdmissionController extends Controller
         ]);
     }
 
-    #[OA\Post(path: '/administration/nouvelles-admissions/importer', summary: 'Importer les admis depuis Excel ou CSV', tags: ['Nouvelles admissions'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(required: ['annee_entree', 'liste'], properties: [new OA\Property(property: 'annee_entree', type: 'integer', example: 2026), new OA\Property(property: 'liste', type: 'string', format: 'binary', description: 'XLSX, XLS ou CSV ; 10 Mo, 5000 lignes maximum. Colonnes : Nom et Prénoms, Région, Paroisse, Situation matrimoniale.'), new OA\Property(property: 'arrete', type: 'string', format: 'binary', description: 'PDF signé facultatif, 10 Mo maximum')]))), responses: [new OA\Response(response: 201, description: 'Import terminé, nombres importés et doublons ignorés'), new OA\Response(response: 422, description: 'Fichier ou ligne invalide ; aucun admis enregistré'), new OA\Response(response: 403, description: 'Rôle non autorisé')])]
+    #[OA\Post(path: '/administration/nouvelles-admissions/importer', summary: 'Importer les admis depuis Excel ou CSV', tags: ['Nouvelles admissions'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(required: ['annee_entree', 'liste'], properties: [new OA\Property(property: 'annee_entree', type: 'integer', example: 2026), new OA\Property(property: 'liste', type: 'string', format: 'binary', description: 'XLSX, XLS ou CSV ; 10 Mo, 5000 lignes maximum. Colonnes : Nom et Prénoms, Région, Paroisse, Situation matrimoniale.'), new OA\Property(property: 'document_pdf', type: 'string', format: 'binary', description: 'PDF signé facultatif, 10 Mo maximum')]))), responses: [new OA\Response(response: 201, description: 'Import terminé, nombres importés et doublons ignorés'), new OA\Response(response: 422, description: 'Fichier ou ligne invalide ; aucun admis enregistré'), new OA\Response(response: 403, description: 'Rôle non autorisé')])]
     public function importer(Request $request, ImportAdmissions $service)
     {
         $donnees = $request->validate([
             'annee_entree' => ['required', 'integer', 'min:1900', 'max:9998'],
             'liste' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'extensions:xlsx,xls,csv', 'max:10240'],
-            'arrete' => ['sometimes', 'nullable', 'file', 'mimes:pdf', 'extensions:pdf', 'max:10240'],
+            'document_pdf' => ['sometimes', 'nullable', 'file', 'mimes:pdf', 'extensions:pdf', 'max:10240'],
         ]);
         $lignes = $service->lire($request->file('liste'));
         $chemin = null;
         try {
-            if ($request->hasFile('arrete')) {
-                $chemin = $request->file('arrete')->store('admissions/'.$donnees['annee_entree'], 'local');
+            if ($request->hasFile('document_pdf')) {
+                $chemin = $request->file('document_pdf')->store('admissions/'.$donnees['annee_entree'], 'local');
                 if (! $chemin) {
                     throw new \RuntimeException('Impossible de conserver l’arrêté signé.');
                 }
@@ -97,7 +99,11 @@ class NouvelleAdmissionController extends Controller
             throw $exception;
         }
 
-        return response()->json(['message' => 'Import terminé.', 'annee_entree' => (int) $donnees['annee_entree'], ...$resultat], 201);
+        return response()->json([
+            'message' => 'Import terminé.', 'annee_entree' => (int) $donnees['annee_entree'], ...$resultat,
+            'document_pdf_url' => $chemin ? route('api.v1.administration.nouvelles-admissions.document_pdf', ['id' => $resultat['import_id']]) : null,
+            'document_pdf_telechargement_url' => $chemin ? route('api.v1.administration.nouvelles-admissions.document_pdf.telecharger', ['id' => $resultat['import_id']]) : null,
+        ], 201);
     }
 
     #[OA\Patch(path: '/administration/nouvelles-admissions/{id}', summary: 'Compléter les coordonnées et le dépôt du dossier', tags: ['Nouvelles admissions'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'id', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'telephone', type: 'string', nullable: true), new OA\Property(property: 'adresse', type: 'string', nullable: true), new OA\Property(property: 'email', type: 'string', format: 'email', nullable: true), new OA\Property(property: 'dossier_depose', type: 'boolean')])), responses: [new OA\Response(response: 200, description: 'Admis mis à jour'), new OA\Response(response: 404, description: 'Admis introuvable'), new OA\Response(response: 422, description: 'Coordonnées invalides')])]
@@ -122,6 +128,23 @@ class NouvelleAdmissionController extends Controller
         abort_unless($import?->arrete_chemin && Storage::disk('local')->exists($import->arrete_chemin), 404);
 
         return Storage::disk('local')->download($import->arrete_chemin, 'arrete-'.$import->annee_entree.'-'.$id.'.pdf', ['Content-Type' => 'application/pdf', 'Cache-Control' => 'private, no-store']);
+    }
+
+    #[OA\Get(path: '/administration/nouvelles-admissions/imports/{id}/document-pdf', summary: 'Afficher le PDF enregistré', tags: ['Nouvelles admissions'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'id', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'PDF affiché dans le navigateur'), new OA\Response(response: 404, description: 'Document absent')])]
+    public function afficherDocumentPdf(int $id)
+    {
+        $import = DB::table('imports_admissions')->find($id);
+        abort_unless($import?->arrete_chemin && Storage::disk('local')->exists($import->arrete_chemin), 404);
+
+        return Storage::disk('local')->response($import->arrete_chemin, 'document-'.$import->annee_entree.'-'.$id.'.pdf', [
+            'Content-Type' => 'application/pdf', 'Cache-Control' => 'private, no-store',
+        ], 'inline');
+    }
+
+    #[OA\Get(path: '/administration/nouvelles-admissions/imports/{id}/document-pdf/telecharger', summary: 'Télécharger le PDF enregistré', tags: ['Nouvelles admissions'], security: [['sanctum' => []]], parameters: [new OA\PathParameter(name: 'id', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Fichier PDF à télécharger'), new OA\Response(response: 404, description: 'Document absent')])]
+    public function telechargerDocumentPdf(int $id)
+    {
+        return $this->arrete($id);
     }
 
     #[OA\Get(path: '/administration/nouvelles-admissions/pdf', summary: 'Exporter la liste des admis en PDF', tags: ['Nouvelles admissions'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'annee_entree', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'recherche', in: 'query', schema: new OA\Schema(type: 'string'))], responses: [new OA\Response(response: 200, description: 'Liste PDF')])]

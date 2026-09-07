@@ -11,7 +11,7 @@ Toutes les routes nécessitent `Authorization: Bearer <token>`, un compte actif 
 | --- | --- |
 | `annee_entree` | Obligatoire, entier (ex. `2026` pour la rentrée 2026-2027) |
 | `liste` | Obligatoire, fichier `.xlsx`, `.xls` ou `.csv`, 10 Mo maximum |
-| `arrete` | Facultatif, PDF signé, 10 Mo maximum |
+| `document_pdf` | Facultatif, PDF signé, 10 Mo maximum (ancien champ `arrete` renommé) |
 
 Première feuille uniquement, première ligne contenant les en-têtes : **Nom et Prénoms**, **Région**, **Paroisse**, **Situation matrimoniale**. Les quatre colonnes doivent exister ; seul le nom est obligatoire sur chaque ligne. Les en-têtes sans accents et `nom_prenoms` sont aussi acceptés. CSV avec virgules ou points-virgules. Limite : 5000 admis et 30 colonnes.
 
@@ -52,7 +52,11 @@ Les statistiques concernent toute la rentrée sélectionnée ; la recherche filt
 ## Documents
 
 - `GET /pdf?annee_entree=2026` : liste des admis en PDF ; accepte aussi `recherche`.
-- `GET /imports/{id}/arrete` : arrêté signé de l'import, 404 s'il est absent.
+- `GET /imports/{id}/document-pdf` : afficher le PDF enregistré (`Content-Disposition: inline`).
+- `GET /imports/{id}/document-pdf/telecharger` : télécharger le PDF enregistré (`Content-Disposition: attachment`).
+- `GET /imports/{id}/arrete` : ancienne route conservée pour compatibilité.
+
+`{id}` est l’`import_id` retourné par l’import. Les réponses de l’import et de l’historique fournissent `document_pdf_url` et `document_pdf_telechargement_url` (null si aucun PDF). Un document absent retourne 404. Les documents existants restent disponibles ; aucun changement de base de données n’est nécessaire.
 
 Télécharger ces documents avec le jeton Bearer (par exemple requête du frontend puis création d'un objet Blob).
 

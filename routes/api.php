@@ -34,6 +34,8 @@ Route::prefix('v1/administration/nouvelles-admissions')
         Route::post('/importer', [NouvelleAdmissionController::class, 'importer'])->middleware('throttle:10,1')->name('importer');
         Route::get('/pdf', [NouvelleAdmissionController::class, 'pdf'])->name('pdf');
         Route::get('/imports/{id}/arrete', [NouvelleAdmissionController::class, 'arrete'])->whereNumber('id')->name('arrete');
+        Route::get('/imports/{id}/document-pdf', [NouvelleAdmissionController::class, 'afficherDocumentPdf'])->whereNumber('id')->name('document_pdf');
+        Route::get('/imports/{id}/document-pdf/telecharger', [NouvelleAdmissionController::class, 'telechargerDocumentPdf'])->whereNumber('id')->name('document_pdf.telecharger');
         Route::patch('/{id}', [NouvelleAdmissionController::class, 'update'])->whereNumber('id')->name('update');
     });
 
