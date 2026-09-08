@@ -136,6 +136,27 @@ class NiveauApiTest extends TestCase
         $this->deleteJson("/api/v1/parametres/niveaux/{$niveauId}")
             ->assertUnprocessable();
 
-        $this->assertDatabaseHas('niveaux', ['id' => $niveauId]);
+        $this->assertDatabaseHas('niveaux', ['id' => $niveauId, 'deleted_at' => null, 'deleted_by' => null]);
+    }
+
+    public function test_un_niveau_lie_uniquement_a_une_promotion_supprimee_peut_etre_supprime(): void
+    {
+        $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        $utilisateur = User::factory()->create(['id_role' => $role->id]);
+        Sanctum::actingAs($utilisateur);
+
+        $niveau = \App\Models\Niveau::query()->create([
+            'libelle' => 'Sixieme Annee', 'code' => 'A6', 'rang' => 6,
+        ]);
+        $promotion = \App\Models\Promotion::query()->create([
+            'code' => 'PROMO-000004', 'num_promotion' => 4,
+            'annee_entree' => 2026, 'id_niveau' => $niveau->id, 'statut' => 'Active',
+        ]);
+        $promotion->delete();
+
+        $this->deleteJson("/api/v1/parametres/niveaux/{$niveau->id}")->assertOk();
+
+        $this->assertSoftDeleted('niveaux', ['id' => $niveau->id, 'deleted_by' => $utilisateur->id]);
+        $this->assertSoftDeleted('promotions', ['id' => $promotion->id, 'id_niveau' => $niveau->id]);
     }
 }

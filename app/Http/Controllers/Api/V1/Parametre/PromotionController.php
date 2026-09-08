@@ -69,7 +69,7 @@ class PromotionController extends Controller
     public function update(ModifierPromotionRequest $request, int $id): JsonResponse
     {
         $promotion = Promotion::query()->findOrFail($id);
-        $dto = PromotionDTO::fromArray($request->validated());
+        $dto = PromotionDTO::fromArray($request->safe()->except('code'));
         $donnees = $dto->toArray();
         $dateOuverture = $donnees['date_ouverture'] ?? $promotion->date_ouverture?->toDateString();
         $dateCloture = $donnees['date_cloture'] ?? $promotion->date_cloture?->toDateString();
@@ -90,7 +90,7 @@ class PromotionController extends Controller
     }
 
     #[OA\Delete(path: '/parametres/promotions/{id}', operationId: 'supprimerPromotion', tags: ['Promotions'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Promotion supprimée')])]
-    public function destroy(ModifierPromotionRequest $request, int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
         $promotion = Promotion::query()->findOrFail($id);
         $promotion->update(['deleted_by' => $request->user()->id]);

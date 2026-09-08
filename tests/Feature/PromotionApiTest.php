@@ -62,8 +62,13 @@ class PromotionApiTest extends TestCase
             ->assertOk()->assertJsonPath('promotion.nombre_etudiants', 1);
         $this->patchJson("/api/v1/parametres/promotions/{$id}", ['num_promotion' => 2])
             ->assertOk()->assertJsonPath('promotion.num_promotion', 2);
-        $this->deleteJson("/api/v1/parametres/promotions/{$id}")->assertOk();
+        $this->deleteJson("/api/v1/parametres/promotions/{$id}", [
+            'code' => 'PROMO-000001',
+            'id_niveau' => $niveau->id,
+        ])->assertOk();
         $this->assertSoftDeleted('promotions', ['id' => $id, 'deleted_by' => $utilisateur->id]);
+        $this->assertModelExists($niveau);
+        $this->getJson("/api/v1/parametres/promotions/{$id}")->assertNotFound();
     }
 
     public function test_creation_valide_les_relations_et_les_dates(): void
@@ -106,5 +111,23 @@ class PromotionApiTest extends TestCase
         $this->patchJson("/api/v1/parametres/promotions/{$promotion['id']}", ['code' => 'CODE-MODIFIE'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('code');
+
+        $this->putJson("/api/v1/parametres/promotions/{$promotion['id']}", [...$payload, 'code' => 'CODE-MODIFIE'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('code');
+
+        foreach (['PATCH', 'PUT'] as $methode) {
+            foreach ([null, ''] as $code) {
+                $this->json($methode, "/api/v1/parametres/promotions/{$promotion['id']}", [
+                    ...$payload, 'num_promotion' => 3, 'code' => $code,
+                ])->assertOk()
+                    ->assertJsonPath('promotion.code', 'PROMO-000001')
+                    ->assertJsonPath('promotion.num_promotion', 3);
+
+                $this->assertDatabaseHas('promotions', [
+                    'id' => $promotion['id'], 'code' => 'PROMO-000001', 'num_promotion' => 3,
+                ]);
+            }
+        }
     }
 }

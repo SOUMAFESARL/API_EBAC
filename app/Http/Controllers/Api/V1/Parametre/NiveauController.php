@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Parametre\CreerNiveauRequest;
 use App\Http\Requests\Api\V1\Parametre\ModifierNiveauRequest;
 use App\Models\Niveau;
+use App\Models\Promotion;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use OpenApi\Attributes as OA;
 
 class NiveauController extends Controller
@@ -159,7 +159,7 @@ class NiveauController extends Controller
     public function destroy(ModifierNiveauRequest $request, int $id): JsonResponse
     {
         $niveau = Niveau::query()->findOrFail($id);
-        if (DB::table('promotions')->where('id_niveau', $niveau->id)->exists()) {
+        if (Promotion::query()->where('id_niveau', $niveau->id)->exists()) {
             return response()->json([
                 'message' => 'Ce niveau est utilisé par une promotion et ne peut pas être supprimé.',
             ], 422);
