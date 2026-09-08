@@ -70,6 +70,66 @@ class NiveauApiTest extends TestCase
         ])->assertUnauthorized();
     }
 
+    public function test_le_code_et_le_rang_supprimes_peuvent_etre_reutilises_sans_perdre_l_historique(): void
+    {
+        $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        $payload = ['libelle' => 'Sixieme Annee', 'code' => 'A6', 'rang' => 6];
+
+        // Repeated deletion/recreation must also work when several historical rows exist.
+        for ($i = 0; $i < 2; $i++) {
+            $id = $this->postJson('/api/v1/parametres/niveaux', $payload)
+                ->assertCreated()->assertJsonMissingPath('niveau.unicite_active')->json('niveau.id');
+            $this->deleteJson("/api/v1/parametres/niveaux/{$id}")->assertOk();
+            $this->assertSoftDeleted('niveaux', ['id' => $id, 'code' => 'A6', 'rang' => 6]);
+        }
+
+        $this->postJson('/api/v1/parametres/niveaux', $payload)->assertCreated();
+        $this->postJson('/api/v1/parametres/niveaux', $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors(['code', 'rang']);
+    }
+
+    public function test_un_niveau_peut_reprendre_le_code_et_le_rang_d_un_niveau_supprime(): void
+    {
+        $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        $ancien = \App\Models\Niveau::query()->create(['libelle' => 'Ancien', 'code' => 'A6', 'rang' => 6]);
+        $ancien->delete();
+        $niveau = \App\Models\Niveau::query()->create(['libelle' => 'Nouveau', 'code' => 'A7', 'rang' => 7]);
+
+        $this->patchJson("/api/v1/parametres/niveaux/{$niveau->id}", ['code' => 'A6', 'rang' => 6])
+            ->assertOk()->assertJsonPath('niveau.code', 'A6')->assertJsonPath('niveau.rang', 6);
+        $this->assertSoftDeleted('niveaux', ['id' => $ancien->id, 'code' => 'A6', 'rang' => 6]);
+
+        $occupe = \App\Models\Niveau::query()->create(['libelle' => 'Archive', 'code' => 'A8', 'rang' => 8, 'statut' => 'Archive']);
+        $this->patchJson("/api/v1/parametres/niveaux/{$niveau->id}", ['code' => $occupe->code, 'rang' => $occupe->rang])
+            ->assertUnprocessable()->assertJsonValidationErrors(['code', 'rang']);
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('doublonsDeNiveaux')]
+    public function test_la_base_refuse_les_doublons_non_supprimes(string $code, int $rang): void
+    {
+        \App\Models\Niveau::query()->create(['libelle' => 'Existant', 'code' => 'A1', 'rang' => 1]);
+        $this->expectException(\Illuminate\Database\UniqueConstraintViolationException::class);
+        \App\Models\Niveau::query()->create(['libelle' => 'Doublon', 'code' => $code, 'rang' => $rang]);
+    }
+
+    public static function doublonsDeNiveaux(): array
+    {
+        return ['code identique' => ['A1', 2], 'rang identique' => ['A2', 1]];
+    }
+
+    public function test_la_migration_peut_etre_annulee_sans_reutilisation(): void
+    {
+        $niveau = \App\Models\Niveau::query()->create(['libelle' => 'Existant', 'code' => 'A1', 'rang' => 1]);
+        $migration = require database_path('migrations/2026_09_08_180000_allow_reusing_soft_deleted_niveau_codes.php');
+        $migration->down();
+        $this->assertFalse(\Schema::hasColumn('niveaux', 'unicite_active'));
+        $migration->up();
+        $this->assertModelExists($niveau);
+        $this->assertTrue(\Schema::hasColumn('niveaux', 'unicite_active'));
+    }
+
     public function test_un_utilisateur_authentifie_peut_lister_modifier_et_supprimer_un_niveau(): void
     {
         $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);

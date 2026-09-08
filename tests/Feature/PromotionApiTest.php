@@ -87,6 +87,40 @@ class PromotionApiTest extends TestCase
             ->assertJsonValidationErrors(['num_promotion', 'annee_entree']);
     }
 
+    public function test_une_promotion_supprimee_peut_etre_recreee_avec_le_meme_numero_et_la_meme_annee(): void
+    {
+        $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        $utilisateur = User::factory()->create(['id_role' => $role->id]);
+        Sanctum::actingAs($utilisateur);
+        $niveau = Niveau::query()->create(['libelle' => 'Premiere Annee', 'code' => 'A1', 'rang' => 1]);
+        $payload = ['num_promotion' => 4, 'annee_entree' => 2026, 'id_niveau' => $niveau->id];
+
+        for ($sequence = 1; $sequence <= 3; $sequence++) {
+            $promotion = $this->postJson('/api/v1/parametres/promotions', $payload)
+                ->assertCreated()
+                ->assertJsonPath('promotion.num_promotion', 4)
+                ->assertJsonPath('promotion.annee_entree', 2026)
+                ->assertJsonPath('promotion.id_niveau', $niveau->id)
+                ->assertJsonPath('promotion.code', sprintf('PROMO-%06d', $sequence))
+                ->json('promotion');
+
+            $this->getJson('/api/v1/parametres/promotions')
+                ->assertOk()->assertJsonCount(1, 'promotions');
+
+            if ($sequence < 3) {
+                $this->deleteJson("/api/v1/parametres/promotions/{$promotion['id']}")->assertOk();
+                $this->assertSoftDeleted('promotions', [
+                    'id' => $promotion['id'], 'code' => $promotion['code'],
+                    'num_promotion' => 4, 'annee_entree' => 2026,
+                    'id_niveau' => $niveau->id, 'deleted_by' => $utilisateur->id,
+                ]);
+            }
+        }
+
+        $this->assertDatabaseCount('promotions', 3);
+        $this->assertModelExists($niveau);
+    }
+
     public function test_le_code_est_genere_par_le_serveur_et_ne_peut_pas_etre_modifie(): void
     {
         $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);

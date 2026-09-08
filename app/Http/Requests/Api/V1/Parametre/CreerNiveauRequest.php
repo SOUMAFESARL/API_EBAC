@@ -19,8 +19,8 @@ class CreerNiveauRequest extends FormRequest
     {
         return [
             'libelle' => ['required', 'string', 'max:100'],
-            'code' => ['required', 'string', 'max:20', 'unique:niveaux,code'],
-            'rang' => ['required', 'integer', 'min:1', 'max:65535', 'unique:niveaux,rang'],
+            'code' => ['required', 'string', 'max:20', Rule::unique('niveaux', 'code')->withoutTrashed()],
+            'rang' => ['required', 'integer', 'min:1', 'max:65535', Rule::unique('niveaux', 'rang')->withoutTrashed()],
             'statut' => ['sometimes', Rule::in(['Actif', 'Archive'])],
         ];
     }

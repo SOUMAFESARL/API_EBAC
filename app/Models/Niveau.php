@@ -22,6 +22,8 @@ class Niveau extends Model
 {
     use SoftDeletes;
 
+    protected $hidden = ['unicite_active'];
+
     protected function casts(): array
     {
         return [
