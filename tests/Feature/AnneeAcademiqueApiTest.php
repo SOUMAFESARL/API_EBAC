@@ -47,6 +47,58 @@ class AnneeAcademiqueApiTest extends TestCase
         $this->assertSoftDeleted('annees_academiques', ['id' => $id, 'deleted_by' => $utilisateur->id]);
     }
 
+    public function test_un_libelle_supprime_peut_etre_recree_plusieurs_fois(): void
+    {
+        $utilisateur = $this->authentifier();
+        $payload = ['libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31'];
+        $ids = [];
+
+        for ($i = 0; $i < 3; $i++) {
+            $id = $this->postJson('/api/v1/parametres/annees-academiques', $payload)
+                ->assertCreated()->json('annee_academique.id');
+            $this->assertNotContains($id, $ids);
+            $ids[] = $id;
+            $this->getJson('/api/v1/parametres/annees-academiques')
+                ->assertOk()->assertJsonCount(1, 'annees_academiques');
+            $this->postJson('/api/v1/parametres/annees-academiques', $payload)
+                ->assertUnprocessable()->assertJsonValidationErrors('libelle');
+            $this->deleteJson("/api/v1/parametres/annees-academiques/{$id}")->assertOk();
+            $this->assertSoftDeleted('annees_academiques', [
+                'id' => $id, 'libelle' => $payload['libelle'], 'deleted_by' => $utilisateur->id,
+            ]);
+            $this->getJson("/api/v1/parametres/annees-academiques/{$id}")->assertNotFound();
+        }
+
+        $this->assertDatabaseCount('annees_academiques', 3);
+    }
+
+    public function test_modification_du_libelle_ignore_uniquement_les_annees_supprimees(): void
+    {
+        $this->authentifier();
+        $payload = ['libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31'];
+        $ancienId = $this->postJson('/api/v1/parametres/annees-academiques', $payload)
+            ->assertCreated()->json('annee_academique.id');
+        $id = $this->postJson('/api/v1/parametres/annees-academiques', [...$payload, 'libelle' => '2027-2028'])
+            ->assertCreated()->json('annee_academique.id');
+
+        $this->patchJson("/api/v1/parametres/annees-academiques/{$id}", ['libelle' => $payload['libelle']])
+            ->assertUnprocessable()->assertJsonValidationErrors('libelle');
+        $this->deleteJson("/api/v1/parametres/annees-academiques/{$ancienId}")->assertOk();
+        $this->patchJson("/api/v1/parametres/annees-academiques/{$id}", ['libelle' => $payload['libelle']])
+            ->assertOk()->assertJsonPath('annee_academique.libelle', $payload['libelle']);
+        $this->patchJson("/api/v1/parametres/annees-academiques/{$id}", ['libelle' => $payload['libelle']])
+            ->assertOk();
+    }
+
+    public function test_la_base_refuse_un_doublon_non_supprime(): void
+    {
+        $payload = ['libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31', 'active' => false];
+        \App\Models\AnneeAcademique::query()->create($payload);
+
+        $this->expectException(\Illuminate\Database\UniqueConstraintViolationException::class);
+        \App\Models\AnneeAcademique::query()->create($payload);
+    }
+
     public function test_dates_et_libelle_sont_valides(): void
     {
         $this->authentifier();

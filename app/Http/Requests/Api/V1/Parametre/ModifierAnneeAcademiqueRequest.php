@@ -12,7 +12,7 @@ class ModifierAnneeAcademiqueRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'libelle' => ['sometimes', 'required', 'string', 'max:20', Rule::unique('annees_academiques', 'libelle')->ignore($this->route('id'))],
+            'libelle' => ['sometimes', 'required', 'string', 'max:20', Rule::unique('annees_academiques', 'libelle')->withoutTrashed()->ignore($this->route('id'))],
             'date_debut' => ['sometimes', 'required', 'date'],
             'date_fin' => ['sometimes', 'required', 'date'],
             'active' => ['sometimes', 'boolean'],

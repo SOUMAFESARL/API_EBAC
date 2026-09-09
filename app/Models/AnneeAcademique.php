@@ -14,6 +14,8 @@ class AnneeAcademique extends Model
 
     protected $table = 'annees_academiques';
 
+    protected $hidden = ['unicite_active'];
+
     protected function casts(): array
     {
         return ['date_debut' => 'date:Y-m-d', 'date_fin' => 'date:Y-m-d', 'active' => 'boolean'];
