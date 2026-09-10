@@ -13,8 +13,8 @@ class ModifierAnneeAcademiqueRequest extends FormRequest
     {
         return [
             'libelle' => ['sometimes', 'required', 'string', 'max:20', Rule::unique('annees_academiques', 'libelle')->withoutTrashed()->ignore($this->route('id'))],
-            'date_debut' => ['sometimes', 'required', 'date'],
-            'date_fin' => ['sometimes', 'required', 'date'],
+            'date_debut' => ['sometimes', 'required', 'date_format:Y-m-d'],
+            'date_fin' => ['sometimes', 'required', 'date_format:Y-m-d'],
             'active' => ['sometimes', 'boolean'],
         ];
     }

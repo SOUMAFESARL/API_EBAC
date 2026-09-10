@@ -99,6 +99,21 @@ class AnneeAcademiqueApiTest extends TestCase
         \App\Models\AnneeAcademique::query()->create($payload);
     }
 
+    public function test_la_suppression_ne_valide_pas_les_champs_de_modification(): void
+    {
+        $utilisateur = $this->authentifier();
+        $id = $this->postJson('/api/v1/parametres/annees-academiques', [
+            'libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31',
+        ])->assertCreated()->json('annee_academique.id');
+
+        $this->deleteJson("/api/v1/parametres/annees-academiques/{$id}", [
+            'libelle' => null, 'date_debut' => null, 'date_fin' => null, 'active' => null,
+        ])->assertOk();
+
+        $this->assertSoftDeleted('annees_academiques', ['id' => $id, 'deleted_by' => $utilisateur->id]);
+        $this->getJson('/api/v1/parametres/annees-academiques')->assertOk()->assertJsonCount(0, 'annees_academiques');
+    }
+
     public function test_dates_et_libelle_sont_valides(): void
     {
         $this->authentifier();

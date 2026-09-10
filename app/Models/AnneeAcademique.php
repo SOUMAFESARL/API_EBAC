@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['libelle', 'date_debut', 'date_fin', 'active', 'user_id', 'created_by', 'updated_by', 'deleted_by'])]
@@ -15,6 +16,11 @@ class AnneeAcademique extends Model
     protected $table = 'annees_academiques';
 
     protected $hidden = ['unicite_active'];
+
+    public function calendrier(): HasOne
+    {
+        return $this->hasOne(CalendrierAcademique::class, 'id_annee_academique');
+    }
 
     protected function casts(): array
     {

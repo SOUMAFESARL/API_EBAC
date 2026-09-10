@@ -38,7 +38,7 @@ class NouvelleAdmissionApiTest extends TestCase
 
     public static function rolesAutorises(): array
     {
-        return [['ADMIN'], ['SECRETARIAT'], ['SECRETAIRE_ACADEMIQUE']];
+        return [['ADMIN'], ['DIRECTION'], ['SECRETAIRE_ACADEMIQUE']];
     }
 
     #[DataProvider('rolesAutorises')]
@@ -143,7 +143,7 @@ class NouvelleAdmissionApiTest extends TestCase
         foreach ($routes as [$methode, $suffixe]) {
             $this->json($methode, self::URL.$suffixe)->assertUnauthorized();
         }
-        foreach (['ETUDIANT', 'ENSEIGNANT', 'AUTRE'] as $role) {
+        foreach (['ETUDIANT', 'ENSEIGNANT', 'SECRETARIAT', 'AUTRE'] as $role) {
             $this->connecter($role);
             foreach ($routes as [$methode, $suffixe]) {
                 $this->json($methode, self::URL.$suffixe)->assertForbidden();

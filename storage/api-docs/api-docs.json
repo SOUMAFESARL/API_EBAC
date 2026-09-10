@@ -1799,6 +1799,9 @@
                 ],
                 "operationId": "listerAnneesAcademiques",
                 "responses": {
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
                     "200": {
                         "description": "Liste des années académiques"
                     }
@@ -1825,6 +1828,9 @@
                     }
                 },
                 "responses": {
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
                     "201": {
                         "description": "Année créée"
                     },
@@ -1856,6 +1862,9 @@
                     }
                 ],
                 "responses": {
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
                     "200": {
                         "description": "Année trouvée"
                     },
@@ -1895,6 +1904,9 @@
                     }
                 },
                 "responses": {
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
                     "200": {
                         "description": "Année modifiée"
                     },
@@ -1924,6 +1936,9 @@
                     }
                 ],
                 "responses": {
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
                     "200": {
                         "description": "Année supprimée"
                     },
@@ -1963,11 +1978,245 @@
                     }
                 },
                 "responses": {
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
                     "200": {
                         "description": "Année modifiée"
                     },
                     "422": {
                         "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/annees-academiques/{id}/calendrier": {
+            "get": {
+                "tags": [
+                    "Calendrier académique"
+                ],
+                "operationId": "afficherCalendrierAcademique",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "200": {
+                        "description": "Année et calendrier complet",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "annee_academique": {
+                                            "$ref": "#/components/schemas/AnneeAcademique"
+                                        },
+                                        "calendrier": {
+                                            "$ref": "#/components/schemas/CalendrierAcademique"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Année ou calendrier introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Calendrier académique"
+                ],
+                "operationId": "remplacerCalendrierAcademique",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CalendrierPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "200": {
+                        "description": "Calendrier remplacé intégralement",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Calendrier acad?mique enregistr? avec succ?s."
+                                        },
+                                        "calendrier": {
+                                            "$ref": "#/components/schemas/CalendrierAcademique"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Introuvable"
+                    },
+                    "422": {
+                        "description": "Dates ou périodes invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Calendrier académique"
+                ],
+                "operationId": "creerCalendrierAcademique",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CalendrierPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "404": {
+                        "description": "Ann?e introuvable"
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "201": {
+                        "description": "Calendrier créé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Calendrier acad?mique enregistr? avec succ?s."
+                                        },
+                                        "calendrier": {
+                                            "$ref": "#/components/schemas/CalendrierAcademique"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Calendrier déjà configuré"
+                    },
+                    "422": {
+                        "description": "Dates ou périodes invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Calendrier académique"
+                ],
+                "operationId": "supprimerCalendrierAcademique",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "200": {
+                        "description": "Calendrier et périodes supprimés",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Calendrier acad?mique supprim? avec succ?s."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Introuvable"
                     }
                 },
                 "security": [
@@ -4613,6 +4862,533 @@
                 ]
             }
         },
+        "/parametres/creneaux": {
+            "get": {
+                "tags": [
+                    "Cr?neaux"
+                ],
+                "summary": "Lister le planning hebdomadaire",
+                "operationId": "listerCreneaux",
+                "parameters": [
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "id_niveau",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "id_module_calendrier",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succ?s",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "creneaux": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Creneau"
+                                            }
+                                        },
+                                        "nombre_creneaux": {
+                                            "type": "integer"
+                                        },
+                                        "heures_hebdomadaires": {
+                                            "type": "number"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "404": {
+                        "description": "Ressource introuvable"
+                    },
+                    "422": {
+                        "description": "Validation ou conflit horaire",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Cr?neaux"
+                ],
+                "summary": "Cr?er un cr?neau",
+                "operationId": "creerCreneau",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreneauPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Succ?s",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "creneau": {
+                                            "$ref": "#/components/schemas/Creneau"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "404": {
+                        "description": "Ressource introuvable"
+                    },
+                    "422": {
+                        "description": "Validation ou conflit horaire",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/creneaux/options": {
+            "get": {
+                "tags": [
+                    "Cr?neaux"
+                ],
+                "summary": "Charger les listes du formulaire",
+                "operationId": "optionsCreneaux",
+                "parameters": [
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "id_niveau",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "id_matiere",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succ?s",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "modules_calendrier": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "niveaux": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "promotions": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "matieres": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "cours": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "enseignants": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "salles": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "404": {
+                        "description": "Ressource introuvable"
+                    },
+                    "422": {
+                        "description": "Validation ou conflit horaire",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/creneaux/{id}": {
+            "get": {
+                "tags": [
+                    "Cr?neaux"
+                ],
+                "summary": "Afficher un cr?neau",
+                "operationId": "afficherCreneau",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succ?s",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "creneau": {
+                                            "$ref": "#/components/schemas/Creneau"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "404": {
+                        "description": "Ressource introuvable"
+                    },
+                    "422": {
+                        "description": "Validation ou conflit horaire",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Cr?neaux"
+                ],
+                "summary": "Modifier un cr?neau complet",
+                "operationId": "remplacerCreneau",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreneauPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succ?s",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "creneau": {
+                                            "$ref": "#/components/schemas/Creneau"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "404": {
+                        "description": "Ressource introuvable"
+                    },
+                    "422": {
+                        "description": "Validation ou conflit horaire",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Cr?neaux"
+                ],
+                "summary": "Supprimer logiquement un cr?neau",
+                "operationId": "supprimerCreneau",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succ?s",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "404": {
+                        "description": "Ressource introuvable"
+                    },
+                    "422": {
+                        "description": "Validation ou conflit horaire",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Cr?neaux"
+                ],
+                "summary": "Modifier partiellement un cr?neau",
+                "operationId": "modifierCreneau",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreneauModification"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succ?s",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "creneau": {
+                                            "$ref": "#/components/schemas/Creneau"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "404": {
+                        "description": "Ressource introuvable"
+                    },
+                    "422": {
+                        "description": "Validation ou conflit horaire",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/navigation/sidebar": {
             "get": {
                 "tags": [
@@ -5542,10 +6318,836 @@
                     }
                 ]
             }
+        },
+        "/parametres/salles": {
+            "get": {
+                "tags": [
+                    "Salles"
+                ],
+                "summary": "Liste pagin?e des salles",
+                "operationId": "listerSalles",
+                "parameters": [
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Actif",
+                                "Inactif"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "tri",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "code",
+                            "enum": [
+                                "code",
+                                "nom",
+                                "statut"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "direction",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "asc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succ?s",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "salles": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Salle"
+                                            }
+                                        },
+                                        "salles_en_service": {
+                                            "description": "Nombre global de salles actives, ind?pendant des filtres.",
+                                            "type": "integer"
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                },
+                                                "from": {
+                                                    "type": "integer",
+                                                    "nullable": true
+                                                },
+                                                "to": {
+                                                    "type": "integer",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "422": {
+                        "description": "Validation invalide",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Salles"
+                ],
+                "summary": "Cr?er une salle",
+                "operationId": "creerSalle",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SallePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Succ?s",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "salle": {
+                                            "$ref": "#/components/schemas/Salle"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "422": {
+                        "description": "Validation invalide",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/salles/{id}": {
+            "get": {
+                "tags": [
+                    "Salles"
+                ],
+                "summary": "Afficher une salle",
+                "operationId": "afficherSalle",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succ?s",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "salle": {
+                                            "$ref": "#/components/schemas/Salle"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "404": {
+                        "description": "Salle introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Salles"
+                ],
+                "summary": "Modifier une salle (nom et code obligatoires)",
+                "operationId": "remplacerSalle",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SallePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succ?s",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "salle": {
+                                            "$ref": "#/components/schemas/Salle"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "404": {
+                        "description": "Salle introuvable"
+                    },
+                    "422": {
+                        "description": "Validation invalide",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Salles"
+                ],
+                "summary": "Supprimer logiquement une salle",
+                "operationId": "supprimerSalle",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succ?s",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "404": {
+                        "description": "Salle introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Salles"
+                ],
+                "summary": "Modifier partiellement une salle",
+                "operationId": "modifierSalle",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SalleModification"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succ?s",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "salle": {
+                                            "$ref": "#/components/schemas/Salle"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                    },
+                    "404": {
+                        "description": "Salle introuvable"
+                    },
+                    "422": {
+                        "description": "Validation invalide",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
         "schemas": {
+            "PeriodeCalendrier": {
+                "required": [
+                    "date_debut",
+                    "date_fin"
+                ],
+                "properties": {
+                    "date_debut": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "date_fin": {
+                        "type": "string",
+                        "format": "date"
+                    }
+                },
+                "type": "object"
+            },
+            "CalendrierPayload": {
+                "description": "Calendrier complet : POST pour créer, PUT pour remplacer toutes les rubriques. Ajouter ou retirer des lignes dans les tableaux avant enregistrement. Au moins un module, sans chevauchement et dans les bornes de l’année. Examens dans leur module ; rattrapages après leur module et dans l’année. Jours fériés et congés dans l’année. Une seule période de grandes vacances, après les modules, congés et rattrapages ; elle peut dépasser la fin de l’année. Envoyer [] pour les listes vides et null sans grandes vacances.",
+                "required": [
+                    "modules",
+                    "jours_feries",
+                    "conges",
+                    "grandes_vacances"
+                ],
+                "properties": {
+                    "modules": {
+                        "type": "array",
+                        "items": {
+                            "required": [
+                                "libelle",
+                                "date_debut",
+                                "date_fin",
+                                "examens",
+                                "rattrapages"
+                            ],
+                            "properties": {
+                                "libelle": {
+                                    "type": "string",
+                                    "example": "Module 1"
+                                },
+                                "date_debut": {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                "date_fin": {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                "examens": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PeriodeCalendrier"
+                                    }
+                                },
+                                "rattrapages": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PeriodeCalendrier"
+                                    }
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "minItems": 1
+                    },
+                    "jours_feries": {
+                        "type": "array",
+                        "items": {
+                            "required": [
+                                "libelle",
+                                "date"
+                            ],
+                            "properties": {
+                                "libelle": {
+                                    "type": "string",
+                                    "example": "Toussaint"
+                                },
+                                "date": {
+                                    "type": "string",
+                                    "format": "date"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "conges": {
+                        "type": "array",
+                        "items": {
+                            "required": [
+                                "libelle",
+                                "date_debut",
+                                "date_fin"
+                            ],
+                            "properties": {
+                                "libelle": {
+                                    "type": "string"
+                                },
+                                "date_debut": {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                "date_fin": {
+                                    "type": "string",
+                                    "format": "date"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "grandes_vacances": {
+                        "required": [
+                            "date_debut",
+                            "date_fin"
+                        ],
+                        "properties": {
+                            "date_debut": {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            "date_fin": {
+                                "type": "string",
+                                "format": "date"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object",
+                "example": {
+                    "modules": [
+                        {
+                            "libelle": "Module 1",
+                            "date_debut": "2026-09-01",
+                            "date_fin": "2026-12-20",
+                            "examens": [
+                                {
+                                    "date_debut": "2026-12-15",
+                                    "date_fin": "2026-12-20"
+                                }
+                            ],
+                            "rattrapages": [
+                                {
+                                    "date_debut": "2027-01-05",
+                                    "date_fin": "2027-01-10"
+                                }
+                            ]
+                        },
+                        {
+                            "libelle": "Module 2",
+                            "date_debut": "2027-01-11",
+                            "date_fin": "2027-06-30",
+                            "examens": [],
+                            "rattrapages": [
+                                {
+                                    "date_debut": "2027-07-01",
+                                    "date_fin": "2027-07-10"
+                                }
+                            ]
+                        }
+                    ],
+                    "jours_feries": [
+                        {
+                            "libelle": "Toussaint",
+                            "date": "2026-11-01"
+                        }
+                    ],
+                    "conges": [
+                        {
+                            "libelle": "Congés de Noël",
+                            "date_debut": "2026-12-21",
+                            "date_fin": "2027-01-04"
+                        }
+                    ],
+                    "grandes_vacances": {
+                        "date_debut": "2027-07-31",
+                        "date_fin": "2027-08-31"
+                    }
+                }
+            },
+            "CalendrierAcademique": {
+                "type": "object",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CalendrierPayload"
+                    },
+                    {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "readOnly": true,
+                                "example": 1
+                            },
+                            "id_annee_academique": {
+                                "type": "integer",
+                                "readOnly": true,
+                                "example": 1
+                            },
+                            "created_by": {
+                                "type": "integer",
+                                "readOnly": true,
+                                "nullable": true
+                            },
+                            "updated_by": {
+                                "type": "integer",
+                                "readOnly": true,
+                                "nullable": true
+                            },
+                            "updated_at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "readOnly": true
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "CreneauPayload": {
+                "description": "Cr?neau hebdomadaire dans un module du calendrier. Cours et promotion facultatifs. Conflits de salle, enseignant ou niveau refus?s avec 422. Les horaires adjacents sont autoris?s.",
+                "required": [
+                    "id_module_calendrier",
+                    "id_niveau",
+                    "id_matiere",
+                    "enseignant_id",
+                    "id_salle",
+                    "jour",
+                    "heure_debut",
+                    "heure_fin"
+                ],
+                "properties": {
+                    "id_module_calendrier": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_niveau": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_matiere": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_cours": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "id_promotion": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "enseignant_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "id_salle": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "jour": {
+                        "description": "1 = lundi, 7 = dimanche",
+                        "type": "integer",
+                        "example": 1,
+                        "maximum": 7,
+                        "minimum": 1
+                    },
+                    "heure_debut": {
+                        "type": "string",
+                        "pattern": "^[0-2][0-9]:[0-5][0-9]$",
+                        "example": "08:00"
+                    },
+                    "heure_fin": {
+                        "type": "string",
+                        "pattern": "^[0-2][0-9]:[0-5][0-9]$",
+                        "example": "10:00"
+                    }
+                },
+                "type": "object"
+            },
+            "CreneauModification": {
+                "description": "Cr?neau hebdomadaire dans un module du calendrier. Cours et promotion facultatifs. Conflits de salle, enseignant ou niveau refus?s avec 422. Les horaires adjacents sont autoris?s.",
+                "properties": {
+                    "id_module_calendrier": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_niveau": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_matiere": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_cours": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "id_promotion": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "enseignant_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "id_salle": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "jour": {
+                        "description": "1 = lundi, 7 = dimanche",
+                        "type": "integer",
+                        "example": 1,
+                        "maximum": 7,
+                        "minimum": 1
+                    },
+                    "heure_debut": {
+                        "type": "string",
+                        "pattern": "^[0-2][0-9]:[0-5][0-9]$",
+                        "example": "08:00"
+                    },
+                    "heure_fin": {
+                        "type": "string",
+                        "pattern": "^[0-2][0-9]:[0-5][0-9]$",
+                        "example": "10:00"
+                    }
+                },
+                "type": "object"
+            },
+            "Creneau": {
+                "type": "object",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CreneauPayload"
+                    },
+                    {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "id_annee_academique": {
+                                "type": "integer"
+                            },
+                            "duree_minutes": {
+                                "type": "integer"
+                            },
+                            "module_calendrier": {
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "niveau": {
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "matiere": {
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "cours": {
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "promotion": {
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "enseignant": {
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "salle": {
+                                "type": "object",
+                                "nullable": true
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
             "ModifierDossierEtudiantPayload": {
                 "description": "Envoyer au moins un champ modifiable à la racine, sans enveloppe dossier. Les champs omis sont conservés. Le nom et les prénoms sont aussi synchronisés avec le compte.",
                 "properties": {
@@ -7150,6 +8752,106 @@
                         "type": "object"
                     }
                 ]
+            },
+            "SallePayload": {
+                "required": [
+                    "nom",
+                    "code"
+                ],
+                "properties": {
+                    "nom": {
+                        "type": "string",
+                        "example": "Salle A",
+                        "maxLength": 180
+                    },
+                    "code": {
+                        "description": "Normalis? en majuscules, unique parmi les salles non supprim?es.",
+                        "type": "string",
+                        "example": "A",
+                        "maxLength": 30
+                    },
+                    "statut": {
+                        "type": "string",
+                        "example": "Actif",
+                        "enum": [
+                            "Actif",
+                            "Inactif"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "SalleModification": {
+                "properties": {
+                    "nom": {
+                        "type": "string",
+                        "maxLength": 180
+                    },
+                    "code": {
+                        "type": "string",
+                        "maxLength": 30
+                    },
+                    "statut": {
+                        "type": "string",
+                        "enum": [
+                            "Actif",
+                            "Inactif"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "Salle": {
+                "type": "object",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/SallePayload"
+                    },
+                    {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "readOnly": true
+                            },
+                            "created_by": {
+                                "type": "integer",
+                                "readOnly": true,
+                                "nullable": true
+                            },
+                            "updated_by": {
+                                "type": "integer",
+                                "readOnly": true,
+                                "nullable": true
+                            },
+                            "deleted_by": {
+                                "type": "integer",
+                                "readOnly": true,
+                                "nullable": true
+                            },
+                            "created_at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                            },
+                            "updated_at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                            },
+                            "deleted_at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                            },
+                            "seances_par_semaine": {
+                                "description": "Toujours null : gestion des s?ances non encore disponible.",
+                                "type": "integer",
+                                "nullable": true
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
             }
         },
         "securitySchemes": {
@@ -7231,6 +8933,10 @@
             "description": "Années académiques"
         },
         {
+            "name": "Calendrier académique",
+            "description": "Calendrier académique"
+        },
+        {
             "name": "Civilités",
             "description": "Civilités"
         },
@@ -7253,6 +8959,14 @@
         {
             "name": "Promotions",
             "description": "Promotions"
+        },
+        {
+            "name": "Cr?neaux",
+            "description": "Cr?neaux"
+        },
+        {
+            "name": "Salles",
+            "description": "Salles"
         }
     ]
 }

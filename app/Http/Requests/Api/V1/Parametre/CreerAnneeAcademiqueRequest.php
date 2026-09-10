@@ -13,8 +13,8 @@ class CreerAnneeAcademiqueRequest extends FormRequest
     {
         return [
             'libelle' => ['required', 'string', 'max:20', Rule::unique('annees_academiques', 'libelle')->withoutTrashed()],
-            'date_debut' => ['required', 'date'],
-            'date_fin' => ['required', 'date', 'after:date_debut'],
+            'date_debut' => ['required', 'date_format:Y-m-d'],
+            'date_fin' => ['required', 'date_format:Y-m-d', 'after:date_debut'],
             'active' => ['sometimes', 'boolean'],
         ];
     }
