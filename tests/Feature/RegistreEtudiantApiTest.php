@@ -93,4 +93,46 @@ class RegistreEtudiantApiTest extends TestCase
         $this->getJson('/api/v1/administration/registre-etudiants/1/dossier')->assertForbidden();
         $this->patchJson('/api/v1/administration/registre-etudiants/1', [])->assertForbidden();
     }
+
+    public function test_la_direction_peut_acceder_et_modifier_le_registre(): void
+    {
+        $role = Role::query()->create(['code' => 'DIRECTION', 'libelle' => 'Direction']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        $annee = AnneeAcademique::query()->create([
+            'libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31', 'active' => true,
+        ]);
+        $niveau = Niveau::query()->create(['code' => 'A1', 'libelle' => '1ère Année', 'rang' => 1]);
+        $promotion = Promotion::query()->create([
+            'code' => 'PROMO-DIR', 'num_promotion' => 18, 'annee_entree' => 2026,
+            'id_niveau' => $niveau->id, 'statut' => 'Active',
+        ]);
+        $affecte = Etudiant::query()->create([
+            'matricule' => 'EBAC-DIR-2026', 'nom' => 'KOUASSI', 'prenoms' => 'Jean',
+            'date_inscription' => '2026-09-04', 'statut' => 'En formation',
+        ]);
+        DossierEtudiant::query()->create([
+            'id_etudiant' => $affecte->id, 'numero_dossier' => 'KOU0182026',
+            'statut' => 'En cours', 'date_ouverture' => '2026-09-04',
+            'pieces_requises' => ['Photo', 'Diplôme'],
+        ]);
+        Inscription::query()->create([
+            'id_etudiant' => $affecte->id, 'id_promotion' => $promotion->id,
+            'id_annee_academique' => $annee->id, 'date_inscription' => '2026-09-04',
+            'statut' => 'En formation',
+        ]);
+
+        $this->getJson('/api/v1/administration/registre-etudiants')->assertOk()
+            ->assertJsonPath('statistiques.total', 1);
+
+        $this->getJson("/api/v1/administration/registre-etudiants/{$affecte->id}/dossier")
+            ->assertOk()
+            ->assertJsonPath('id', $affecte->id);
+
+        $this->patchJson("/api/v1/administration/registre-etudiants/{$affecte->id}", [
+            'statut' => 'Diplômé',
+            'dossier_statut' => 'Clôturé',
+        ])->assertOk()
+            ->assertJsonPath('etudiant.statut', 'Diplômé')
+            ->assertJsonPath('etudiant.dossier.statut', 'Clôturé');
+    }
 }
