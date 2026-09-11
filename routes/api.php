@@ -124,7 +124,7 @@ Route::get('v1/administration/etudiants', [EtudiantController::class, 'index'])
 
 Route::prefix('v1/administration/etudiants/{id}')
     ->name('api.v1.administration.etudiants.')
-    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE'])
     ->group(function () {
         Route::post('affecter-promotion', [DossierEtudiantCompletController::class, 'affecter'])
             ->whereNumber('id')
@@ -140,7 +140,7 @@ Route::get('v1/administration/dossiers-etudiants', [DossierEtudiantController::c
 
 Route::prefix('v1/administration/registre-etudiants')
     ->name('api.v1.administration.registre-etudiants.')
-    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE'])
     ->group(function () {
         Route::get('/', [RegistreEtudiantController::class, 'index'])->name('index');
         Route::get('/{id}/dossier', [DossierEtudiantCompletController::class, 'show'])
@@ -166,12 +166,12 @@ Route::prefix('v1/parametres')
             ->parameters(['civilites' => 'id']);
         Route::apiResource('niveaux', NiveauController::class)
             ->parameters(['niveaux' => 'id']);
-        Route::apiResource('salles', SalleController::class)->parameters(['salles' => 'id'])->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION');
-        Route::get('creneaux/options', [CreneauController::class, 'options'])->name('creneaux.options')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION');
-        Route::apiResource('creneaux', CreneauController::class)->parameters(['creneaux' => 'id'])->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION');
+        Route::apiResource('salles', SalleController::class)->parameters(['salles' => 'id'])->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE');
+        Route::get('creneaux/options', [CreneauController::class, 'options'])->name('creneaux.options')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE');
+        Route::apiResource('creneaux', CreneauController::class)->parameters(['creneaux' => 'id'])->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE');
         Route::apiResource('annees-academiques', AnneeAcademiqueController::class)
-            ->parameters(['annees-academiques' => 'id'])->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION');
-        Route::prefix('annees-academiques/{id}/calendrier')->whereNumber('id')->name('calendrier.')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION')->group(function () {
+            ->parameters(['annees-academiques' => 'id'])->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE');
+        Route::prefix('annees-academiques/{id}/calendrier')->whereNumber('id')->name('calendrier.')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE')->group(function () {
             Route::get('/', [CalendrierAcademiqueController::class, 'show'])->name('show');
             Route::post('/', [CalendrierAcademiqueController::class, 'store'])->name('store');
             Route::put('/', [CalendrierAcademiqueController::class, 'update'])->name('update');
