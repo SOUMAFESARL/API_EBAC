@@ -55,4 +55,41 @@ class ModuleApiTest extends TestCase
         $this->postJson('/api/v1/parametres/modules', $payload)
             ->assertUnprocessable()->assertJsonValidationErrors(['libelle']);
     }
+
+    public function test_libelle_module_parametre_vient_du_front_sans_generation_auto(): void
+    {
+        $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        $utilisateur = User::factory()->create(['id_role' => $role->id]);
+        Sanctum::actingAs($utilisateur);
+        $niveau = Niveau::query()->create(['libelle' => 'Troisième année', 'code' => 'A3', 'rang' => 3]);
+        $matiere = Matiere::query()->create(['code' => 'MAT-THEO', 'libelle' => 'Théologie', 'id_niveau' => $niveau->id]);
+
+        $creer = function (string $libelle, string $code) use ($matiere): int {
+            return $this->postJson('/api/v1/parametres/modules', [
+                'id_matiere' => $matiere->id,
+                'code' => $code,
+                'libelle' => $libelle,
+            ])->assertCreated()->json('module.id');
+        };
+
+        $id1 = $creer('Anthropologie biblique', 'MOD-ANTHRO');
+        $id2 = $creer('Sotériologie', 'MOD-SOTER');
+        $id3 = $creer('Ecclésiologie pratique', 'MOD-ECCLE');
+
+        foreach ([$id1 => 'Anthropologie biblique', $id2 => 'Sotériologie', $id3 => 'Ecclésiologie pratique'] as $id => $attendu) {
+            $this->getJson("/api/v1/parametres/modules/{$id}")
+                ->assertOk()
+                ->assertJsonPath('module.libelle', $attendu);
+        }
+
+        $this->patchJson("/api/v1/parametres/modules/{$id2}", [
+            'id_matiere' => $matiere->id,
+            'libelle' => 'Sotériologie — Alliance de grâce',
+        ])->assertOk()->assertJsonPath('module.libelle', 'Sotériologie — Alliance de grâce');
+
+        $this->assertDatabaseMissing('modules', ['libelle' => 'Module 1']);
+        $this->assertDatabaseMissing('modules', ['libelle' => 'Module 2']);
+        $this->assertDatabaseMissing('modules', ['libelle' => 'Module 3']);
+        $this->assertDatabaseHas('modules', ['libelle' => 'Sotériologie — Alliance de grâce', 'id' => $id2]);
+    }
 }

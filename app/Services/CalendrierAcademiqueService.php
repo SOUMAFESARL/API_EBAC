@@ -102,6 +102,7 @@ class CalendrierAcademiqueService
     {
         $calendrier->load(['modules', 'evenements']);
         $periode = fn ($event) => ['date_debut' => $event->date_debut->toDateString(), 'date_fin' => $event->date_fin->toDateString()];
+        $periodeAvecLibelle = fn ($event) => ['libelle' => $event->libelle, ...$periode($event)];
         $evenements = $calendrier->evenements;
 
         return [
@@ -109,12 +110,12 @@ class CalendrierAcademiqueService
             'id_annee_academique' => $calendrier->id_annee_academique,
             'modules' => $calendrier->modules->map(fn ($module) => [
                 'libelle' => $module->libelle, ...$periode($module),
-                'examens' => $evenements->where('id_module_calendrier', $module->id)->where('type', 'examen')->map($periode)->values()->all(),
-                'rattrapages' => $evenements->where('id_module_calendrier', $module->id)->where('type', 'rattrapage')->map($periode)->values()->all(),
+                'examens' => $evenements->where('id_module_calendrier', $module->id)->where('type', 'examen')->map($periodeAvecLibelle)->values()->all(),
+                'rattrapages' => $evenements->where('id_module_calendrier', $module->id)->where('type', 'rattrapage')->map($periodeAvecLibelle)->values()->all(),
             ])->all(),
             'jours_feries' => $evenements->where('type', 'jour_ferie')->map(fn ($e) => ['libelle' => $e->libelle, 'date' => $e->date_debut->toDateString()])->values()->all(),
             'conges' => $evenements->where('type', 'conge')->map(fn ($e) => ['libelle' => $e->libelle, ...$periode($e)])->values()->all(),
-            'grandes_vacances' => ($vacances = $evenements->firstWhere('type', 'grandes_vacances')) ? $periode($vacances) : null,
+            'grandes_vacances' => ($vacances = $evenements->firstWhere('type', 'grandes_vacances')) ? ['libelle' => $vacances->libelle, ...$periode($vacances)] : null,
             'created_by' => $calendrier->created_by,
             'updated_by' => $calendrier->updated_by,
             'updated_at' => $calendrier->updated_at,

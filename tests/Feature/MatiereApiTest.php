@@ -100,6 +100,8 @@ class MatiereApiTest extends TestCase
             ->assertJsonCount(2, 'matiere.modules')
             ->assertJsonCount(2, 'matiere.modules.0.cours')
             ->assertJsonCount(2, 'matiere.modules.1.cours')
+            ->assertJsonPath('matiere.modules.0.libelle', 'Théologie')
+            ->assertJsonPath('matiere.modules.1.libelle', 'Christologie')
             ->assertJsonPath('matiere.modules.0.ordre', 1)
             ->assertJsonPath('matiere.modules.1.ordre', 2)
             ->assertJsonPath('matiere.modules.1.cours.0.coefficient', '1.50')

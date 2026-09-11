@@ -31,14 +31,14 @@ class CalendrierAcademiqueApiTest extends TestCase
         return [
             'modules' => [
                 ['libelle' => 'Module 1', 'date_debut' => '2026-09-01', 'date_fin' => '2026-12-20',
-                    'examens' => [['date_debut' => '2026-12-15', 'date_fin' => '2026-12-20']],
-                    'rattrapages' => [['date_debut' => '2027-01-05', 'date_fin' => '2027-01-10']]],
+                    'examens' => [['libelle' => 'Examen final Module 1', 'date_debut' => '2026-12-15', 'date_fin' => '2026-12-20']],
+                    'rattrapages' => [['libelle' => 'Rattrapage Module 1', 'date_debut' => '2027-01-05', 'date_fin' => '2027-01-10']]],
                 ['libelle' => 'Module 2', 'date_debut' => '2027-01-11', 'date_fin' => '2027-06-30',
-                    'examens' => [], 'rattrapages' => [['date_debut' => '2027-07-01', 'date_fin' => '2027-07-10']]],
+                    'examens' => [], 'rattrapages' => [['libelle' => null, 'date_debut' => '2027-07-01', 'date_fin' => '2027-07-10']]],
             ],
             'jours_feries' => [['libelle' => 'Toussaint', 'date' => '2026-11-01']],
             'conges' => [['libelle' => 'Noël', 'date_debut' => '2026-12-21', 'date_fin' => '2027-01-04']],
-            'grandes_vacances' => ['date_debut' => '2027-07-31', 'date_fin' => '2027-08-31'],
+            'grandes_vacances' => ['libelle' => 'Vacances estivales 2027', 'date_debut' => '2027-07-31', 'date_fin' => '2027-08-31'],
         ];
     }
 
@@ -231,5 +231,66 @@ class CalendrierAcademiqueApiTest extends TestCase
         $this->assertSame($avant, $this->getJson($url)->assertOk()->json('calendrier'));
         $this->assertDatabaseCount('modules_calendrier', 2);
         $this->assertDatabaseCount('evenements_calendrier', 6);
+    }
+
+    public function test_libelles_examens_rattrapages_et_grandes_vacances_saisis_par_front(): void
+    {
+        $annee = $this->annee();
+        $url = "/api/v1/parametres/annees-academiques/$annee->id/calendrier";
+        $data = $this->payload();
+
+        $reponse = $this->postJson($url, $data)->assertCreated();
+        $reponse
+            ->assertJsonPath('calendrier.modules.0.examens.0.libelle', 'Examen final Module 1')
+            ->assertJsonPath('calendrier.modules.0.rattrapages.0.libelle', 'Rattrapage Module 1')
+            ->assertJsonPath('calendrier.modules.1.rattrapages.0.libelle', null)
+            ->assertJsonPath('calendrier.grandes_vacances.libelle', 'Vacances estivales 2027');
+
+        $calendrier = $this->getJson($url)->json('calendrier');
+        $this->assertSame('Examen final Module 1', $calendrier['modules'][0]['examens'][0]['libelle']);
+        $this->assertSame('Rattrapage Module 1', $calendrier['modules'][0]['rattrapages'][0]['libelle']);
+        $this->assertNull($calendrier['modules'][1]['rattrapages'][0]['libelle']);
+        $this->assertSame('Vacances estivales 2027', $calendrier['grandes_vacances']['libelle']);
+
+        $data['modules'][0]['examens'][0]['libelle'] = 'Nouvel examen libellé';
+        $data['grandes_vacances']['libelle'] = null;
+        $this->putJson($url, $data)->assertOk()
+            ->assertJsonPath('calendrier.modules.0.examens.0.libelle', 'Nouvel examen libellé')
+            ->assertJsonPath('calendrier.grandes_vacances.libelle', null);
+    }
+
+    public function test_libelles_modules_calendrier_saisis_par_front_sans_generation_auto(): void
+    {
+        $annee = $this->annee();
+        $url = "/api/v1/parametres/annees-academiques/$annee->id/calendrier";
+        $data = [
+            'modules' => [
+                ['libelle' => 'Herméneutique biblique — S1', 'date_debut' => '2026-09-01', 'date_fin' => '2026-12-20',
+                    'examens' => [], 'rattrapages' => []],
+                ['libelle' => 'Histoire de l\'Église — S2', 'date_debut' => '2027-01-11', 'date_fin' => '2027-06-30',
+                    'examens' => [], 'rattrapages' => []],
+                ['libelle' => 'Pratique pastorale', 'date_debut' => '2027-07-01', 'date_fin' => '2027-07-30',
+                    'examens' => [], 'rattrapages' => []],
+            ],
+            'jours_feries' => [],
+            'conges' => [],
+            'grandes_vacances' => ['libelle' => null, 'date_debut' => '2027-08-01', 'date_fin' => '2027-08-31'],
+        ];
+
+        $this->postJson($url, $data)->assertCreated()
+            ->assertJsonPath('calendrier.modules.0.libelle', 'Herméneutique biblique — S1')
+            ->assertJsonPath('calendrier.modules.1.libelle', 'Histoire de l\'Église — S2')
+            ->assertJsonPath('calendrier.modules.2.libelle', 'Pratique pastorale')
+            ->assertJsonCount(3, 'calendrier.modules');
+
+        $calendrier = $this->getJson($url)->json('calendrier');
+        $this->assertSame('Herméneutique biblique — S1', $calendrier['modules'][0]['libelle']);
+        $this->assertSame('Histoire de l\'Église — S2', $calendrier['modules'][1]['libelle']);
+        $this->assertSame('Pratique pastorale', $calendrier['modules'][2]['libelle']);
+        $this->assertNull($calendrier['grandes_vacances']['libelle']);
+
+        $this->assertDatabaseMissing('modules_calendrier', ['libelle' => 'Module 1']);
+        $this->assertDatabaseMissing('modules_calendrier', ['libelle' => 'Module 2']);
+        $this->assertDatabaseMissing('modules_calendrier', ['libelle' => 'Module 3']);
     }
 }

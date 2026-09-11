@@ -26,11 +26,13 @@ class EnregistrerCalendrierRequest extends FormRequest
             'conges' => ['present', 'array', 'list', 'max:100'],
             'conges.*' => ['required', 'array:libelle,date_debut,date_fin'],
             'conges.*.libelle' => ['required', 'string', 'max:180'],
-            'grandes_vacances' => ['present', 'nullable', 'array:date_debut,date_fin', 'required_array_keys:date_debut,date_fin'],
+            'grandes_vacances' => ['present', 'nullable', 'array:libelle,date_debut,date_fin', 'required_array_keys:date_debut,date_fin'],
+            'grandes_vacances.libelle' => ['nullable', 'string', 'max:180'],
         ];
         foreach (['modules.*.examens', 'modules.*.rattrapages'] as $key) {
             $rules[$key] = ['present', 'array', 'list', 'max:100'];
-            $rules[$key.'.*'] = ['required', 'array:date_debut,date_fin'];
+            $rules[$key.'.*'] = ['required', 'array:libelle,date_debut,date_fin'];
+            $rules[$key.'.*.libelle'] = ['sometimes', 'nullable', 'string', 'max:180'];
         }
         foreach (['modules.*.examens.*', 'modules.*.rattrapages.*', 'conges.*', 'grandes_vacances'] as $key) {
             $required = $key === 'grandes_vacances' ? 'required_with:grandes_vacances' : 'required';
