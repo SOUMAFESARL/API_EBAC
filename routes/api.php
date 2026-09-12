@@ -21,8 +21,10 @@ use App\Http\Controllers\Api\V1\Parametre\AnneeAcademiqueController;
 use App\Http\Controllers\Api\V1\Parametre\CalendrierAcademiqueController;
 use App\Http\Controllers\Api\V1\Parametre\CiviliteController;
 use App\Http\Controllers\Api\V1\Parametre\CoursController;
+use App\Http\Controllers\Api\V1\Parametre\EvenementCalendrierController;
 use App\Http\Controllers\Api\V1\Parametre\MatiereController;
 use App\Http\Controllers\Api\V1\Parametre\ModuleController;
+use App\Http\Controllers\Api\V1\Parametre\ModuleCalendrierController;
 use App\Http\Controllers\Api\V1\Parametre\NiveauController;
 use App\Http\Controllers\Api\V1\Parametre\SalleController;
 use App\Http\Controllers\Api\V1\Parametre\CreneauController;
@@ -124,7 +126,7 @@ Route::get('v1/administration/etudiants', [EtudiantController::class, 'index'])
 
 Route::prefix('v1/administration/etudiants/{id}')
     ->name('api.v1.administration.etudiants.')
-    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
     ->group(function () {
         Route::post('affecter-promotion', [DossierEtudiantCompletController::class, 'affecter'])
             ->whereNumber('id')
@@ -140,7 +142,7 @@ Route::get('v1/administration/dossiers-etudiants', [DossierEtudiantController::c
 
 Route::prefix('v1/administration/registre-etudiants')
     ->name('api.v1.administration.registre-etudiants.')
-    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
     ->group(function () {
         Route::get('/', [RegistreEtudiantController::class, 'index'])->name('index');
         Route::get('/{id}/dossier', [DossierEtudiantCompletController::class, 'show'])
@@ -167,8 +169,8 @@ Route::prefix('v1/parametres')
         Route::apiResource('niveaux', NiveauController::class)
             ->parameters(['niveaux' => 'id']);
         Route::apiResource('salles', SalleController::class)->parameters(['salles' => 'id'])->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE');
-        Route::get('creneaux/options', [CreneauController::class, 'options'])->name('creneaux.options')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE');
-        Route::apiResource('creneaux', CreneauController::class)->parameters(['creneaux' => 'id'])->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE');
+        Route::get('creneaux/options', [CreneauController::class, 'options'])->name('creneaux.options')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION');
+        Route::apiResource('creneaux', CreneauController::class)->parameters(['creneaux' => 'id'])->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,');
         Route::apiResource('annees-academiques', AnneeAcademiqueController::class)
             ->parameters(['annees-academiques' => 'id'])->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE');
         Route::prefix('annees-academiques/{id}/calendrier')->whereNumber('id')->name('calendrier.')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE')->group(function () {
@@ -177,6 +179,14 @@ Route::prefix('v1/parametres')
             Route::put('/', [CalendrierAcademiqueController::class, 'update'])->name('update');
             Route::delete('/', [CalendrierAcademiqueController::class, 'destroy'])->name('destroy');
         });
+        Route::apiResource('modules-calendrier', ModuleCalendrierController::class)
+            ->parameters(['modules-calendrier' => 'id'])
+            ->whereNumber('id')
+            ->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE');
+        Route::apiResource('evenements-calendrier', EvenementCalendrierController::class)
+            ->parameters(['evenements-calendrier' => 'id'])
+            ->whereNumber('id')
+            ->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE');
         Route::apiResource('promotions', PromotionController::class)
             ->parameters(['promotions' => 'id']);
         Route::apiResource('matieres', MatiereController::class)

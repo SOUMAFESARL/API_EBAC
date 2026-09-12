@@ -9,7 +9,7 @@ class EvenementCalendrier extends Model
 {
     protected $table = 'evenements_calendrier';
 
-    protected $fillable = ['id_module_calendrier', 'type', 'libelle', 'date_debut', 'date_fin'];
+    protected $fillable = ['id_calendrier', 'id_module_calendrier', 'type', 'libelle', 'date_debut', 'date_fin'];
 
     protected function casts(): array
     {

@@ -1659,7 +1659,7 @@
                         "description": "Statistiques et liste paginée du registre"
                     },
                     "403": {
-                        "description": "Réservé à ADMIN et SECRETARIAT"
+                        "description": "Réservé à ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION"
                     },
                     "422": {
                         "description": "Filtres invalides"
@@ -1729,7 +1729,7 @@
                         "description": "Affectation mise à jour"
                     },
                     "403": {
-                        "description": "Réservé à ADMIN et SECRETARIAT"
+                        "description": "Réservé à ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION"
                     },
                     "404": {
                         "description": "Étudiant ou inscription introuvable"
@@ -4960,7 +4960,7 @@
             },
             "post": {
                 "tags": [
-                    "Cr?neaux"
+                    "Créneaux"
                 ],
                 "summary": "Cr?er un cr?neau",
                 "operationId": "creerCreneau",
@@ -4976,7 +4976,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Succ?s",
+                        "description": "Succès",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4994,7 +4994,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Accès réservé aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
                     },
                     "404": {
                         "description": "Ressource introuvable"
@@ -5154,7 +5154,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Succ?s",
+                        "description": "Succès",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -5172,7 +5172,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Accès r?servé aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
                     },
                     "404": {
                         "description": "Ressource introuvable"
@@ -5198,7 +5198,7 @@
                 "tags": [
                     "Cr?neaux"
                 ],
-                "summary": "Modifier un cr?neau complet",
+                "summary": "Modifier un créneau complet",
                 "operationId": "remplacerCreneau",
                 "parameters": [
                     {
@@ -5222,7 +5222,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Succ?s",
+                        "description": "Succès",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -5240,7 +5240,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Accès réservé aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
                     },
                     "404": {
                         "description": "Ressource introuvable"
@@ -5280,7 +5280,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Succ?s",
+                        "description": "Succès",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -5348,7 +5348,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Succ?s",
+                        "description": "Succès",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -5366,13 +5366,796 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Accès réservé aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
                     },
                     "404": {
                         "description": "Ressource introuvable"
                     },
                     "422": {
                         "description": "Validation ou conflit horaire",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/evenements-calendrier": {
+            "get": {
+                "tags": [
+                    "Événements calendrier"
+                ],
+                "summary": "Lister les événements du calendrier",
+                "operationId": "listerEvenementsCalendrier",
+                "parameters": [
+                    {
+                        "name": "id_calendrier",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "id_module_calendrier",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "examen",
+                                "rattrapage",
+                                "jour_ferie",
+                                "conge",
+                                "grandes_vacances"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste triée par date.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "evenements": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/EvenementCalendrier"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "422": {
+                        "description": "Filtre invalide",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Événements calendrier"
+                ],
+                "summary": "Créer un événement de calendrier",
+                "description": "Un examen reste dans son module ; un rattrapage commence après son module ; une seule période de grandes vacances est autorisée.",
+                "operationId": "creerEvenementCalendrier",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EvenementCalendrierPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Événement créé.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "evenement": {
+                                            "$ref": "#/components/schemas/EvenementCalendrier"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "422": {
+                        "description": "Données invalides",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/evenements-calendrier/{id}": {
+            "get": {
+                "tags": [
+                    "Événements calendrier"
+                ],
+                "summary": "Afficher un événement de calendrier",
+                "operationId": "afficherEvenementCalendrier",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Événement trouvé.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "evenement": {
+                                            "$ref": "#/components/schemas/EvenementCalendrier"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "404": {
+                        "description": "Événement introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Événements calendrier"
+                ],
+                "summary": "Remplacer complètement un événement",
+                "operationId": "remplacerEvenementCalendrier",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EvenementCalendrierPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Événement modifié.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "evenement": {
+                                            "$ref": "#/components/schemas/EvenementCalendrier"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "404": {
+                        "description": "Événement introuvable"
+                    },
+                    "422": {
+                        "description": "Données invalides",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Événements calendrier"
+                ],
+                "summary": "Supprimer un événement",
+                "operationId": "supprimerEvenementCalendrier",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Événement supprimé.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Événement supprimé avec succès."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "404": {
+                        "description": "Événement introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Événements calendrier"
+                ],
+                "summary": "Modifier partiellement un événement",
+                "operationId": "modifierEvenementCalendrier",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EvenementCalendrierModification"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Événement modifié.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "evenement": {
+                                            "$ref": "#/components/schemas/EvenementCalendrier"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "404": {
+                        "description": "Événement introuvable"
+                    },
+                    "422": {
+                        "description": "Données invalides",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/modules-calendrier": {
+            "get": {
+                "tags": [
+                    "Modules calendrier"
+                ],
+                "summary": "Lister les modules du calendrier",
+                "operationId": "listerModulesCalendrier",
+                "parameters": [
+                    {
+                        "name": "id_calendrier",
+                        "in": "query",
+                        "description": "Filtrer les modules par calendrier.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste triée par ordre.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "modules"
+                                    ],
+                                    "properties": {
+                                        "modules": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ModuleCalendrier"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurAuthentification"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "422": {
+                        "description": "Filtre invalide",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Modules calendrier"
+                ],
+                "summary": "Créer un module de calendrier",
+                "description": "La période doit appartenir à l’année académique, ne chevaucher aucun autre module et son ordre doit être unique dans le calendrier.",
+                "operationId": "creerModuleCalendrier",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ModuleCalendrierPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Module créé.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Module créé avec succès."
+                                        },
+                                        "module": {
+                                            "$ref": "#/components/schemas/ModuleCalendrier"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "422": {
+                        "description": "Données invalides",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/modules-calendrier/{id}": {
+            "get": {
+                "tags": [
+                    "Modules calendrier"
+                ],
+                "summary": "Afficher un module de calendrier",
+                "operationId": "afficherModuleCalendrier",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Module trouvé.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "module": {
+                                            "$ref": "#/components/schemas/ModuleCalendrier"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "404": {
+                        "description": "Module introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Modules calendrier"
+                ],
+                "summary": "Remplacer complètement un module de calendrier",
+                "operationId": "remplacerModuleCalendrier",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ModuleCalendrierPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Module modifié.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "module": {
+                                            "$ref": "#/components/schemas/ModuleCalendrier"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "404": {
+                        "description": "Module introuvable"
+                    },
+                    "422": {
+                        "description": "Données invalides",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Modules calendrier"
+                ],
+                "summary": "Supprimer un module de calendrier",
+                "description": "Les événements associés sont supprimés en cascade. La suppression est refusée si un créneau utilise le module.",
+                "operationId": "supprimerModuleCalendrier",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Module supprimé.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Module supprimé avec succès."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "404": {
+                        "description": "Module introuvable"
+                    },
+                    "422": {
+                        "description": "Module utilisé par un créneau",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Ce module est utilisé par des créneaux et ne peut pas être supprimé."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Modules calendrier"
+                ],
+                "summary": "Modifier partiellement un module de calendrier",
+                "operationId": "modifierModuleCalendrier",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ModuleCalendrierModification"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Module modifié.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "module": {
+                                            "$ref": "#/components/schemas/ModuleCalendrier"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "404": {
+                        "description": "Module introuvable"
+                    },
+                    "422": {
+                        "description": "Données invalides",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -6784,8 +7567,30 @@
                 },
                 "type": "object"
             },
+            "PeriodeCalendrierLibellee": {
+                "required": [
+                    "date_debut",
+                    "date_fin"
+                ],
+                "properties": {
+                    "libelle": {
+                        "type": "string",
+                        "example": "Examen écrit — Théologie",
+                        "nullable": true
+                    },
+                    "date_debut": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "date_fin": {
+                        "type": "string",
+                        "format": "date"
+                    }
+                },
+                "type": "object"
+            },
             "CalendrierPayload": {
-                "description": "Calendrier complet : POST pour créer, PUT pour remplacer toutes les rubriques. Ajouter ou retirer des lignes dans les tableaux avant enregistrement. Au moins un module, sans chevauchement et dans les bornes de l’année. Examens dans leur module ; rattrapages après leur module et dans l’année. Jours fériés et congés dans l’année. Une seule période de grandes vacances, après les modules, congés et rattrapages ; elle peut dépasser la fin de l’année. Envoyer [] pour les listes vides et null sans grandes vacances.",
+                "description": "Calendrier complet : POST pour créer, PUT pour remplacer toutes les rubriques. Ajouter ou retirer des lignes dans les tableaux avant enregistrement. Au moins un module, sans chevauchement et dans les bornes de l’année. Examens dans leur module ; rattrapages après leur module et dans l’année. Jours fériés et congés dans l’année. Une seule période de grandes vacances, après les modules, congés et rattrapages ; elle peut dépasser la fin de l’année. Envoyer [] pour les listes vides et null sans grandes vacances. — IMPORTANT — Tous les libellés (modules, examens, rattrapages, jours_feries, conges, grandes_vacances) sont SAISIS PAR LE FRONTEND (utilisateur). Le backend ne génère AUCUN libellé par défaut ; il enregistre et restitue strictement ceux qui sont envoyés. Les libellés non renseignés (examens, rattrapages, grandes_vacances) peuvent être omis ou null.",
                 "required": [
                     "modules",
                     "jours_feries",
@@ -6806,7 +7611,7 @@
                             "properties": {
                                 "libelle": {
                                     "type": "string",
-                                    "example": "Module 1"
+                                    "example": "Théologie systématique — Semestre 1"
                                 },
                                 "date_debut": {
                                     "type": "string",
@@ -6819,13 +7624,13 @@
                                 "examens": {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/components/schemas/PeriodeCalendrier"
+                                        "$ref": "#/components/schemas/PeriodeCalendrierLibellee"
                                     }
                                 },
                                 "rattrapages": {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/components/schemas/PeriodeCalendrier"
+                                        "$ref": "#/components/schemas/PeriodeCalendrierLibellee"
                                     }
                                 }
                             },
@@ -6843,7 +7648,7 @@
                             "properties": {
                                 "libelle": {
                                     "type": "string",
-                                    "example": "Toussaint"
+                                    "example": "Fête de l'indépendance"
                                 },
                                 "date": {
                                     "type": "string",
@@ -6863,7 +7668,8 @@
                             ],
                             "properties": {
                                 "libelle": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "example": "Pause semestrielle"
                                 },
                                 "date_debut": {
                                     "type": "string",
@@ -6883,6 +7689,11 @@
                             "date_fin"
                         ],
                         "properties": {
+                            "libelle": {
+                                "type": "string",
+                                "example": "Grandes vacances estivales",
+                                "nullable": true
+                            },
                             "date_debut": {
                                 "type": "string",
                                 "format": "date"
@@ -6900,29 +7711,32 @@
                 "example": {
                     "modules": [
                         {
-                            "libelle": "Module 1",
+                            "libelle": "Théologie systématique — Semestre 1",
                             "date_debut": "2026-09-01",
                             "date_fin": "2026-12-20",
                             "examens": [
                                 {
+                                    "libelle": "Partiel — Théologie",
                                     "date_debut": "2026-12-15",
                                     "date_fin": "2026-12-20"
                                 }
                             ],
                             "rattrapages": [
                                 {
+                                    "libelle": "Rattrapage janvier",
                                     "date_debut": "2027-01-05",
                                     "date_fin": "2027-01-10"
                                 }
                             ]
                         },
                         {
-                            "libelle": "Module 2",
+                            "libelle": "Bible hébraïque — Semestre 2",
                             "date_debut": "2027-01-11",
                             "date_fin": "2027-06-30",
                             "examens": [],
                             "rattrapages": [
                                 {
+                                    "libelle": null,
                                     "date_debut": "2027-07-01",
                                     "date_fin": "2027-07-10"
                                 }
@@ -6931,18 +7745,19 @@
                     ],
                     "jours_feries": [
                         {
-                            "libelle": "Toussaint",
+                            "libelle": "Fête de l'indépendance",
                             "date": "2026-11-01"
                         }
                     ],
                     "conges": [
                         {
-                            "libelle": "Congés de Noël",
+                            "libelle": "Pause semestrielle de Noël",
                             "date_debut": "2026-12-21",
                             "date_fin": "2027-01-04"
                         }
                     ],
                     "grandes_vacances": {
+                        "libelle": "Grandes vacances estivales",
                         "date_debut": "2027-07-31",
                         "date_fin": "2027-08-31"
                     }
@@ -6987,7 +7802,7 @@
                 ]
             },
             "CreneauPayload": {
-                "description": "Cr?neau hebdomadaire dans un module du calendrier. Cours et promotion facultatifs. Conflits de salle, enseignant ou niveau refus?s avec 422. Les horaires adjacents sont autoris?s.",
+                "description": "Creneau hebdomadaire dans un module du calendrier. Cours et promotion facultatifs. Conflits de salle, enseignant ou niveau refusés avec 422. Les horaires adjacents sont autoris?s.",
                 "required": [
                     "id_module_calendrier",
                     "id_niveau",
@@ -7048,7 +7863,7 @@
                 "type": "object"
             },
             "CreneauModification": {
-                "description": "Cr?neau hebdomadaire dans un module du calendrier. Cours et promotion facultatifs. Conflits de salle, enseignant ou niveau refus?s avec 422. Les horaires adjacents sont autoris?s.",
+                "description": "Cr?neau hebdomadaire dans un module du calendrier. Cours et promotion facultatifs. Conflits de salle, enseignant ou niveau refusés avec 422. Les horaires adjacents sont autorisés.",
                 "properties": {
                     "id_module_calendrier": {
                         "type": "integer",
@@ -7870,6 +8685,280 @@
                                 "type": "string"
                             }
                         }
+                    }
+                },
+                "type": "object"
+            },
+            "EvenementCalendrierPayload": {
+                "required": [
+                    "id_calendrier",
+                    "type",
+                    "date_debut",
+                    "date_fin"
+                ],
+                "properties": {
+                    "id_calendrier": {
+                        "type": "integer",
+                        "example": 1,
+                        "minimum": 1
+                    },
+                    "id_module_calendrier": {
+                        "description": "Obligatoire pour examen et rattrapage ; interdit pour les autres types.",
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true,
+                        "minimum": 1
+                    },
+                    "type": {
+                        "type": "string",
+                        "example": "examen",
+                        "enum": [
+                            "examen",
+                            "rattrapage",
+                            "jour_ferie",
+                            "conge",
+                            "grandes_vacances"
+                        ]
+                    },
+                    "libelle": {
+                        "description": "Obligatoire pour jour_ferie et conge.",
+                        "type": "string",
+                        "example": "Examen final",
+                        "nullable": true,
+                        "maxLength": 180
+                    },
+                    "date_debut": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-12-15"
+                    },
+                    "date_fin": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-12-20"
+                    }
+                },
+                "type": "object"
+            },
+            "EvenementCalendrierModification": {
+                "description": "Tous les champs sont facultatifs avec PATCH.",
+                "properties": {
+                    "id_calendrier": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "id_module_calendrier": {
+                        "type": "integer",
+                        "nullable": true,
+                        "minimum": 1
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "examen",
+                            "rattrapage",
+                            "jour_ferie",
+                            "conge",
+                            "grandes_vacances"
+                        ]
+                    },
+                    "libelle": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 180
+                    },
+                    "date_debut": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "date_fin": {
+                        "type": "string",
+                        "format": "date"
+                    }
+                },
+                "type": "object"
+            },
+            "EvenementCalendrier": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "id_calendrier": {
+                        "type": "integer"
+                    },
+                    "id_module_calendrier": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "libelle": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "date_debut": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "date_fin": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "calendrier": {
+                        "type": "object",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "module": {
+                        "type": "object",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "type": "object"
+            },
+            "ModuleCalendrierPayload": {
+                "required": [
+                    "id_calendrier",
+                    "libelle",
+                    "ordre",
+                    "date_debut",
+                    "date_fin"
+                ],
+                "properties": {
+                    "id_calendrier": {
+                        "description": "Identifiant du calendrier académique.",
+                        "type": "integer",
+                        "example": 1,
+                        "minimum": 1
+                    },
+                    "libelle": {
+                        "type": "string",
+                        "example": "Premier semestre",
+                        "maxLength": 180
+                    },
+                    "ordre": {
+                        "description": "Ordre unique dans le calendrier.",
+                        "type": "integer",
+                        "example": 1,
+                        "maximum": 65535,
+                        "minimum": 1
+                    },
+                    "date_debut": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-09-01"
+                    },
+                    "date_fin": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-12-20"
+                    }
+                },
+                "type": "object"
+            },
+            "ModuleCalendrierModification": {
+                "description": "Tous les champs sont facultatifs avec PATCH.",
+                "properties": {
+                    "id_calendrier": {
+                        "type": "integer",
+                        "example": 1,
+                        "minimum": 1
+                    },
+                    "libelle": {
+                        "type": "string",
+                        "example": "Semestre 1",
+                        "maxLength": 180
+                    },
+                    "ordre": {
+                        "type": "integer",
+                        "example": 1,
+                        "maximum": 65535,
+                        "minimum": 1
+                    },
+                    "date_debut": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-09-01"
+                    },
+                    "date_fin": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-12-20"
+                    }
+                },
+                "type": "object"
+            },
+            "ModuleCalendrier": {
+                "required": [
+                    "id",
+                    "id_calendrier",
+                    "libelle",
+                    "ordre",
+                    "date_debut",
+                    "date_fin"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "example": 1
+                    },
+                    "id_calendrier": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "libelle": {
+                        "type": "string",
+                        "example": "Premier semestre"
+                    },
+                    "ordre": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "date_debut": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-09-01"
+                    },
+                    "date_fin": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-12-20"
+                    },
+                    "calendrier": {
+                        "type": "object",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "evenements": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        },
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
                     }
                 },
                 "type": "object"
@@ -8963,6 +10052,18 @@
         {
             "name": "Cr?neaux",
             "description": "Cr?neaux"
+        },
+        {
+            "name": "Créneaux",
+            "description": "Créneaux"
+        },
+        {
+            "name": "Événements calendrier",
+            "description": "Événements calendrier"
+        },
+        {
+            "name": "Modules calendrier",
+            "description": "Modules calendrier"
         },
         {
             "name": "Salles",
