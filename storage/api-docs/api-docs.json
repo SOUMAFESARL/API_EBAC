@@ -4172,6 +4172,434 @@
                 ]
             }
         },
+        "/administration/affectations-enseignants/tableau-de-bord": {
+            "get": {
+                "tags": [
+                    "Affectations enseignants"
+                ],
+                "summary": "Obtenir les indicateurs des affectations",
+                "operationId": "tableauDeBordAffectationsEnseignants",
+                "parameters": [
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Indicateurs.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "indicateurs": {
+                                            "properties": {
+                                                "enseignements_confies": {
+                                                    "type": "integer"
+                                                },
+                                                "enseignants_mobilises": {
+                                                    "type": "integer"
+                                                },
+                                                "cours_sans_enseignant": {
+                                                    "type": "integer"
+                                                },
+                                                "enseignants_sans_charge": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "422": {
+                        "description": "Année invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/affectations-enseignants/options": {
+            "get": {
+                "tags": [
+                    "Affectations enseignants"
+                ],
+                "summary": "Charger enseignants, matières et cours éligibles",
+                "operationId": "optionsAffectationsEnseignants",
+                "parameters": [
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_matiere",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Options.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "enseignants": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "enseignants_exclus": {
+                                            "type": "integer"
+                                        },
+                                        "matieres": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "cours": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "422": {
+                        "description": "Paramètres invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/affectations-enseignants": {
+            "get": {
+                "tags": [
+                    "Affectations enseignants"
+                ],
+                "summary": "Lister les affectations et leur historique",
+                "operationId": "listerAffectationsEnseignants",
+                "parameters": [
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "en_cours",
+                                "terminee"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "affectations": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AffectationEnseignant"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "422": {
+                        "description": "Filtres invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Affectations enseignants"
+                ],
+                "summary": "Confier un enseignement",
+                "description": "Une affectation matière couvre tous ses cours actuels et futurs. Les chevauchements de couverture sont refusés.",
+                "operationId": "creerAffectationEnseignant",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AffectationEnseignantPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Affectation créée.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "affectation": {
+                                            "$ref": "#/components/schemas/AffectationEnseignant"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "422": {
+                        "description": "Données ou couverture invalides",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/affectations-enseignants/{id}": {
+            "get": {
+                "tags": [
+                    "Affectations enseignants"
+                ],
+                "summary": "Afficher une affectation",
+                "operationId": "afficherAffectationEnseignant",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Affectation trouvée.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "affectation": {
+                                            "$ref": "#/components/schemas/AffectationEnseignant"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "404": {
+                        "description": "Affectation introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/affectations-enseignants/{id}/terminer": {
+            "patch": {
+                "tags": [
+                    "Affectations enseignants"
+                ],
+                "summary": "Terminer une affectation sans supprimer son historique",
+                "description": "Une date antérieure à une note déjà saisie dans la matière est refusée.",
+                "operationId": "terminerAffectationEnseignant",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "date_fin"
+                                ],
+                                "properties": {
+                                    "date_fin": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-09-12"
+                                    },
+                                    "motif": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 2000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Affectation terminée.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "affectation": {
+                                            "$ref": "#/components/schemas/AffectationEnseignant"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé"
+                    },
+                    "404": {
+                        "description": "Affectation introuvable"
+                    },
+                    "422": {
+                        "description": "Date invalide",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErreurValidation"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/auth/connexion": {
             "post": {
                 "tags": [
@@ -7550,6 +7978,118 @@
     },
     "components": {
         "schemas": {
+            "AffectationEnseignantPayload": {
+                "required": [
+                    "id_annee_academique",
+                    "enseignant_id",
+                    "portee",
+                    "id_matiere",
+                    "date_debut"
+                ],
+                "properties": {
+                    "id_annee_academique": {
+                        "type": "integer",
+                        "example": 1,
+                        "minimum": 1
+                    },
+                    "enseignant_id": {
+                        "type": "integer",
+                        "example": 12,
+                        "minimum": 1
+                    },
+                    "portee": {
+                        "type": "string",
+                        "example": "matiere",
+                        "enum": [
+                            "matiere",
+                            "cours"
+                        ]
+                    },
+                    "id_matiere": {
+                        "type": "integer",
+                        "example": 4,
+                        "minimum": 1
+                    },
+                    "id_cours": {
+                        "description": "Obligatoire lorsque portee vaut cours, interdit pour matiere.",
+                        "type": "integer",
+                        "example": 15,
+                        "nullable": true,
+                        "minimum": 1
+                    },
+                    "date_debut": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-09-12"
+                    }
+                },
+                "type": "object"
+            },
+            "AffectationEnseignant": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "id_annee_academique": {
+                        "type": "integer"
+                    },
+                    "enseignant_id": {
+                        "type": "integer"
+                    },
+                    "id_matiere": {
+                        "type": "integer"
+                    },
+                    "id_cours": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "portee": {
+                        "type": "string",
+                        "enum": [
+                            "matiere",
+                            "cours"
+                        ]
+                    },
+                    "date_debut": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "date_fin": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "motif_fin": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "statut": {
+                        "type": "string",
+                        "enum": [
+                            "en_cours",
+                            "terminee"
+                        ]
+                    },
+                    "volume_horaire": {
+                        "type": "number",
+                        "nullable": true
+                    },
+                    "enseignant": {
+                        "type": "object"
+                    },
+                    "matiere": {
+                        "type": "object"
+                    },
+                    "cours": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "annee_academique": {
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
             "PeriodeCalendrier": {
                 "required": [
                     "date_debut",
@@ -10048,6 +10588,10 @@
         {
             "name": "Promotions",
             "description": "Promotions"
+        },
+        {
+            "name": "Affectations enseignants",
+            "description": "Affectations enseignants"
         },
         {
             "name": "Cr?neaux",

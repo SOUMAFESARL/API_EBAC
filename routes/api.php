@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Administration\ActionController;
+use App\Http\Controllers\Api\V1\Administration\AffectationEnseignantController;
 use App\Http\Controllers\Api\V1\Administration\CompteController;
 use App\Http\Controllers\Api\V1\Administration\MenuController;
 use App\Http\Controllers\Api\V1\Administration\PermissionController;
@@ -42,6 +43,18 @@ Route::prefix('v1/administration/nouvelles-admissions')
         Route::get('/imports/{id}/document-pdf', [NouvelleAdmissionController::class, 'afficherDocumentPdf'])->whereNumber('id')->name('document_pdf');
         Route::get('/imports/{id}/document-pdf/telecharger', [NouvelleAdmissionController::class, 'telechargerDocumentPdf'])->whereNumber('id')->name('document_pdf.telecharger');
         Route::patch('/{id}', [NouvelleAdmissionController::class, 'update'])->whereNumber('id')->name('update');
+    });
+
+Route::prefix('v1/administration/affectations-enseignants')
+    ->name('api.v1.administration.affectations-enseignants.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION,GESTIONNAIRE'])
+    ->group(function () {
+        Route::get('tableau-de-bord', [AffectationEnseignantController::class, 'tableauDeBord'])->name('tableau-de-bord');
+        Route::get('options', [AffectationEnseignantController::class, 'options'])->name('options');
+        Route::get('/', [AffectationEnseignantController::class, 'index'])->name('index');
+        Route::post('/', [AffectationEnseignantController::class, 'store'])->name('store');
+        Route::get('{id}', [AffectationEnseignantController::class, 'show'])->whereNumber('id')->name('show');
+        Route::patch('{id}/terminer', [AffectationEnseignantController::class, 'terminer'])->whereNumber('id')->name('terminer');
     });
 
 Route::get('v1/fichiers-preinscriptions/{chemin}', FichierPreinscriptionController::class)
