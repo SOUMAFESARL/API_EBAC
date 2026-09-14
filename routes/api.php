@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\Administration\RoleController;
 use App\Http\Controllers\Api\V1\Auth\AuthentificationController;
 use App\Http\Controllers\Api\V1\Eglise\EgliseController;
 use App\Http\Controllers\Api\V1\Enseignant\MesCoursController;
+use App\Http\Controllers\Api\V1\Enseignant\MonEmploiDuTempsController;
 use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantCompletController;
 use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\EtudiantController;
@@ -121,6 +122,10 @@ Route::prefix('v1/enseignant/mes-cours')
         Route::get('/', [MesCoursController::class, 'index'])->name('index');
         Route::get('{matiere}', [MesCoursController::class, 'show'])->whereNumber('matiere')->name('show');
     });
+
+Route::get('v1/enseignant/emploi-du-temps', MonEmploiDuTempsController::class)
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ENSEIGNANT'])
+    ->name('api.v1.enseignant.emploi-du-temps');
 
 Route::get('v1/utilisateurs/{compte}/photo', [CompteController::class, 'photo'])
     ->name('api.v1.utilisateurs.photo');

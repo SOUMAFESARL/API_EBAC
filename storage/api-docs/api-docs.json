@@ -5817,6 +5817,53 @@
                 ]
             }
         },
+        "/enseignant/emploi-du-temps": {
+            "get": {
+                "tags": [
+                    "Espace enseignant"
+                ],
+                "summary": "Afficher l’emploi du temps hebdomadaire de l’enseignant connecté",
+                "description": "Retourne exclusivement les créneaux attribués au compte enseignant authentifié, groupés par jour. Sans module explicite, le module calendrier courant, puis le prochain disponible, est sélectionné.",
+                "operationId": "afficherEmploiDuTempsEnseignant",
+                "parameters": [
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_module_calendrier",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Emploi du temps, jours, créneaux et total hebdomadaire."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Rôle enseignant requis."
+                    },
+                    "422": {
+                        "description": "Année ou module calendrier invalide."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/parametres/evenements-calendrier": {
             "get": {
                 "tags": [
@@ -10729,12 +10776,12 @@
             "description": "Créneaux"
         },
         {
-            "name": "Événements calendrier",
-            "description": "Événements calendrier"
-        },
-        {
             "name": "Espace enseignant",
             "description": "Espace enseignant"
+        },
+        {
+            "name": "Événements calendrier",
+            "description": "Événements calendrier"
         },
         {
             "name": "Modules calendrier",
