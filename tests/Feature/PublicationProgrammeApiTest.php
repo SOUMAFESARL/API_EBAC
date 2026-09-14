@@ -61,7 +61,7 @@ class PublicationProgrammeApiTest extends TestCase
         Sanctum::actingAs($data['admin']);
         $url = '/api/v1/administration/publication-programme/'.$data['module']->id;
         $this->postJson($url.'/publier')->assertOk()->assertJsonPath('programme.version', 1);
-        $this->postJson($url.'/retirer')->assertOk()->assertJsonPath('programme.visible_utilisateurs', false);
+        $this->postJson($url.'/retire')->assertOk()->assertJsonPath('programme.visible_utilisateurs', false);
         $this->postJson($url.'/publier')->assertOk()->assertJsonPath('programme.version', 2);
     }
 

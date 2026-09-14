@@ -25,15 +25,15 @@ use OpenApi\Attributes as OA;
     responses: [new OA\Response(response: 200, description: 'État, version et indicateurs du programme.'), new OA\Response(response: 401, description: 'Authentification requise.'), new OA\Response(response: 403, description: 'Rôle ADMIN requis.'), new OA\Response(response: 422, description: 'Filtres invalides.')]
 )]
 #[OA\Post(
-    path: '/administration/publication-programme/{module}/publier', operationId: 'publierProgramme',
+    path: '/administration/publication-programme/{module_id}/publier', operationId: 'publierProgramme',
     summary: 'Publier un programme pour les espaces utilisateur', tags: ['Publication du programme'], security: [['sanctum' => []]],
-    parameters: [new OA\Parameter(name: 'module', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+    parameters: [new OA\Parameter(name: 'module_id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
     responses: [new OA\Response(response: 200, description: 'Programme publié et version incrémentée.'), new OA\Response(response: 401, description: 'Authentification requise.'), new OA\Response(response: 403, description: 'Rôle ADMIN requis.'), new OA\Response(response: 404, description: 'Module introuvable.'), new OA\Response(response: 422, description: 'Aucun créneau à publier.')]
 )]
 #[OA\Post(
-    path: '/administration/publication-programme/{module}/retirer', operationId: 'retirerProgramme',
+    path: '/administration/publication-programme/{module_id}/retire', operationId: 'retirerProgramme',
     summary: 'Retirer un programme des espaces utilisateur', tags: ['Publication du programme'], security: [['sanctum' => []]],
-    parameters: [new OA\Parameter(name: 'module', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+    parameters: [new OA\Parameter(name: 'module_id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
     responses: [new OA\Response(response: 200, description: 'Programme retiré et immédiatement masqué.'), new OA\Response(response: 401, description: 'Authentification requise.'), new OA\Response(response: 403, description: 'Rôle ADMIN requis.'), new OA\Response(response: 404, description: 'Module introuvable.'), new OA\Response(response: 422, description: 'Programme non publié.')]
 )]
 final class PublicationProgrammeDocumentation {}

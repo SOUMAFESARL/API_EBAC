@@ -40,8 +40,9 @@ class PublicationProgrammeController extends Controller
         ]);
     }
 
-    public function publier(Request $request, ModuleCalendrier $module): JsonResponse
+    public function publier(Request $request, int $module_id): JsonResponse
     {
+        $module = ModuleCalendrier::findOrFail($module_id);
         $publication = DB::transaction(function () use ($request, $module) {
             $nombre = Creneau::where('id_module_calendrier', $module->id)->lockForUpdate()->count();
             if ($nombre === 0) {
@@ -60,8 +61,9 @@ class PublicationProgrammeController extends Controller
         return response()->json(['message' => 'Programme publié avec succès.', 'programme' => $this->presenter($module->load('publication'))]);
     }
 
-    public function retirer(Request $request, ModuleCalendrier $module): JsonResponse
+    public function retirer(Request $request, int $module_id): JsonResponse
     {
+        $module = ModuleCalendrier::findOrFail($module_id);
         $publication = PublicationProgramme::where('id_module_calendrier', $module->id)->first();
         if (! $publication || $publication->statut !== 'publie') {
             throw ValidationException::withMessages(['module' => ['Ce programme n’est pas publié.']]);

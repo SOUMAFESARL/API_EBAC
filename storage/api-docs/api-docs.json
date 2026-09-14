@@ -7429,7 +7429,7 @@
                 ]
             }
         },
-        "/administration/publication-programme/{module}/publier": {
+        "/administration/publication-programme/{module_id}/publier": {
             "post": {
                 "tags": [
                     "Publication du programme"
@@ -7438,7 +7438,7 @@
                 "operationId": "publierProgramme",
                 "parameters": [
                     {
-                        "name": "module",
+                        "name": "module_id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -7470,7 +7470,7 @@
                 ]
             }
         },
-        "/administration/publication-programme/{module}/retirer": {
+        "/administration/publication-programme/{module_id}/retire": {
             "post": {
                 "tags": [
                     "Publication du programme"
@@ -7479,7 +7479,7 @@
                 "operationId": "retirerProgramme",
                 "parameters": [
                     {
-                        "name": "module",
+                        "name": "module_id",
                         "in": "path",
                         "required": true,
                         "schema": {
