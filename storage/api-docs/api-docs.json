@@ -4955,6 +4955,275 @@
                 ]
             }
         },
+        "/enseignant/cahier-de-texte": {
+            "get": {
+                "tags": [
+                    "Cahier de texte"
+                ],
+                "summary": "Lister les séances du cahier de texte de l’enseignant connecté",
+                "operationId": "listerCahierTexte",
+                "parameters": [
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "prevue",
+                                "realisee",
+                                "reportee",
+                                "annulee"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "date_debut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_fin",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Séances personnelles paginées."
+                    },
+                    "401": {
+                        "description": "Non authentifié."
+                    },
+                    "403": {
+                        "description": "Rôle enseignant requis."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Cahier de texte"
+                ],
+                "summary": "Consigner une séance exceptionnelle",
+                "operationId": "creerSeanceCahierTexte",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SeanceCahierTextePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Séance créée."
+                    },
+                    "403": {
+                        "description": "Rôle enseignant requis."
+                    },
+                    "422": {
+                        "description": "Données invalides, programme non publié ou délai dépassé."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/enseignant/cahier-de-texte/{seance}": {
+            "get": {
+                "tags": [
+                    "Cahier de texte"
+                ],
+                "summary": "Consulter une séance",
+                "operationId": "afficherSeanceCahierTexte",
+                "parameters": [
+                    {
+                        "name": "seance",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Séance trouvée."
+                    },
+                    "404": {
+                        "description": "Séance absente ou appartenant à un autre enseignant."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Cahier de texte"
+                ],
+                "summary": "Modifier une séance dans les 48 heures",
+                "operationId": "remplacerSeanceCahierTexte",
+                "parameters": [
+                    {
+                        "name": "seance",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SeanceCahierTextePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Séance modifiée."
+                    },
+                    "404": {
+                        "description": "Séance inaccessible."
+                    },
+                    "422": {
+                        "description": "Délai dépassé ou données invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Cahier de texte"
+                ],
+                "summary": "Supprimer une séance dans les 48 heures",
+                "operationId": "supprimerSeanceCahierTexte",
+                "parameters": [
+                    {
+                        "name": "seance",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Séance supprimée."
+                    },
+                    "404": {
+                        "description": "Séance inaccessible."
+                    },
+                    "422": {
+                        "description": "Délai dépassé."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Cahier de texte"
+                ],
+                "summary": "Modifier partiellement une séance dans les 48 heures",
+                "operationId": "modifierSeanceCahierTexte",
+                "parameters": [
+                    {
+                        "name": "seance",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SeanceCahierTextePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Séance modifiée."
+                    },
+                    "404": {
+                        "description": "Séance inaccessible."
+                    },
+                    "422": {
+                        "description": "Délai dépassé ou données invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/administration/comptes": {
             "get": {
                 "tags": [
@@ -6244,6 +6513,192 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/enseignant/liste-presence": {
+            "get": {
+                "tags": [
+                    "Liste de présence"
+                ],
+                "summary": "Lister les séances accessibles pour l’appel",
+                "operationId": "listerSeancesPresence",
+                "parameters": [
+                    {
+                        "name": "id_matiere",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_cours",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "date_debut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_fin",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Séances de l’enseignant et état de leur feuille."
+                    },
+                    "401": {
+                        "description": "Non authentifié."
+                    },
+                    "403": {
+                        "description": "Rôle enseignant requis."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/enseignant/liste-presence/{seance}": {
+            "get": {
+                "tags": [
+                    "Liste de présence"
+                ],
+                "summary": "Afficher les étudiants concernés par une séance",
+                "description": "Les étudiants sont calculés côté serveur depuis l’année, le niveau et la promotion de la séance.",
+                "operationId": "afficherListePresence",
+                "parameters": [
+                    {
+                        "name": "seance",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Feuille et étudiants concernés."
+                    },
+                    "404": {
+                        "description": "Séance absente ou appartenant à un autre enseignant."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Liste de présence"
+                ],
+                "summary": "Enregistrer la liste de présence en brouillon",
+                "operationId": "enregistrerListePresence",
+                "parameters": [
+                    {
+                        "name": "seance",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PresencePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Brouillon enregistré."
+                    },
+                    "404": {
+                        "description": "Séance inaccessible."
+                    },
+                    "422": {
+                        "description": "Liste incomplète, doublon ou étudiant non concerné."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/enseignant/liste-presence/{seance}/valider": {
+            "post": {
+                "tags": [
+                    "Liste de présence"
+                ],
+                "summary": "Valider définitivement la liste de présence",
+                "description": "Opération irréversible. Chaque absent reçoit automatiquement un cours à faire.",
+                "operationId": "validerListePresence",
+                "parameters": [
+                    {
+                        "name": "seance",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PresencePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Liste validée définitivement."
+                    },
+                    "404": {
+                        "description": "Séance inaccessible."
+                    },
+                    "422": {
+                        "description": "Séance non réalisée, feuille absente/incomplète ou déjà validée."
                     }
                 },
                 "security": [
@@ -8551,6 +9006,64 @@
                 },
                 "type": "object"
             },
+            "SeanceCahierTextePayload": {
+                "required": [
+                    "statut"
+                ],
+                "properties": {
+                    "id_creneau": {
+                        "description": "Obligatoire à la création, interdit en modification.",
+                        "type": "integer"
+                    },
+                    "date_prevue": {
+                        "description": "Obligatoire à la création, interdite en modification.",
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "statut": {
+                        "type": "string",
+                        "enum": [
+                            "prevue",
+                            "realisee",
+                            "reportee",
+                            "annulee"
+                        ]
+                    },
+                    "date_effective": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "heure_effective": {
+                        "type": "string",
+                        "format": "time",
+                        "nullable": true
+                    },
+                    "duree_reelle_minutes": {
+                        "type": "integer",
+                        "nullable": true,
+                        "maximum": 1440,
+                        "minimum": 1
+                    },
+                    "theme_traite": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "observations": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "supports_pedagogiques": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "motif_annulation": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "PeriodeCalendrier": {
                 "required": [
                     "date_debut",
@@ -9830,6 +10343,37 @@
                 },
                 "type": "object"
             },
+            "PresencePayload": {
+                "required": [
+                    "presences"
+                ],
+                "properties": {
+                    "presences": {
+                        "type": "array",
+                        "items": {
+                            "required": [
+                                "id_etudiant",
+                                "statut"
+                            ],
+                            "properties": {
+                                "id_etudiant": {
+                                    "type": "integer"
+                                },
+                                "statut": {
+                                    "type": "string",
+                                    "enum": [
+                                        "present",
+                                        "absent"
+                                    ]
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "minItems": 1
+                    }
+                },
+                "type": "object"
+            },
             "ModuleCalendrierPayload": {
                 "required": [
                     "id_calendrier",
@@ -11055,6 +11599,10 @@
             "description": "Affectations enseignants"
         },
         {
+            "name": "Cahier de texte",
+            "description": "Cahier de texte"
+        },
+        {
             "name": "Cr?neaux",
             "description": "Cr?neaux"
         },
@@ -11069,6 +11617,10 @@
         {
             "name": "Événements calendrier",
             "description": "Événements calendrier"
+        },
+        {
+            "name": "Liste de présence",
+            "description": "Liste de présence"
         },
         {
             "name": "Espace étudiant",

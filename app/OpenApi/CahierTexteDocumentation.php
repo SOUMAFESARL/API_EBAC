@@ -1,0 +1,27 @@
+<?php
+
+namespace App\OpenApi;
+
+use OpenApi\Attributes as OA;
+
+#[OA\Schema(schema: 'SeanceCahierTextePayload', type: 'object', required: ['statut'], properties: [
+    new OA\Property(property: 'id_creneau', type: 'integer', description: 'Obligatoire à la création, interdit en modification.'),
+    new OA\Property(property: 'date_prevue', type: 'string', format: 'date', description: 'Obligatoire à la création, interdite en modification.'),
+    new OA\Property(property: 'statut', type: 'string', enum: ['prevue', 'realisee', 'reportee', 'annulee']),
+    new OA\Property(property: 'date_effective', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'heure_effective', type: 'string', format: 'time', nullable: true),
+    new OA\Property(property: 'duree_reelle_minutes', type: 'integer', nullable: true, minimum: 1, maximum: 1440),
+    new OA\Property(property: 'theme_traite', type: 'string', nullable: true), new OA\Property(property: 'observations', type: 'string', nullable: true),
+    new OA\Property(property: 'supports_pedagogiques', type: 'string', nullable: true), new OA\Property(property: 'motif_annulation', type: 'string', nullable: true),
+])]
+#[OA\Get(path: '/enseignant/cahier-de-texte', operationId: 'listerCahierTexte', summary: 'Lister les séances du cahier de texte de l’enseignant connecté', tags: ['Cahier de texte'], security: [['sanctum' => []]], parameters: [
+    new OA\Parameter(name: 'recherche', in: 'query', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'statut', in: 'query', schema: new OA\Schema(type: 'string', enum: ['prevue', 'realisee', 'reportee', 'annulee'])),
+    new OA\Parameter(name: 'id_promotion', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'date_debut', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
+    new OA\Parameter(name: 'date_fin', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')), new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer', maximum: 100)),
+], responses: [new OA\Response(response: 200, description: 'Séances personnelles paginées.'), new OA\Response(response: 401, description: 'Non authentifié.'), new OA\Response(response: 403, description: 'Rôle enseignant requis.')])]
+#[OA\Post(path: '/enseignant/cahier-de-texte', operationId: 'creerSeanceCahierTexte', summary: 'Consigner une séance exceptionnelle', tags: ['Cahier de texte'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SeanceCahierTextePayload')), responses: [new OA\Response(response: 201, description: 'Séance créée.'), new OA\Response(response: 403, description: 'Rôle enseignant requis.'), new OA\Response(response: 422, description: 'Données invalides, programme non publié ou délai dépassé.')])]
+#[OA\Get(path: '/enseignant/cahier-de-texte/{seance}', operationId: 'afficherSeanceCahierTexte', summary: 'Consulter une séance', tags: ['Cahier de texte'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'seance', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Séance trouvée.'), new OA\Response(response: 404, description: 'Séance absente ou appartenant à un autre enseignant.')])]
+#[OA\Put(path: '/enseignant/cahier-de-texte/{seance}', operationId: 'remplacerSeanceCahierTexte', summary: 'Modifier une séance dans les 48 heures', tags: ['Cahier de texte'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'seance', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SeanceCahierTextePayload')), responses: [new OA\Response(response: 200, description: 'Séance modifiée.'), new OA\Response(response: 404, description: 'Séance inaccessible.'), new OA\Response(response: 422, description: 'Délai dépassé ou données invalides.')])]
+#[OA\Patch(path: '/enseignant/cahier-de-texte/{seance}', operationId: 'modifierSeanceCahierTexte', summary: 'Modifier partiellement une séance dans les 48 heures', tags: ['Cahier de texte'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'seance', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SeanceCahierTextePayload')), responses: [new OA\Response(response: 200, description: 'Séance modifiée.'), new OA\Response(response: 404, description: 'Séance inaccessible.'), new OA\Response(response: 422, description: 'Délai dépassé ou données invalides.')])]
+#[OA\Delete(path: '/enseignant/cahier-de-texte/{seance}', operationId: 'supprimerSeanceCahierTexte', summary: 'Supprimer une séance dans les 48 heures', tags: ['Cahier de texte'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'seance', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Séance supprimée.'), new OA\Response(response: 404, description: 'Séance inaccessible.'), new OA\Response(response: 422, description: 'Délai dépassé.')])]
+final class CahierTexteDocumentation {}

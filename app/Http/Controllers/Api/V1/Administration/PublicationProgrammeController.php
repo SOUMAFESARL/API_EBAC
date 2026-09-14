@@ -7,6 +7,7 @@ use App\Models\AnneeAcademique;
 use App\Models\Creneau;
 use App\Models\ModuleCalendrier;
 use App\Models\PublicationProgramme;
+use App\Services\CahierTexteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 
 class PublicationProgrammeController extends Controller
 {
+    public function __construct(private CahierTexteService $cahierTexte) {}
+
     public function index(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -54,6 +57,7 @@ class PublicationProgrammeController extends Controller
             }
             $publication->fill(['statut' => 'publie', 'version' => $publication->version + 1, 'date_publication' => now(),
                 'date_retrait' => null, 'publie_par' => $request->user()->id, 'retire_par' => null])->save();
+            $this->cahierTexte->synchroniserModule($module);
 
             return $publication;
         });

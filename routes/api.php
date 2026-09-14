@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\V1\Administration\PublicationProgrammeController;
 use App\Http\Controllers\Api\V1\Administration\RoleController;
 use App\Http\Controllers\Api\V1\Auth\AuthentificationController;
 use App\Http\Controllers\Api\V1\Eglise\EgliseController;
+use App\Http\Controllers\Api\V1\Enseignant\CahierTexteController;
+use App\Http\Controllers\Api\V1\Enseignant\ListePresenceController;
 use App\Http\Controllers\Api\V1\Enseignant\MesCoursController;
 use App\Http\Controllers\Api\V1\Enseignant\MonEmploiDuTempsController;
 use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantCompletController;
@@ -150,6 +152,27 @@ Route::prefix('v1/enseignant/mes-cours')
 Route::get('v1/enseignant/emploi-du-temps', MonEmploiDuTempsController::class)
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ENSEIGNANT'])
     ->name('api.v1.enseignant.emploi-du-temps');
+
+Route::prefix('v1/enseignant/cahier-de-texte')
+    ->name('api.v1.enseignant.cahier-de-texte.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ENSEIGNANT'])
+    ->group(function () {
+        Route::get('/', [CahierTexteController::class, 'index'])->name('index');
+        Route::post('/', [CahierTexteController::class, 'store'])->name('store');
+        Route::get('{seance}', [CahierTexteController::class, 'show'])->whereNumber('seance')->name('show');
+        Route::match(['put', 'patch'], '{seance}', [CahierTexteController::class, 'update'])->whereNumber('seance')->name('update');
+        Route::delete('{seance}', [CahierTexteController::class, 'destroy'])->whereNumber('seance')->name('destroy');
+    });
+
+Route::prefix('v1/enseignant/liste-presence')
+    ->name('api.v1.enseignant.liste-presence.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ENSEIGNANT'])
+    ->group(function () {
+        Route::get('/', [ListePresenceController::class, 'index'])->name('index');
+        Route::get('{seance}', [ListePresenceController::class, 'show'])->whereNumber('seance')->name('show');
+        Route::put('{seance}', [ListePresenceController::class, 'update'])->whereNumber('seance')->name('update');
+        Route::post('{seance}/valider', [ListePresenceController::class, 'valider'])->whereNumber('seance')->name('valider');
+    });
 
 Route::get('v1/utilisateurs/{compte}/photo', [CompteController::class, 'photo'])
     ->name('api.v1.utilisateurs.photo');
