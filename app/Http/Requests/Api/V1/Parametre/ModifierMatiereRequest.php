@@ -8,7 +8,10 @@ use Illuminate\Validation\Rule;
 
 class ModifierMatiereRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool
+    {
+        return true;
+    }
 
     public function rules(): array
     {
@@ -27,6 +30,8 @@ class ModifierMatiereRequest extends FormRequest
             'obligatoire' => ['sometimes', 'boolean'],
             'active' => ['sometimes', 'boolean'],
             'version' => ['sometimes', 'integer', 'min:1', 'max:65535'],
+            'module_calendrier_id' => ['sometimes', 'array'],
+            'module_calendrier_id.*' => ['integer', 'distinct', 'exists:modules_calendrier,id'],
         ];
     }
 }

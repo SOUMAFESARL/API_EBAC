@@ -10374,6 +10374,23 @@
                 },
                 "type": "object"
             },
+            "MatiereModuleCalendrierSelection": {
+                "description": "Champ complémentaire accepté par POST, PUT et PATCH du CRUD des matières.",
+                "properties": {
+                    "module_calendrier_id": {
+                        "description": "Identifiants uniques des modules du calendrier associés. Envoyer un tableau vide lors d’une modification pour retirer toutes les associations.",
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "example": [
+                            1,
+                            2
+                        ]
+                    }
+                },
+                "type": "object"
+            },
             "ModuleCalendrierPayload": {
                 "required": [
                     "id_calendrier",

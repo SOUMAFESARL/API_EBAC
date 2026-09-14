@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -12,6 +14,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Matiere extends Model
 {
     use SoftDeletes;
+
+    protected $appends = ['module_calendrier_id'];
 
     protected function casts(): array
     {
@@ -25,8 +29,33 @@ class Matiere extends Model
         ];
     }
 
-    public function niveau(): BelongsTo { return $this->belongsTo(Niveau::class, 'id_niveau'); }
-    public function enseignant(): BelongsTo { return $this->belongsTo(User::class, 'enseignant_id'); }
-    public function modules(): HasMany { return $this->hasMany(Module::class, 'id_matiere'); }
-    public function utilisateur(): BelongsTo { return $this->belongsTo(User::class, 'user_id'); }
+    public function niveau(): BelongsTo
+    {
+        return $this->belongsTo(Niveau::class, 'id_niveau');
+    }
+
+    public function enseignant(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'enseignant_id');
+    }
+
+    public function modules(): HasMany
+    {
+        return $this->hasMany(Module::class, 'id_matiere');
+    }
+
+    public function modulesCalendrier(): BelongsToMany
+    {
+        return $this->belongsToMany(ModuleCalendrier::class, 'matiere_module_calendrier', 'id_matiere', 'id_module_calendrier')->withTimestamps();
+    }
+
+    public function utilisateur(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    protected function moduleCalendrierId(): Attribute
+    {
+        return Attribute::get(fn () => $this->modulesCalendrier->pluck('id')->values()->all());
+    }
 }

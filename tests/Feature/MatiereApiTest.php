@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AnneeAcademique;
 use App\Models\Niveau;
 use App\Models\Role;
 use App\Models\User;
@@ -146,5 +147,43 @@ class MatiereApiTest extends TestCase
             ->assertJsonValidationErrors(['modules.0.cours']);
 
         $this->assertDatabaseCount('matieres', 0);
+    }
+
+    public function test_associe_et_synchronise_plusieurs_modules_calendrier(): void
+    {
+        $role = Role::create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        $niveau = Niveau::create(['libelle' => 'Première année', 'code' => 'A1', 'rang' => 1]);
+        $annee = AnneeAcademique::create(['libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31']);
+        $calendrier = $annee->calendrier()->create([]);
+        $module1 = $calendrier->modules()->create(['libelle' => 'Module 1', 'ordre' => 1, 'date_debut' => '2026-09-01', 'date_fin' => '2026-12-20']);
+        $module2 = $calendrier->modules()->create(['libelle' => 'Module 2', 'ordre' => 2, 'date_debut' => '2027-01-01', 'date_fin' => '2027-03-31']);
+
+        $id = $this->postJson('/api/v1/parametres/matieres', [
+            'code' => 'MAT-CAL', 'libelle' => 'Matière planifiée', 'id_niveau' => $niveau->id,
+            'module_calendrier_id' => [$module1->id, $module2->id],
+        ])->assertCreated()->assertJsonPath('matiere.module_calendrier_id', [$module1->id, $module2->id])
+            ->assertJsonCount(2, 'matiere.modules_calendrier')->json('matiere.id');
+        $this->assertDatabaseHas('matiere_module_calendrier', ['id_matiere' => $id, 'id_module_calendrier' => $module1->id]);
+        $this->getJson('/api/v1/parametres/matieres?module_calendrier_id[]='.$module2->id)->assertOk()->assertJsonCount(1, 'matieres');
+
+        $this->patchJson('/api/v1/parametres/matieres/'.$id, ['module_calendrier_id' => [$module2->id]])
+            ->assertOk()->assertJsonPath('matiere.module_calendrier_id', [$module2->id]);
+        $this->assertDatabaseMissing('matiere_module_calendrier', ['id_matiere' => $id, 'id_module_calendrier' => $module1->id]);
+        $this->patchJson('/api/v1/parametres/matieres/'.$id, ['module_calendrier_id' => []])
+            ->assertOk()->assertJsonPath('matiere.module_calendrier_id', []);
+        $this->assertDatabaseMissing('matiere_module_calendrier', ['id_matiere' => $id]);
+    }
+
+    public function test_refuse_modules_calendrier_invalides_ou_dupliques(): void
+    {
+        $role = Role::create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        $niveau = Niveau::create(['libelle' => 'Première année', 'code' => 'A1', 'rang' => 1]);
+        $base = ['code' => 'MAT-CAL', 'libelle' => 'Matière planifiée', 'id_niveau' => $niveau->id];
+        $this->postJson('/api/v1/parametres/matieres', [...$base, 'module_calendrier_id' => [999]])
+            ->assertUnprocessable()->assertJsonValidationErrors('module_calendrier_id.0');
+        $this->postJson('/api/v1/parametres/matieres', [...$base, 'module_calendrier_id' => [1, 1]])
+            ->assertUnprocessable()->assertJsonValidationErrors('module_calendrier_id.0');
     }
 }

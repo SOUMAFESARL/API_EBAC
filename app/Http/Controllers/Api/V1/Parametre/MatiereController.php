@@ -6,8 +6,8 @@ use App\DTOs\Api\V1\Parametre\MatiereDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Parametre\CreerMatiereRequest;
 use App\Http\Requests\Api\V1\Parametre\ModifierMatiereRequest;
-use App\Models\Matiere;
 use App\Models\Cours;
+use App\Models\Matiere;
 use App\Models\Module;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,6 +29,10 @@ class MatiereController extends Controller
             ->when($request->has('active'), fn ($query) => $query->where('active', $request->boolean('active')))
             ->when($request->has('obligatoire'), fn ($query) => $query->where('obligatoire', $request->boolean('obligatoire')))
             ->when($request->filled('version'), fn ($query) => $query->where('version', $request->integer('version')))
+            ->when($request->filled('module_calendrier_id'), function ($query) use ($request) {
+                $ids = array_map('intval', (array) $request->input('module_calendrier_id'));
+                $query->whereHas('modulesCalendrier', fn ($module) => $module->whereIn('modules_calendrier.id', $ids));
+            })
             ->when($request->filled('recherche') || $request->filled('q'), function ($query) use ($request) {
                 $terme = $request->input('recherche', $request->input('q'));
                 $query->where(fn ($sousRequete) => $sousRequete
@@ -47,15 +51,17 @@ class MatiereController extends Controller
         $utilisateur = $request->user();
         $donnees = $request->validated();
         $modules = $donnees['modules'] ?? [];
-        unset($donnees['modules']);
+        $modulesCalendrier = $donnees['module_calendrier_id'] ?? [];
+        unset($donnees['modules'], $donnees['module_calendrier_id']);
 
-        $matiere = DB::transaction(function () use ($donnees, $modules, $utilisateur): Matiere {
+        $matiere = DB::transaction(function () use ($donnees, $modules, $modulesCalendrier, $utilisateur): Matiere {
             $dto = MatiereDTO::fromArray($donnees);
             $matiere = Matiere::query()->create([
                 ...$dto->toArray(),
                 'user_id' => $utilisateur->id,
                 'created_by' => $utilisateur->id,
             ]);
+            $matiere->modulesCalendrier()->sync($modulesCalendrier);
 
             foreach ($modules as $indexModule => $donneesModule) {
                 $cours = $donneesModule['cours'];
@@ -101,9 +107,20 @@ class MatiereController extends Controller
     #[OA\Patch(path: '/parametres/matieres/{id}', operationId: 'modifierMatiere', tags: ['Matières'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/MatierePayload')), responses: [new OA\Response(response: 200, description: 'Matière modifiée')])]
     public function update(ModifierMatiereRequest $request, int $id): JsonResponse
     {
-        $matiere = Matiere::query()->findOrFail($id);
-        $dto = MatiereDTO::fromArray($request->validated());
-        $matiere->update([...$dto->toArray(), 'updated_by' => $request->user()->id]);
+        $matiere = DB::transaction(function () use ($request, $id) {
+            $matiere = Matiere::query()->lockForUpdate()->findOrFail($id);
+            $donnees = $request->validated();
+            $synchroniser = array_key_exists('module_calendrier_id', $donnees);
+            $modulesCalendrier = $donnees['module_calendrier_id'] ?? [];
+            unset($donnees['module_calendrier_id']);
+            $dto = MatiereDTO::fromArray($donnees);
+            $matiere->update([...$dto->toArray(), 'updated_by' => $request->user()->id]);
+            if ($synchroniser) {
+                $matiere->modulesCalendrier()->sync($modulesCalendrier);
+            }
+
+            return $matiere;
+        });
 
         return response()->json([
             'message' => 'Matière modifiée avec succès.',
@@ -128,6 +145,7 @@ class MatiereController extends Controller
             'niveau:id,code,libelle,rang,statut',
             'enseignant:id,code,nom,prenoms,email,id_role',
             'enseignant.role:id,code,libelle',
+            'modulesCalendrier' => fn ($query) => $query->orderBy('ordre')->orderBy('id'),
             'modules' => fn ($query) => $query->orderBy('ordre')->orderBy('id'),
             'modules.cours' => fn ($query) => $query->orderBy('ordre')->orderBy('id'),
         ];

@@ -7,7 +7,10 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class CreerMatiereRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool
+    {
+        return true;
+    }
 
     public function rules(): array
     {
@@ -26,6 +29,8 @@ class CreerMatiereRequest extends FormRequest
             'obligatoire' => ['sometimes', 'boolean'],
             'active' => ['sometimes', 'boolean'],
             'version' => ['sometimes', 'integer', 'min:1', 'max:65535'],
+            'module_calendrier_id' => ['sometimes', 'array'],
+            'module_calendrier_id.*' => ['integer', 'distinct', 'exists:modules_calendrier,id'],
             'modules' => ['sometimes', 'array', 'min:1'],
             'modules.*.code' => ['nullable', 'string', 'max:50'],
             'modules.*.libelle' => ['required', 'string', 'max:180', 'distinct:strict'],
