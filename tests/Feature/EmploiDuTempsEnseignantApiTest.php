@@ -63,4 +63,46 @@ class EmploiDuTempsEnseignantApiTest extends TestCase
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
         $this->getJson('/api/v1/enseignant/emploi-du-temps')->assertForbidden();
     }
+
+    public function test_endpoint_exige_une_authentification_et_valide_les_filtres(): void
+    {
+        $this->getJson('/api/v1/enseignant/emploi-du-temps')->assertUnauthorized();
+
+        $role = Role::create(['code' => 'ENSEIGNANT', 'libelle' => 'Enseignant']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        $this->getJson('/api/v1/enseignant/emploi-du-temps?id_annee_academique=999')
+            ->assertUnprocessable()->assertJsonValidationErrors('id_annee_academique');
+        $this->getJson('/api/v1/enseignant/emploi-du-temps?id_module_calendrier=999')
+            ->assertUnprocessable()->assertJsonValidationErrors('id_module_calendrier');
+    }
+
+    public function test_selectionne_le_module_courant_puis_permet_un_module_explicite(): void
+    {
+        Carbon::setTestNow('2026-09-14 12:00:00');
+        $role = Role::create(['code' => 'ENSEIGNANT', 'libelle' => 'Enseignant']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        $annee = AnneeAcademique::create(['libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31', 'active' => true]);
+        $calendrier = $annee->calendrier()->create([]);
+        $courant = $calendrier->modules()->create(['libelle' => 'Module courant', 'ordre' => 1, 'date_debut' => '2026-09-01', 'date_fin' => '2026-12-20']);
+        $suivant = $calendrier->modules()->create(['libelle' => 'Module suivant', 'ordre' => 2, 'date_debut' => '2027-01-01', 'date_fin' => '2027-03-31']);
+
+        $this->getJson('/api/v1/enseignant/emploi-du-temps')->assertOk()
+            ->assertJsonPath('module_calendrier.id', $courant->id)
+            ->assertJsonCount(2, 'modules_disponibles');
+        $this->getJson('/api/v1/enseignant/emploi-du-temps?id_module_calendrier='.$suivant->id)->assertOk()
+            ->assertJsonPath('module_calendrier.id', $suivant->id);
+    }
+
+    public function test_refuse_un_module_appartenant_a_une_autre_annee(): void
+    {
+        $role = Role::create(['code' => 'ENSEIGNANT', 'libelle' => 'Enseignant']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        $annee = AnneeAcademique::create(['libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31', 'active' => true]);
+        $annee->calendrier()->create([])->modules()->create(['libelle' => 'Module 1', 'ordre' => 1, 'date_debut' => '2026-09-01', 'date_fin' => '2026-12-20']);
+        $autreAnnee = AnneeAcademique::create(['libelle' => '2027-2028', 'date_debut' => '2027-09-01', 'date_fin' => '2028-07-31']);
+        $autreModule = $autreAnnee->calendrier()->create([])->modules()->create(['libelle' => 'Autre module', 'ordre' => 1, 'date_debut' => '2027-09-01', 'date_fin' => '2027-12-20']);
+
+        $this->getJson('/api/v1/enseignant/emploi-du-temps?id_annee_academique='.$annee->id.'&id_module_calendrier='.$autreModule->id)
+            ->assertUnprocessable();
+    }
 }

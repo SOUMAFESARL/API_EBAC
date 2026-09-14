@@ -6380,6 +6380,122 @@
                 ]
             }
         },
+        "/etudiant/mes-matieres": {
+            "get": {
+                "tags": [
+                    "Espace étudiant"
+                ],
+                "summary": "Lister les matières accessibles à l’étudiant connecté",
+                "description": "Les matières sont déterminées par la promotion et le niveau actuels. L’accès est cumulatif : un étudiant de deuxième année voit les matières des première et deuxième années. Seules les notes de bulletins publiés sont exposées.",
+                "operationId": "listerMesMatieresEtudiant",
+                "parameters": [
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "validee",
+                                "a_completer",
+                                "non_validee"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "id_niveau",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée des matières et notes publiées."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Rôle étudiant requis."
+                    },
+                    "404": {
+                        "description": "Fiche étudiant ou inscription introuvable."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/etudiant/mes-matieres/{matiere}": {
+            "get": {
+                "tags": [
+                    "Espace étudiant"
+                ],
+                "summary": "Afficher le détail d’une matière accessible à l’étudiant",
+                "description": "Retourne la matière, sa note publiée et ses modules/cours. Les notes par cours restent nulles tant qu’aucune donnée d’évaluation par cours n’existe.",
+                "operationId": "afficherMaMatiereEtudiant",
+                "parameters": [
+                    {
+                        "name": "matiere",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détail de la matière."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Rôle étudiant requis."
+                    },
+                    "404": {
+                        "description": "Matière inaccessible ou introuvable."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/parametres/modules-calendrier": {
             "get": {
                 "tags": [
@@ -10782,6 +10898,10 @@
         {
             "name": "Événements calendrier",
             "description": "Événements calendrier"
+        },
+        {
+            "name": "Espace étudiant",
+            "description": "Espace étudiant"
         },
         {
             "name": "Modules calendrier",

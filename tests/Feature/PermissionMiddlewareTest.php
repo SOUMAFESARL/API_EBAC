@@ -81,7 +81,7 @@ class PermissionMiddlewareTest extends TestCase
             ->assertJsonValidationErrors(['nom', 'email', 'id_role']);
     }
 
-    public function test_tout_autre_role_actif_peut_acceder_a_la_gestion_des_comptes(): void
+    public function test_la_direction_peut_lister_et_creer_des_comptes(): void
     {
         $role = Role::query()->create([
             'code' => 'DIRECTION',
@@ -90,5 +90,12 @@ class PermissionMiddlewareTest extends TestCase
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
 
         $this->getJson('/api/v1/administration/comptes')->assertOk();
+        $this->getJson('/api/v1/administration/comptes/create')->assertOk();
+        $this->postJson('/api/v1/administration/comptes', [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['civilite_id', 'nom', 'prenoms', 'email', 'id_role']);
+        $this->postJson('/api/v1/administration/comptes/etudiants', [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['civilite_id', 'nom', 'prenoms', 'email']);
     }
 }

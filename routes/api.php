@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantCompletController;
 use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\EtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\GestionPreInscriptionController;
+use App\Http\Controllers\Api\V1\Etudiant\MesMatieresController;
 use App\Http\Controllers\Api\V1\Etudiant\NouvelleAdmissionController;
 use App\Http\Controllers\Api\V1\Etudiant\PreInscriptionController;
 use App\Http\Controllers\Api\V1\Etudiant\RegistreEtudiantController;
@@ -71,6 +72,14 @@ Route::post('v1/etudiant/pre-inscription', [PreInscriptionController::class, 'st
 Route::get('v1/etudiant/dossier', [DossierEtudiantCompletController::class, 'monDossier'])
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->name('api.v1.etudiant.dossier');
+
+Route::prefix('v1/etudiant/mes-matieres')
+    ->name('api.v1.etudiant.mes-matieres.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ETUDIANT'])
+    ->group(function () {
+        Route::get('/', [MesMatieresController::class, 'index'])->name('index');
+        Route::get('{matiere}', [MesMatieresController::class, 'show'])->whereNumber('matiere')->name('show');
+    });
 Route::match(['patch', 'post'], 'v1/etudiant/dossier', [DossierEtudiantCompletController::class, 'modifierMonDossier'])
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->name('api.v1.etudiant.dossier.update');
