@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Cours extends Model
@@ -24,6 +25,18 @@ class Cours extends Model
         ];
     }
 
-    public function module(): BelongsTo { return $this->belongsTo(Module::class, 'id_module'); }
-    public function utilisateur(): BelongsTo { return $this->belongsTo(User::class, 'user_id'); }
+    public function module(): BelongsTo
+    {
+        return $this->belongsTo(Module::class, 'id_module');
+    }
+
+    public function creneaux(): HasMany
+    {
+        return $this->hasMany(Creneau::class, 'id_cours');
+    }
+
+    public function utilisateur(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

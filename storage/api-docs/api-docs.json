@@ -6206,6 +6206,133 @@
                 ]
             }
         },
+        "/enseignant/mes-cours": {
+            "get": {
+                "tags": [
+                    "Espace enseignant"
+                ],
+                "summary": "Lister les matières et cours affectés à l’enseignant connecté",
+                "operationId": "listerMesCoursEnseignant",
+                "parameters": [
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id_niveau",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_module_calendrier",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée des matières affectées."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Rôle enseignant requis."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/enseignant/mes-cours/{matiere}": {
+            "get": {
+                "tags": [
+                    "Espace enseignant"
+                ],
+                "summary": "Afficher les modules et cours d’une matière affectée",
+                "operationId": "afficherMonCoursEnseignant",
+                "parameters": [
+                    {
+                        "name": "matiere",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détail de la matière, modules, cours et avancement."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Rôle enseignant requis."
+                    },
+                    "404": {
+                        "description": "Matière non affectée à cet enseignant."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/parametres/modules-calendrier": {
             "get": {
                 "tags": [
@@ -10604,6 +10731,10 @@
         {
             "name": "Événements calendrier",
             "description": "Événements calendrier"
+        },
+        {
+            "name": "Espace enseignant",
+            "description": "Espace enseignant"
         },
         {
             "name": "Modules calendrier",

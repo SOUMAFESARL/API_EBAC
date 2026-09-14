@@ -9,27 +9,28 @@ use App\Http\Controllers\Api\V1\Administration\ProfilController;
 use App\Http\Controllers\Api\V1\Administration\RoleController;
 use App\Http\Controllers\Api\V1\Auth\AuthentificationController;
 use App\Http\Controllers\Api\V1\Eglise\EgliseController;
-use App\Http\Controllers\Api\V1\FichierPreinscriptionController;
-use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantController;
+use App\Http\Controllers\Api\V1\Enseignant\MesCoursController;
 use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantCompletController;
+use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\EtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\GestionPreInscriptionController;
 use App\Http\Controllers\Api\V1\Etudiant\NouvelleAdmissionController;
 use App\Http\Controllers\Api\V1\Etudiant\PreInscriptionController;
 use App\Http\Controllers\Api\V1\Etudiant\RegistreEtudiantController;
+use App\Http\Controllers\Api\V1\FichierPreinscriptionController;
 use App\Http\Controllers\Api\V1\Navigation\SidebarController;
 use App\Http\Controllers\Api\V1\Parametre\AnneeAcademiqueController;
 use App\Http\Controllers\Api\V1\Parametre\CalendrierAcademiqueController;
 use App\Http\Controllers\Api\V1\Parametre\CiviliteController;
 use App\Http\Controllers\Api\V1\Parametre\CoursController;
+use App\Http\Controllers\Api\V1\Parametre\CreneauController;
 use App\Http\Controllers\Api\V1\Parametre\EvenementCalendrierController;
 use App\Http\Controllers\Api\V1\Parametre\MatiereController;
-use App\Http\Controllers\Api\V1\Parametre\ModuleController;
 use App\Http\Controllers\Api\V1\Parametre\ModuleCalendrierController;
+use App\Http\Controllers\Api\V1\Parametre\ModuleController;
 use App\Http\Controllers\Api\V1\Parametre\NiveauController;
-use App\Http\Controllers\Api\V1\Parametre\SalleController;
-use App\Http\Controllers\Api\V1\Parametre\CreneauController;
 use App\Http\Controllers\Api\V1\Parametre\PromotionController;
+use App\Http\Controllers\Api\V1\Parametre\SalleController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/administration/nouvelles-admissions')
@@ -112,6 +113,14 @@ Route::prefix('v1/auth')->name('api.v1.auth.')->group(function () {
 Route::get('v1/navigation/sidebar', SidebarController::class)
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->name('api.v1.navigation.sidebar');
+
+Route::prefix('v1/enseignant/mes-cours')
+    ->name('api.v1.enseignant.mes-cours.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ENSEIGNANT'])
+    ->group(function () {
+        Route::get('/', [MesCoursController::class, 'index'])->name('index');
+        Route::get('{matiere}', [MesCoursController::class, 'show'])->whereNumber('matiere')->name('show');
+    });
 
 Route::get('v1/utilisateurs/{compte}/photo', [CompteController::class, 'photo'])
     ->name('api.v1.utilisateurs.photo');
