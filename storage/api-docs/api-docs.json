@@ -5823,7 +5823,7 @@
                     "Espace enseignant"
                 ],
                 "summary": "Afficher l’emploi du temps hebdomadaire de l’enseignant connecté",
-                "description": "Retourne exclusivement les créneaux attribués au compte enseignant authentifié, groupés par jour. Sans module explicite, le module calendrier courant, puis le prochain disponible, est sélectionné.",
+                "description": "Retourne exclusivement les créneaux publiés attribués au compte enseignant authentifié, groupés par jour. Tant que l’administrateur n’a pas publié le programme, aucun créneau n’est exposé.",
                 "operationId": "afficherEmploiDuTempsEnseignant",
                 "parameters": [
                     {
@@ -7331,6 +7331,177 @@
                     },
                     "422": {
                         "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/programme": {
+            "get": {
+                "tags": [
+                    "Publication du programme"
+                ],
+                "summary": "Consulter le programme publié",
+                "description": "Portail commun du secrétariat académique, gestionnaire, étudiant et enseignant. Aucun créneau n’est retourné avant publication. Les enseignants voient leurs créneaux et les étudiants ceux de leur promotion/niveau.",
+                "operationId": "consulterProgrammePublie",
+                "parameters": [
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_module_calendrier",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Programme publié ou liste vide si non publié."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/publication-programme": {
+            "get": {
+                "tags": [
+                    "Publication du programme"
+                ],
+                "summary": "Consulter l’état de publication des programmes",
+                "operationId": "etatPublicationProgramme",
+                "parameters": [
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_module_calendrier",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "État, version et indicateurs du programme."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Rôle ADMIN requis."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/publication-programme/{module}/publier": {
+            "post": {
+                "tags": [
+                    "Publication du programme"
+                ],
+                "summary": "Publier un programme pour les espaces utilisateur",
+                "operationId": "publierProgramme",
+                "parameters": [
+                    {
+                        "name": "module",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Programme publié et version incrémentée."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Rôle ADMIN requis."
+                    },
+                    "404": {
+                        "description": "Module introuvable."
+                    },
+                    "422": {
+                        "description": "Aucun créneau à publier."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/publication-programme/{module}/retirer": {
+            "post": {
+                "tags": [
+                    "Publication du programme"
+                ],
+                "summary": "Retirer un programme des espaces utilisateur",
+                "operationId": "retirerProgramme",
+                "parameters": [
+                    {
+                        "name": "module",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Programme retiré et immédiatement masqué."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Rôle ADMIN requis."
+                    },
+                    "404": {
+                        "description": "Module introuvable."
+                    },
+                    "422": {
+                        "description": "Programme non publié."
                     }
                 },
                 "security": [
@@ -10906,6 +11077,10 @@
         {
             "name": "Modules calendrier",
             "description": "Modules calendrier"
+        },
+        {
+            "name": "Publication du programme",
+            "description": "Publication du programme"
         },
         {
             "name": "Salles",

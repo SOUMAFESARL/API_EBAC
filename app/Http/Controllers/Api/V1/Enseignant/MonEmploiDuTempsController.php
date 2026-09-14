@@ -34,7 +34,7 @@ class MonEmploiDuTempsController extends Controller
             ]);
         }
 
-        $modules = ModuleCalendrier::query()
+        $modules = ModuleCalendrier::query()->with('publication')
             ->whereHas('calendrier', fn ($q) => $q->where('id_annee_academique', $annee->id))
             ->orderBy('ordre')->get();
         $module = isset($filtres['id_module_calendrier'])
@@ -43,11 +43,13 @@ class MonEmploiDuTempsController extends Controller
         if (isset($filtres['id_module_calendrier']) && ! $module) {
             abort(422, 'Le module calendrier sélectionné n’appartient pas à cette année académique.');
         }
+        $estPublie = $module?->publication?->statut === 'publie';
 
         $creneaux = Creneau::query()
             ->where('enseignant_id', $request->user()->id)
             ->whereHas('moduleCalendrier.calendrier', fn ($q) => $q->where('id_annee_academique', $annee->id))
             ->when($module, fn ($q) => $q->where('id_module_calendrier', $module->id))
+            ->when(! $estPublie, fn ($q) => $q->whereRaw('1 = 0'))
             ->with(['moduleCalendrier.calendrier', 'niveau', 'matiere', 'cours', 'promotion', 'enseignant', 'salle'])
             ->orderBy('jour')->orderBy('heure_debut')->orderBy('id')->get()
             ->map(fn (Creneau $creneau) => $this->service->presenter($creneau));
@@ -60,7 +62,10 @@ class MonEmploiDuTempsController extends Controller
         return response()->json([
             'annee_academique' => $annee->only(['id', 'libelle', 'date_debut', 'date_fin']),
             'module_calendrier' => $module?->only(['id', 'libelle', 'ordre', 'date_debut', 'date_fin']),
-            'modules_disponibles' => $modules->map->only(['id', 'libelle', 'ordre', 'date_debut', 'date_fin']),
+            'publication' => ['statut' => $module?->publication?->statut ?? 'non_publie', 'version' => $module?->publication?->version ?? 0,
+                'date_publication' => $module?->publication?->date_publication],
+            'message' => $estPublie ? null : 'Le programme n’est pas encore disponible.',
+            'modules_disponibles' => $modules->filter(fn ($item) => $item->publication?->statut === 'publie')->values()->map->only(['id', 'libelle', 'ordre', 'date_debut', 'date_fin']),
             'planning_hebdomadaire' => true,
             'jours' => $jours, 'creneaux' => $creneaux,
             'nombre_creneaux' => $creneaux->count(),

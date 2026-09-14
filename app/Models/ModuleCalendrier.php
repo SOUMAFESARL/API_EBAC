@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ModuleCalendrier extends Model
 {
@@ -25,5 +26,10 @@ class ModuleCalendrier extends Model
     public function evenements(): HasMany
     {
         return $this->hasMany(EvenementCalendrier::class, 'id_module_calendrier');
+    }
+
+    public function publication(): HasOne
+    {
+        return $this->hasOne(PublicationProgramme::class, 'id_module_calendrier');
     }
 }

@@ -9,6 +9,7 @@ use App\Models\Matiere;
 use App\Models\ModuleCalendrier;
 use App\Models\Niveau;
 use App\Models\Promotion;
+use App\Models\PublicationProgramme;
 use App\Models\Salle;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -18,6 +19,7 @@ class CreneauService
 {
     public function enregistrer(array $data, int $userId, ?Creneau $creneau = null): Creneau
     {
+        $ancienModuleId = $creneau?->id_module_calendrier;
         $data = [...($creneau?->only(['id_module_calendrier', 'id_niveau', 'id_matiere', 'id_cours', 'id_promotion', 'enseignant_id', 'id_salle', 'jour', 'heure_debut', 'heure_fin']) ?? []), ...$data];
         $data['heure_debut'] = substr($data['heure_debut'], 0, 5);
         $data['heure_fin'] = substr($data['heure_fin'], 0, 5);
@@ -97,6 +99,8 @@ class CreneauService
         } else {
             $creneau = Creneau::create([...$data, 'created_by' => $userId]);
         }
+        PublicationProgramme::whereIn('id_module_calendrier', array_filter([$ancienModuleId, $data['id_module_calendrier']]))
+            ->where('statut', 'publie')->update(['statut' => 'non_publie', 'date_retrait' => now(), 'retire_par' => $userId]);
 
         return $creneau->fresh();
     }

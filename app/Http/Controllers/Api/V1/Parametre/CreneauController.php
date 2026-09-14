@@ -11,6 +11,7 @@ use App\Models\Matiere;
 use App\Models\ModuleCalendrier;
 use App\Models\Niveau;
 use App\Models\Promotion;
+use App\Models\PublicationProgramme;
 use App\Models\Salle;
 use App\Models\User;
 use App\Services\CreneauService;
@@ -88,6 +89,8 @@ class CreneauController extends Controller
     {
         DB::transaction(function () use ($request, $id) {
             $creneau = $this->queryVisible()->lockForUpdate()->findOrFail($id);
+            PublicationProgramme::where('id_module_calendrier', $creneau->id_module_calendrier)->where('statut', 'publie')
+                ->update(['statut' => 'non_publie', 'date_retrait' => now(), 'retire_par' => $request->user()->id]);
             $creneau->update(['deleted_by' => $request->user()->id]);
             $creneau->delete();
         });

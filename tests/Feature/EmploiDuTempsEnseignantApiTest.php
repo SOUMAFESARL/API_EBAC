@@ -9,6 +9,7 @@ use App\Models\Matiere;
 use App\Models\Module;
 use App\Models\Niveau;
 use App\Models\Promotion;
+use App\Models\PublicationProgramme;
 use App\Models\Role;
 use App\Models\Salle;
 use App\Models\User;
@@ -46,6 +47,7 @@ class EmploiDuTempsEnseignantApiTest extends TestCase
             'id_cours' => $cours->id, 'id_promotion' => $promotion->id, 'id_salle' => $salle->id, 'jour' => 1, 'heure_debut' => '08:00:00', 'heure_fin' => '10:00:00'];
         Creneau::create([...$base, 'enseignant_id' => $enseignant->id]);
         Creneau::create([...$base, 'enseignant_id' => $autre->id, 'jour' => 2]);
+        PublicationProgramme::create(['id_module_calendrier' => $moduleCalendrier->id, 'statut' => 'publie', 'version' => 1, 'date_publication' => now()]);
 
         Sanctum::actingAs($enseignant);
         $this->getJson('/api/v1/enseignant/emploi-du-temps')->assertOk()
@@ -85,6 +87,8 @@ class EmploiDuTempsEnseignantApiTest extends TestCase
         $calendrier = $annee->calendrier()->create([]);
         $courant = $calendrier->modules()->create(['libelle' => 'Module courant', 'ordre' => 1, 'date_debut' => '2026-09-01', 'date_fin' => '2026-12-20']);
         $suivant = $calendrier->modules()->create(['libelle' => 'Module suivant', 'ordre' => 2, 'date_debut' => '2027-01-01', 'date_fin' => '2027-03-31']);
+        PublicationProgramme::create(['id_module_calendrier' => $courant->id, 'statut' => 'publie', 'version' => 1, 'date_publication' => now()]);
+        PublicationProgramme::create(['id_module_calendrier' => $suivant->id, 'statut' => 'publie', 'version' => 1, 'date_publication' => now()]);
 
         $this->getJson('/api/v1/enseignant/emploi-du-temps')->assertOk()
             ->assertJsonPath('module_calendrier.id', $courant->id)

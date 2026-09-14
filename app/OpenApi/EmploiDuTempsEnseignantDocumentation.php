@@ -8,7 +8,7 @@ use OpenApi\Attributes as OA;
     path: '/enseignant/emploi-du-temps',
     operationId: 'afficherEmploiDuTempsEnseignant',
     summary: 'Afficher l’emploi du temps hebdomadaire de l’enseignant connecté',
-    description: 'Retourne exclusivement les créneaux attribués au compte enseignant authentifié, groupés par jour. Sans module explicite, le module calendrier courant, puis le prochain disponible, est sélectionné.',
+    description: 'Retourne exclusivement les créneaux publiés attribués au compte enseignant authentifié, groupés par jour. Tant que l’administrateur n’a pas publié le programme, aucun créneau n’est exposé.',
     tags: ['Espace enseignant'],
     security: [['sanctum' => []]],
     parameters: [

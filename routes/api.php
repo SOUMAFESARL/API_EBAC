@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Administration\CompteController;
 use App\Http\Controllers\Api\V1\Administration\MenuController;
 use App\Http\Controllers\Api\V1\Administration\PermissionController;
 use App\Http\Controllers\Api\V1\Administration\ProfilController;
+use App\Http\Controllers\Api\V1\Administration\PublicationProgrammeController;
 use App\Http\Controllers\Api\V1\Administration\RoleController;
 use App\Http\Controllers\Api\V1\Auth\AuthentificationController;
 use App\Http\Controllers\Api\V1\Eglise\EgliseController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\Api\V1\Parametre\ModuleController;
 use App\Http\Controllers\Api\V1\Parametre\NiveauController;
 use App\Http\Controllers\Api\V1\Parametre\PromotionController;
 use App\Http\Controllers\Api\V1\Parametre\SalleController;
+use App\Http\Controllers\Api\V1\ProgrammePublieController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/administration/nouvelles-admissions')
@@ -58,6 +60,15 @@ Route::prefix('v1/administration/affectations-enseignants')
         Route::post('/', [AffectationEnseignantController::class, 'store'])->name('store');
         Route::get('{id}', [AffectationEnseignantController::class, 'show'])->whereNumber('id')->name('show');
         Route::patch('{id}/terminer', [AffectationEnseignantController::class, 'terminer'])->whereNumber('id')->name('terminer');
+    });
+
+Route::prefix('v1/administration/publication-programme')
+    ->name('api.v1.administration.publication-programme.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN'])
+    ->group(function () {
+        Route::get('/', [PublicationProgrammeController::class, 'index'])->name('index');
+        Route::post('{module}/publier', [PublicationProgrammeController::class, 'publier'])->whereNumber('module')->name('publier');
+        Route::post('{module}/retirer', [PublicationProgrammeController::class, 'retirer'])->whereNumber('module')->name('retirer');
     });
 
 Route::get('v1/fichiers-preinscriptions/{chemin}', FichierPreinscriptionController::class)
@@ -123,6 +134,10 @@ Route::prefix('v1/auth')->name('api.v1.auth.')->group(function () {
 Route::get('v1/navigation/sidebar', SidebarController::class)
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->name('api.v1.navigation.sidebar');
+
+Route::get('v1/programme', ProgrammePublieController::class)
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:SECRETAIRE_ACADEMIQUE,SECRETARIAT,GESTIONNAIRE,ETUDIANT,ENSEIGNANT'])
+    ->name('api.v1.programme');
 
 Route::prefix('v1/enseignant/mes-cours')
     ->name('api.v1.enseignant.mes-cours.')
