@@ -59,7 +59,7 @@ class ListePresenceEnseignantApiTest extends TestCase
         $horsPromotion = Etudiant::create(['matricule' => 'ETU-3', 'nom' => 'HORS', 'prenoms' => 'Promotion', 'date_inscription' => '2026-09-01']);
         Inscription::create(['id_etudiant' => $horsPromotion->id, 'id_promotion' => $autrePromotion->id, 'id_annee_academique' => $annee->id, 'date_inscription' => '2026-09-01']);
         Sanctum::actingAs($admin);
-        $this->postJson('/api/v1/administration/publication-programme/'.$moduleCalendrier->id.'/publier')->assertOk();
+        $this->postJson('/api/v1/administration/publication-programme/'.$moduleCalendrier->id_calendrier.'/publier')->assertOk();
         $seance = SeanceCahierTexte::whereDate('date_prevue', '2026-09-14')->firstOrFail();
         $seance->update(['statut' => 'realisee', 'date_effective' => '2026-09-14', 'heure_effective' => '08:00', 'duree_reelle_minutes' => 120, 'theme_traite' => 'Les conciles']);
 

@@ -7784,8 +7784,8 @@
                 "tags": [
                     "Publication du programme"
                 ],
-                "summary": "Consulter le programme publié",
-                "description": "Portail commun du secrétariat académique, gestionnaire, étudiant et enseignant. Aucun créneau n’est retourné avant publication. Les enseignants voient leurs créneaux et les étudiants ceux de leur promotion/niveau.",
+                "summary": "Consulter le calendrier académique publié",
+                "description": "Retourne tout le calendrier de l’année : tous les modules, leurs examens et rattrapages, jours fériés, congés et grandes vacances. Un seul statut de publication pour le calendrier entier. Le champ calendrier vaut null avant publication ou après retrait. Accessible au secrétariat académique, gestionnaire, étudiant et enseignant, même sans inscription ni créneau. Le filtre id_module_calendrier est interdit. Sans année explicite, utilise l’année active ou en cours.",
                 "operationId": "consulterProgrammePublie",
                 "parameters": [
                     {
@@ -7794,18 +7794,43 @@
                         "schema": {
                             "type": "integer"
                         }
-                    },
-                    {
-                        "name": "id_module_calendrier",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer"
-                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Programme publié ou liste vide si non publié."
+                        "description": "Calendrier complet publié ou calendrier null.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "annee_academique": {
+                                            "nullable": true,
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/AnneeAcademique"
+                                                }
+                                            ]
+                                        },
+                                        "publication": {
+                                            "$ref": "#/components/schemas/PublicationCalendrier"
+                                        },
+                                        "calendrier": {
+                                            "nullable": true,
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/CalendrierAcademique"
+                                                }
+                                            ]
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Authentification requise."
@@ -7829,7 +7854,8 @@
                 "tags": [
                     "Publication du programme"
                 ],
-                "summary": "Consulter l’état de publication des programmes",
+                "summary": "Consulter l’état de publication du calendrier académique",
+                "description": "Le tableau programmes contient une entrée pour le calendrier complet de l’année sélectionnée, ou aucune si aucun calendrier n’existe. Un seul statut et une seule version couvrent tous ses modules. Le filtre id_module_calendrier est interdit.",
                 "operationId": "etatPublicationProgramme",
                 "parameters": [
                     {
@@ -7838,18 +7864,34 @@
                         "schema": {
                             "type": "integer"
                         }
-                    },
-                    {
-                        "name": "id_module_calendrier",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer"
-                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "État, version et indicateurs du programme."
+                        "description": "État de publication du calendrier.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "annee_academique": {
+                                            "nullable": true,
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/AnneeAcademique"
+                                                }
+                                            ]
+                                        },
+                                        "programmes": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/EtatPublicationCalendrier"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Authentification requise."
@@ -7868,17 +7910,19 @@
                 ]
             }
         },
-        "/administration/publication-programme/{module_id}/publier": {
+        "/administration/publication-programme/{calendrier_id}/publier": {
             "post": {
                 "tags": [
                     "Publication du programme"
                 ],
-                "summary": "Publier un programme pour les espaces utilisateur",
+                "summary": "Publier tout le calendrier académique",
+                "description": "Publie le calendrier et tous ses modules et événements en une seule action. Aucun corps de requête ni créneau requis ; au moins un module est nécessaire. Un nouvel appel sur un calendrier déjà publié conserve sa version. Les autres calendriers conservent leur statut.",
                 "operationId": "publierProgramme",
                 "parameters": [
                     {
-                        "name": "module_id",
+                        "name": "calendrier_id",
                         "in": "path",
+                        "description": "Champ calendrier.id renvoyé par GET /parametres/annees-academiques/{id}/calendrier.",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -7887,7 +7931,22 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Programme publié et version incrémentée."
+                        "description": "Calendrier académique publié.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "programme": {
+                                            "$ref": "#/components/schemas/EtatPublicationCalendrier"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Authentification requise."
@@ -7896,10 +7955,10 @@
                         "description": "Rôle ADMIN requis."
                     },
                     "404": {
-                        "description": "Module introuvable."
+                        "description": "Calendrier introuvable ou année supprimée."
                     },
                     "422": {
-                        "description": "Aucun créneau à publier."
+                        "description": "Calendrier sans module ou paramètres invalides."
                     }
                 },
                 "security": [
@@ -7909,17 +7968,19 @@
                 ]
             }
         },
-        "/administration/publication-programme/{module_id}/retire": {
+        "/administration/publication-programme/{calendrier_id}/retire": {
             "post": {
                 "tags": [
                     "Publication du programme"
                 ],
-                "summary": "Retirer un programme des espaces utilisateur",
+                "summary": "Retirer la publication de tout le calendrier académique",
+                "description": "Masque immédiatement le calendrier entier et tous ses modules sans supprimer les données.",
                 "operationId": "retirerProgramme",
                 "parameters": [
                     {
-                        "name": "module_id",
+                        "name": "calendrier_id",
                         "in": "path",
+                        "description": "Identifiant du calendrier académique.",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -7928,7 +7989,22 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Programme retiré et immédiatement masqué."
+                        "description": "Publication du calendrier retirée.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "programme": {
+                                            "$ref": "#/components/schemas/EtatPublicationCalendrier"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Authentification requise."
@@ -7937,10 +8013,10 @@
                         "description": "Rôle ADMIN requis."
                     },
                     "404": {
-                        "description": "Module introuvable."
+                        "description": "Calendrier introuvable ou année supprimée."
                     },
                     "422": {
-                        "description": "Programme non publié."
+                        "description": "Calendrier non publié."
                     }
                 },
                 "security": [
@@ -11387,6 +11463,51 @@
                                 "type": "string",
                                 "format": "date-time",
                                 "readOnly": true
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "PublicationCalendrier": {
+                "properties": {
+                    "statut": {
+                        "type": "string",
+                        "enum": [
+                            "non_publie",
+                            "publie"
+                        ]
+                    },
+                    "version": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "date_publication": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "date_retrait": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "EtatPublicationCalendrier": {
+                "type": "object",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/PublicationCalendrier"
+                    },
+                    {
+                        "properties": {
+                            "calendrier": {
+                                "$ref": "#/components/schemas/CalendrierAcademique"
+                            },
+                            "visible_utilisateurs": {
+                                "type": "boolean"
                             }
                         },
                         "type": "object"

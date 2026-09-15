@@ -89,7 +89,7 @@ class CreneauController extends Controller
     {
         DB::transaction(function () use ($request, $id) {
             $creneau = $this->queryVisible()->lockForUpdate()->findOrFail($id);
-            PublicationProgramme::where('id_module_calendrier', $creneau->id_module_calendrier)->where('statut', 'publie')
+            PublicationProgramme::where('id_calendrier', $creneau->moduleCalendrier->id_calendrier)->where('statut', 'publie')
                 ->update(['statut' => 'non_publie', 'date_retrait' => now(), 'retire_par' => $request->user()->id]);
             $creneau->update(['deleted_by' => $request->user()->id]);
             $creneau->delete();

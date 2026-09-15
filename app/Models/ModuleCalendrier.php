@@ -13,6 +13,16 @@ class ModuleCalendrier extends Model
 
     protected $fillable = ['id_calendrier', 'libelle', 'ordre', 'date_debut', 'date_fin'];
 
+    protected static function booted(): void
+    {
+        $retirer = function (self $module) {
+            PublicationProgramme::whereIn('id_calendrier', array_filter([$module->id_calendrier, $module->getOriginal('id_calendrier')]))
+                ->where('statut', 'publie')->update(['statut' => 'non_publie', 'date_retrait' => now(), 'retire_par' => auth()->id()]);
+        };
+        static::saved($retirer);
+        static::deleted($retirer);
+    }
+
     protected function casts(): array
     {
         return ['date_debut' => 'date:Y-m-d', 'date_fin' => 'date:Y-m-d', 'ordre' => 'integer'];
@@ -30,6 +40,6 @@ class ModuleCalendrier extends Model
 
     public function publication(): HasOne
     {
-        return $this->hasOne(PublicationProgramme::class, 'id_module_calendrier');
+        return $this->hasOne(PublicationProgramme::class, 'id_calendrier', 'id_calendrier');
     }
 }

@@ -123,7 +123,7 @@ class CreneauApiTest extends TestCase
         $payload = $this->getJson($url)->assertOk()->json('calendrier');
         $moduleId = $payload['modules'][0]['id'];
         Matiere::findOrFail($data['id_matiere'])->modulesCalendrier()->attach($moduleId);
-        $publication = PublicationProgramme::create(['id_module_calendrier' => $moduleId, 'statut' => 'publie', 'version' => 1]);
+        $publication = PublicationProgramme::create(['id_calendrier' => $payload['id'], 'statut' => 'publie', 'version' => 1]);
         $payload['modules'][0]['libelle'] = 'Module modifié';
         $payload['modules'][0]['date_fin'] = '2026-12-19';
         $payload['modules'][0]['rattrapages'] = [['libelle' => 'Session', 'date_debut' => '2027-01-05', 'date_fin' => '2027-01-10']];

@@ -41,7 +41,7 @@ class CahierTexteEnseignantApiTest extends TestCase
         $creneau = Creneau::create(['id_module_calendrier' => $module->id, 'id_niveau' => $niveau->id, 'id_matiere' => $matiere->id,
             'enseignant_id' => $enseignant->id, 'id_salle' => $salle->id, 'jour' => 1, 'heure_debut' => '08:00:00', 'heure_fin' => '10:00:00']);
         Sanctum::actingAs($admin);
-        $this->postJson('/api/v1/administration/publication-programme/'.$module->id.'/publier')->assertOk();
+        $this->postJson('/api/v1/administration/publication-programme/'.$module->id_calendrier.'/publier')->assertOk();
 
         return compact('admin', 'enseignant', 'autre', 'creneau');
     }
@@ -140,13 +140,13 @@ class CahierTexteEnseignantApiTest extends TestCase
             'duree_reelle_minutes' => 120, 'theme_traite' => 'Thème officiel',
         ])->assertOk();
         Sanctum::actingAs($data['admin']);
-        $moduleId = $data['creneau']->id_module_calendrier;
-        $this->postJson('/api/v1/administration/publication-programme/'.$moduleId.'/retire')->assertOk();
+        $calendrierId = $data['creneau']->moduleCalendrier->id_calendrier;
+        $this->postJson('/api/v1/administration/publication-programme/'.$calendrierId.'/retire')->assertOk();
         Sanctum::actingAs($data['enseignant']);
         $this->getJson('/api/v1/enseignant/cahier-de-texte?date_debut=2026-09-01&date_fin=2026-09-30')
             ->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('seances.0.theme_traite', 'Thème officiel');
         Sanctum::actingAs($data['admin']);
-        $this->postJson('/api/v1/administration/publication-programme/'.$moduleId.'/publier')->assertOk();
+        $this->postJson('/api/v1/administration/publication-programme/'.$calendrierId.'/publier')->assertOk();
         $this->assertDatabaseHas('seances_cahier_texte', ['id' => $seance->id, 'statut' => 'realisee', 'theme_traite' => 'Thème officiel']);
         $this->assertDatabaseCount('seances_cahier_texte', 4);
     }

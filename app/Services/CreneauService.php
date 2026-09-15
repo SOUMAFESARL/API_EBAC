@@ -99,7 +99,7 @@ class CreneauService
         } else {
             $creneau = Creneau::create([...$data, 'created_by' => $userId]);
         }
-        PublicationProgramme::whereIn('id_module_calendrier', array_filter([$ancienModuleId, $data['id_module_calendrier']]))
+        PublicationProgramme::whereIn('id_calendrier', ModuleCalendrier::whereIn('id', array_filter([$ancienModuleId, $data['id_module_calendrier']]))->select('id_calendrier'))
             ->where('statut', 'publie')->update(['statut' => 'non_publie', 'date_retrait' => now(), 'retire_par' => $userId]);
 
         return $creneau->fresh();

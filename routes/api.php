@@ -69,8 +69,8 @@ Route::prefix('v1/administration/publication-programme')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN'])
     ->group(function () {
         Route::get('/', [PublicationProgrammeController::class, 'index'])->name('index');
-        Route::post('{module_id}/publier', [PublicationProgrammeController::class, 'publier'])->whereNumber('module_id')->name('publier');
-        Route::post('{module_id}/retire', [PublicationProgrammeController::class, 'retirer'])->whereNumber('module_id')->name('retire');
+        Route::post('{calendrier_id}/publier', [PublicationProgrammeController::class, 'publier'])->whereNumber('calendrier_id')->name('publier');
+        Route::post('{calendrier_id}/retire', [PublicationProgrammeController::class, 'retirer'])->whereNumber('calendrier_id')->name('retire');
     });
 
 Route::get('v1/fichiers-preinscriptions/{chemin}', FichierPreinscriptionController::class)

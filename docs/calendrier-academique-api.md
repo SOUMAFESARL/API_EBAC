@@ -44,8 +44,8 @@ Le PUT permet d’ajouter, modifier et supprimer les modules, sessions de rattra
 
 - Conserver le champ `modules[].id` renvoyé par GET pour modifier ou réordonner un module en préservant ses créneaux et ses matières associées.
 - Envoyer `id: null` pour un nouveau module. Pour les anciens formulaires sans champ `id`, le backend recherche un module au libellé unique, puis aux dates identiques et uniques ; sans correspondance, il crée un nouveau module.
-- Retirer un module du tableau le supprime avec ses événements et sa publication. Ses créneaux sont supprimés logiquement, ses séances futures prévues sont retirées et les séances réalisées sont conservées.
-- Les événements sont recréés lors du PUT. Modifier les dates ou le libellé d’un module publié retire sa publication ; une nouvelle publication est nécessaire.
+- Retirer un module du tableau le supprime avec ses événements et retire la publication du calendrier entier. Ses créneaux sont supprimés logiquement, ses séances futures prévues sont retirées et les séances réalisées sont conservées.
+- Les événements sont recréés lors du PUT. Enregistrer le calendrier, modifier ses modules ou ses événements retire sa publication globale ; une nouvelle publication est nécessaire.
 - Les endpoints individuels `/api/v1/parametres/modules-calendrier` et `/api/v1/parametres/evenements-calendrier` permettent également les opérations CRUD. La suppression individuelle d’un module utilisé applique le même traitement à ses créneaux.
 
 ```json
@@ -86,6 +86,31 @@ La réponse `calendrier` reprend ces rubriques et ajoute `id`, `id_annee_academi
 - Année supprimée : calendrier conservé en historique, inaccessible par ces endpoints.
 
 Le stockage des jours fériés et congés permet leur utilisation par un futur calcul des séances ; cette API de paramétrage ne calcule pas de planning.
+
+## Publication du calendrier académique
+
+La publication porte sur le calendrier académique entier : tous ses modules, examens, sessions de rattrapage, jours fériés, congés et grandes vacances deviennent visibles en une seule action. Le calendrier possède un seul statut et une seule version de publication. Aucun créneau n’est requis ; le calendrier doit contenir au moins un module.
+
+| Méthode | URL | Utilisation |
+| --- | --- | --- |
+| GET | `/api/v1/administration/publication-programme?id_annee_academique={id}` | Consulter l’état du calendrier complet (ADMIN) |
+| POST | `/api/v1/administration/publication-programme/{calendrier_id}/publier` | Publier tout le calendrier (ADMIN, sans corps de requête) |
+| POST | `/api/v1/administration/publication-programme/{calendrier_id}/retire` | Retirer la publication de tout le calendrier (ADMIN) |
+| GET | `/api/v1/programme?id_annee_academique={id}` | Consulter tout le calendrier publié |
+
+`calendrier_id` correspond au champ `calendrier.id` renvoyé par `GET /api/v1/parametres/annees-academiques/{id}/calendrier`. La réponse d’administration contient `programme.calendrier` (ou `programmes[0].calendrier` pour la liste, qui contient au plus une entrée pour l’année sélectionnée). La consultation utilisateur contient `publication` et `calendrier` avec :
+
+- `id` et `id_annee_academique` ;
+- `modules` : tous les modules avec leurs identifiants, libellés, dates, examens et rattrapages ;
+- `jours_feries`, `conges`, `grandes_vacances` : événements communs au calendrier annuel.
+
+Avant publication ou après retrait, `calendrier` vaut `null` dans la consultation utilisateur. Un étudiant sans inscription peut consulter le calendrier publié. Le filtre `id_module_calendrier` est désormais interdit sur ces endpoints. La consultation `/programme` renvoie le calendrier complet ; les horaires restent consultables par les endpoints d’emploi du temps.
+
+Publier de nouveau un calendrier déjà publié conserve la version. Après retrait, une nouvelle publication incrémente la version. Les modules héritent tous du statut global pour les contrôles de visibilité de l’emploi du temps et du cahier de texte. Modifier les créneaux retire également la publication globale. Les séances des modules sont synchronisées lors de la publication.
+
+### Migration de l’ancienne publication
+
+Exécuter `php artisan migrate` pour créer `publication_calendriers`, liée à `calendriers_academiques`. Les anciennes publications par module restent conservées dans `publication_programmes` mais ne servent plus aux contrôles de visibilité. Après migration, l’administrateur doit publier explicitement chaque calendrier complet. Le frontend doit utiliser `calendrier.id` dans les routes de publication et lire `calendrier.modules` dans la consultation.
 
 ## Stockage et installation
 

@@ -92,6 +92,8 @@ class CalendrierAcademiqueService
             $modules[$i] = $module;
         }
         $calendrier->update(['updated_by' => $userId]);
+        PublicationProgramme::where('id_calendrier', $calendrier->id)->where('statut', 'publie')
+            ->update(['statut' => 'non_publie', 'date_retrait' => now(), 'retire_par' => $userId]);
         $calendrier->evenements()->delete();
         foreach ($existants->except(collect($modules)->filter()->pluck('id')->all()) as $module) {
             $this->supprimerModule($module, $userId);
@@ -111,10 +113,6 @@ class CalendrierAcademiqueService
                 'libelle' => $item['libelle'], 'ordre' => $i + 1,
                 'date_debut' => $item['date_debut'], 'date_fin' => $item['date_fin'],
             ]);
-            if ($module->exists && $module->isDirty(['libelle', 'date_debut', 'date_fin'])) {
-                PublicationProgramme::where('id_module_calendrier', $module->id)->where('statut', 'publie')
-                    ->update(['statut' => 'non_publie', 'date_retrait' => now(), 'retire_par' => $userId]);
-            }
             $module->save();
             foreach (['examens' => 'examen', 'rattrapages' => 'rattrapage'] as $key => $type) {
                 foreach ($item[$key] as $periode) {
@@ -170,5 +168,16 @@ class CalendrierAcademiqueService
             'updated_by' => $calendrier->updated_by,
             'updated_at' => $calendrier->updated_at,
         ];
+    }
+
+    public function anneePublication(?int $id): ?AnneeAcademique
+    {
+        if ($id) {
+            return AnneeAcademique::find($id);
+        }
+        $date = now()->toDateString();
+
+        return AnneeAcademique::where('active', true)->first()
+            ?? AnneeAcademique::whereDate('date_debut', '<=', $date)->whereDate('date_fin', '>=', $date)->first();
     }
 }
