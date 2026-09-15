@@ -7210,7 +7210,7 @@
                     "Modules calendrier"
                 ],
                 "summary": "Supprimer un module de calendrier",
-                "description": "Les événements associés sont supprimés en cascade. La suppression est refusée si un créneau utilise le module.",
+                "description": "Suppression autorisée même avec des créneaux. Les créneaux sont supprimés logiquement et les séances futures prévues retirées. Les événements associés sont supprimés en cascade.",
                 "operationId": "supprimerModuleCalendrier",
                 "parameters": [
                     {
@@ -7248,22 +7248,6 @@
                     },
                     "404": {
                         "description": "Module introuvable"
-                    },
-                    "422": {
-                        "description": "Module utilisé par un créneau",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Ce module est utilisé par des créneaux et ne peut pas être supprimé."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
                     }
                 },
                 "security": [
@@ -9123,6 +9107,11 @@
                                 "rattrapages"
                             ],
                             "properties": {
+                                "id": {
+                                    "description": "Identifiant renvoyé par GET, à conserver sur PUT pour maintenir les créneaux et matières du module. null pour un nouveau module. Un module retiré du tableau est supprimé et ses créneaux sont supprimés logiquement. Sans ce champ, rapprochement par libellé unique puis dates identiques.",
+                                    "type": "integer",
+                                    "nullable": true
+                                },
                                 "libelle": {
                                     "type": "string",
                                     "example": "Théologie systématique — Semestre 1"

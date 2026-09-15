@@ -9,6 +9,7 @@ use App\Models\Matiere;
 use App\Models\Module;
 use App\Models\ModuleCalendrier;
 use App\Models\Niveau;
+use App\Models\PublicationProgramme;
 use App\Models\Role;
 use App\Models\Salle;
 use App\Models\User;
@@ -109,8 +110,88 @@ class CreneauApiTest extends TestCase
         $this->deleteJson('/api/v1/parametres/annees-academiques/1/calendrier')->assertUnprocessable();
         $this->getJson(self::URL.'/'.$id)->assertOk();
         $payload = ['modules' => [['libelle' => 'Remplacé', 'date_debut' => '2026-09-01', 'date_fin' => '2027-06-30', 'examens' => [], 'rattrapages' => []]], 'jours_feries' => [], 'conges' => [], 'grandes_vacances' => null];
-        $this->putJson('/api/v1/parametres/annees-academiques/1/calendrier', $payload)->assertUnprocessable();
-        $this->assertDatabaseCount('modules_calendrier', 2);
+        $this->putJson('/api/v1/parametres/annees-academiques/1/calendrier', $payload)->assertOk();
+        $this->assertDatabaseCount('modules_calendrier', 1);
+        $this->assertSoftDeleted('creneaux', ['id' => $id]);
+    }
+
+    public function test_modification_de_toutes_les_rubriques_avec_un_creneau_existant(): void
+    {
+        $data = $this->contexte();
+        $id = $this->postJson(self::URL, $data)->assertCreated()->json('creneau.id');
+        $url = '/api/v1/parametres/annees-academiques/1/calendrier';
+        $payload = $this->getJson($url)->assertOk()->json('calendrier');
+        $moduleId = $payload['modules'][0]['id'];
+        Matiere::findOrFail($data['id_matiere'])->modulesCalendrier()->attach($moduleId);
+        $publication = PublicationProgramme::create(['id_module_calendrier' => $moduleId, 'statut' => 'publie', 'version' => 1]);
+        $payload['modules'][0]['libelle'] = 'Module modifié';
+        $payload['modules'][0]['date_fin'] = '2026-12-19';
+        $payload['modules'][0]['rattrapages'] = [['libelle' => 'Session', 'date_debut' => '2027-01-05', 'date_fin' => '2027-01-10']];
+        $payload['jours_feries'] = [['libelle' => 'Fête', 'date' => '2026-11-01']];
+        $payload['conges'] = [['libelle' => 'Congés', 'date_debut' => '2026-12-21', 'date_fin' => '2027-01-04']];
+        $payload['grandes_vacances'] = ['libelle' => 'Vacances', 'date_debut' => '2027-07-31', 'date_fin' => '2027-08-31'];
+        $payload['modules'][] = ['id' => null, 'libelle' => 'Module ajouté', 'date_debut' => '2027-02-01', 'date_fin' => '2027-06-30', 'examens' => [], 'rattrapages' => []];
+        $this->putJson($url, $payload)->assertOk()->assertJsonPath('calendrier.modules.0.id', $moduleId)->assertJsonCount(2, 'calendrier.modules');
+        $this->assertDatabaseHas('creneaux', ['id' => $id, 'id_module_calendrier' => $moduleId, 'deleted_at' => null]);
+        $this->assertDatabaseHas('matiere_module_calendrier', ['id_matiere' => $data['id_matiere'], 'id_module_calendrier' => $moduleId]);
+        $this->assertSame('non_publie', $publication->fresh()->statut);
+
+        $payload['modules'][0]['rattrapages'][0]['date_fin'] = '2027-01-11';
+        $payload['jours_feries'][0]['date'] = '2026-11-02';
+        $payload['conges'][0]['date_debut'] = '2026-12-22';
+        $payload['grandes_vacances']['date_fin'] = '2027-08-30';
+        $this->putJson($url, $payload)->assertOk()
+            ->assertJsonPath('calendrier.modules.0.rattrapages.0.date_fin', '2027-01-11')
+            ->assertJsonPath('calendrier.jours_feries.0.date', '2026-11-02')
+            ->assertJsonPath('calendrier.conges.0.date_debut', '2026-12-22')
+            ->assertJsonPath('calendrier.grandes_vacances.date_fin', '2027-08-30');
+        $payload['modules'] = [$payload['modules'][0]];
+        $payload['modules'][0]['rattrapages'] = [];
+        $payload['jours_feries'] = [];
+        $payload['conges'] = [];
+        $payload['grandes_vacances'] = null;
+        $this->putJson($url, $payload)->assertOk()->assertJsonCount(1, 'calendrier.modules')->assertJsonCount(0, 'calendrier.modules.0.rattrapages');
+        $this->assertDatabaseCount('evenements_calendrier', 0);
+        $this->getJson(self::URL.'/'.$id)->assertOk();
+    }
+
+    public function test_identifiants_invalides_et_reordonnancement_preservent_les_creneaux(): void
+    {
+        $data = $this->contexte();
+        $id = $this->postJson(self::URL, $data)->assertCreated()->json('creneau.id');
+        $module = ModuleCalendrier::first();
+        $autre = $module->calendrier->modules()->create(['libelle' => 'Module 2', 'ordre' => 2, 'date_debut' => '2027-01-01', 'date_fin' => '2027-06-30']);
+        $url = '/api/v1/parametres/annees-academiques/1/calendrier';
+        $payload = $this->getJson($url)->json('calendrier');
+        $invalide = $payload;
+        $invalide['modules'][0]['id'] = 999;
+        $this->putJson($url, $invalide)->assertUnprocessable()->assertJsonValidationErrors('modules.0.id');
+        $invalide['modules'][0]['id'] = $autre->id;
+        $this->putJson($url, $invalide)->assertUnprocessable()->assertJsonValidationErrors('modules.0.id');
+        $annee = AnneeAcademique::create(['libelle' => 'Autre', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-30']);
+        $etranger = $annee->calendrier()->create([])->modules()->create(['libelle' => 'Étranger', 'ordre' => 1, 'date_debut' => '2026-09-01', 'date_fin' => '2026-12-20']);
+        $invalide['modules'][0]['id'] = $etranger->id;
+        $this->putJson($url, $invalide)->assertUnprocessable()->assertJsonValidationErrors('modules.0.id');
+        $this->assertSame($payload, $this->getJson($url)->json('calendrier'));
+        $payload['modules'] = array_reverse($payload['modules']);
+        $this->putJson($url, $payload)->assertOk()->assertJsonPath('calendrier.modules.0.id', $autre->id);
+        $this->assertDatabaseHas('creneaux', ['id' => $id, 'id_module_calendrier' => $module->id, 'deleted_at' => null]);
+    }
+
+    public function test_formulaire_sans_identifiants_conserve_les_creneaux_et_suppression_individuelle_autorisee(): void
+    {
+        $data = $this->contexte();
+        $id = $this->postJson(self::URL, $data)->assertCreated()->json('creneau.id');
+        $url = '/api/v1/parametres/annees-academiques/1/calendrier';
+        $payload = $this->getJson($url)->json('calendrier');
+        unset($payload['modules'][0]['id']);
+        $payload['jours_feries'] = [['libelle' => 'Fête', 'date' => '2026-11-01']];
+        $this->putJson($url, $payload)->assertOk();
+        $this->assertDatabaseHas('creneaux', ['id' => $id, 'id_module_calendrier' => $data['id_module_calendrier'], 'deleted_at' => null]);
+        $this->deleteJson('/api/v1/parametres/modules-calendrier/'.$data['id_module_calendrier'])->assertOk();
+        $this->assertSoftDeleted('creneaux', ['id' => $id]);
+        $this->assertNull(Creneau::withTrashed()->find($id)->id_module_calendrier);
+        $this->getJson(self::URL.'/'.$id)->assertNotFound();
     }
 
     public function test_patch_conflictuel_ne_modifie_rien(): void

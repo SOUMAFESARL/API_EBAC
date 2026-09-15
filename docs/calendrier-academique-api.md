@@ -38,7 +38,15 @@ Base : `/api/v1/parametres/annees-academiques/{id}/calendrier`.
 | PUT | 200 : remplacement complet ; 404 si non configuré |
 | DELETE | 200 : suppression définitive du calendrier et de ses périodes, conserve l’année |
 
-Les boutons Ajouter et Supprimer modifient les tableaux du formulaire. « Enregistrer le calendrier » envoie POST à la première configuration, puis PUT. Toutes les rubriques sont obligatoires ; envoyer `[]` pour une liste vide et `null` en l’absence de grandes vacances. Les modules sont ordonnés selon leur position dans le tableau. Les périodes internes sont recréées lors du PUT, leurs identifiants ne constituent pas un contrat public. Il n’existe pas d’endpoint individuel pour chaque ligne.
+Les boutons Ajouter et Supprimer modifient les tableaux du formulaire. « Enregistrer le calendrier » envoie POST à la première configuration, puis PUT. Toutes les rubriques sont obligatoires ; envoyer `[]` pour une liste vide et `null` en l’absence de grandes vacances. Les modules sont ordonnés selon leur position dans le tableau.
+
+Le PUT permet d’ajouter, modifier et supprimer les modules, sessions de rattrapage, jours fériés, congés et grandes vacances même lorsque des créneaux existent.
+
+- Conserver le champ `modules[].id` renvoyé par GET pour modifier ou réordonner un module en préservant ses créneaux et ses matières associées.
+- Envoyer `id: null` pour un nouveau module. Pour les anciens formulaires sans champ `id`, le backend recherche un module au libellé unique, puis aux dates identiques et uniques ; sans correspondance, il crée un nouveau module.
+- Retirer un module du tableau le supprime avec ses événements et sa publication. Ses créneaux sont supprimés logiquement, ses séances futures prévues sont retirées et les séances réalisées sont conservées.
+- Les événements sont recréés lors du PUT. Modifier les dates ou le libellé d’un module publié retire sa publication ; une nouvelle publication est nécessaire.
+- Les endpoints individuels `/api/v1/parametres/modules-calendrier` et `/api/v1/parametres/evenements-calendrier` permettent également les opérations CRUD. La suppression individuelle d’un module utilisé applique le même traitement à ses créneaux.
 
 ```json
 {

@@ -15,7 +15,8 @@ class EnregistrerCalendrierRequest extends FormRequest
     {
         $rules = [
             'modules' => ['required', 'array', 'list', 'min:1', 'max:100'],
-            'modules.*' => ['required', 'array:libelle,date_debut,date_fin,examens,rattrapages'],
+            'modules.*' => ['required', 'array:id,libelle,date_debut,date_fin,examens,rattrapages'],
+            'modules.*.id' => ['sometimes', 'nullable', 'integer', 'min:1', 'distinct'],
             'modules.*.libelle' => ['required', 'string', 'max:180'],
             'modules.*.date_debut' => ['required', 'date_format:Y-m-d'],
             'modules.*.date_fin' => ['required', 'date_format:Y-m-d', 'after_or_equal:modules.*.date_debut'],

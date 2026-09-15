@@ -5,10 +5,11 @@ namespace App\Http\Controllers\Api\V1\Parametre;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Parametre\CreerModuleCalendrierRequest;
 use App\Http\Requests\Api\V1\Parametre\ModifierModuleCalendrierRequest;
-use App\Models\Creneau;
 use App\Models\ModuleCalendrier;
+use App\Services\CalendrierAcademiqueService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ModuleCalendrierController extends Controller
 {
@@ -53,13 +54,10 @@ class ModuleCalendrierController extends Controller
 
     public function destroy(Request $request, int $id): JsonResponse
     {
-        $module = ModuleCalendrier::query()->findOrFail($id);
-        if (Creneau::query()->where('id_module_calendrier', $module->id)->exists()) {
-            return response()->json([
-                'message' => 'Ce module est utilisé par des créneaux et ne peut pas être supprimé.',
-            ], 422);
-        }
-        $module->delete();
+        DB::transaction(function () use ($request, $id) {
+            $module = ModuleCalendrier::query()->lockForUpdate()->findOrFail($id);
+            app(CalendrierAcademiqueService::class)->supprimerModule($module, $request->user()->id);
+        });
 
         return response()->json(['message' => 'Module supprimé avec succès.']);
     }

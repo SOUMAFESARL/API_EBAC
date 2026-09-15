@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\AnneeAcademique;
 use App\Models\CalendrierAcademique;
 use App\Models\Creneau;
+use App\Models\ModuleCalendrier;
+use App\Models\PublicationProgramme;
+use App\Models\SeanceCahierTexte;
 use Illuminate\Validation\ValidationException;
 
 class CalendrierAcademiqueService
@@ -63,19 +66,56 @@ class CalendrierAcademiqueService
         $calendrier = $annee->calendrier()->first();
         abort_if($creation && $calendrier !== null, 409, 'Cette année possède déjà un calendrier. Utilisez PUT pour le modifier.');
         abort_if(! $creation && $calendrier === null, 404, 'Calendrier introuvable.');
-        if ($calendrier && Creneau::whereIn('id_module_calendrier', $calendrier->modules()->select('id'))->exists()) {
-            throw ValidationException::withMessages(['modules' => ['Supprimez ou réaffectez les créneaux avant de remplacer le calendrier.']]);
-        }
         $this->valider($data, $annee->date_debut->toDateString(), $annee->date_fin->toDateString());
         $calendrier ??= $annee->calendrier()->create(['created_by' => $userId]);
+        $existants = $calendrier->modules()->lockForUpdate()->get()->keyBy('id');
+        $reserves = collect($data['modules'])->pluck('id')->filter()->all();
+        $modules = [];
+        foreach ($data['modules'] as $i => $item) {
+            $module = null;
+            if (isset($item['id'])) {
+                $module = $existants->get($item['id']);
+                if (! $module) {
+                    throw ValidationException::withMessages(["modules.$i.id" => ['Ce module ne fait pas partie de ce calendrier.']]);
+                }
+            } elseif (! array_key_exists('id', $item)) {
+                // Compatibilité avec les formulaires qui ne transmettaient pas les identifiants.
+                $candidats = $existants->except($reserves)->filter(fn ($m) => $m->libelle === $item['libelle']);
+                if ($candidats->count() !== 1) {
+                    $candidats = $existants->except($reserves)->filter(fn ($m) => $m->date_debut->toDateString() === $item['date_debut'] && $m->date_fin->toDateString() === $item['date_fin']);
+                }
+                $module = $candidats->count() === 1 ? $candidats->first() : null;
+                if ($module) {
+                    $reserves[] = $module->id;
+                }
+            }
+            $modules[$i] = $module;
+        }
         $calendrier->update(['updated_by' => $userId]);
         $calendrier->evenements()->delete();
-        $calendrier->modules()->delete();
+        foreach ($existants->except(collect($modules)->filter()->pluck('id')->all()) as $module) {
+            $this->supprimerModule($module, $userId);
+        }
+        // Libérer les ordres avant un réordonnancement (contrainte unique).
+        $ordres = $existants->pluck('ordre')->all();
+        $temporaire = 101;
+        foreach (array_filter($modules) as $module) {
+            while (in_array($temporaire, $ordres, true)) {
+                $temporaire++;
+            }
+            $module->update(['ordre' => $temporaire++]);
+        }
         foreach ($data['modules'] as $i => $item) {
-            $module = $calendrier->modules()->create([
+            $module = $modules[$i] ?? $calendrier->modules()->make();
+            $module->fill([
                 'libelle' => $item['libelle'], 'ordre' => $i + 1,
                 'date_debut' => $item['date_debut'], 'date_fin' => $item['date_fin'],
             ]);
+            if ($module->exists && $module->isDirty(['libelle', 'date_debut', 'date_fin'])) {
+                PublicationProgramme::where('id_module_calendrier', $module->id)->where('statut', 'publie')
+                    ->update(['statut' => 'non_publie', 'date_retrait' => now(), 'retire_par' => $userId]);
+            }
+            $module->save();
             foreach (['examens' => 'examen', 'rattrapages' => 'rattrapage'] as $key => $type) {
                 foreach ($item[$key] as $periode) {
                     $calendrier->evenements()->create([...$periode, 'type' => $type, 'id_module_calendrier' => $module->id]);
@@ -98,6 +138,16 @@ class CalendrierAcademiqueService
         return $calendrier;
     }
 
+    /** À appeler dans la transaction de modification du calendrier. */
+    public function supprimerModule(ModuleCalendrier $module, int $userId): void
+    {
+        Creneau::where('id_module_calendrier', $module->id)->update(['deleted_by' => $userId]);
+        Creneau::where('id_module_calendrier', $module->id)->delete();
+        SeanceCahierTexte::where('id_module_calendrier', $module->id)->where('statut', 'prevue')
+            ->where('date_prevue', '>=', now()->toDateString())->delete();
+        $module->delete();
+    }
+
     public function presenter(CalendrierAcademique $calendrier): array
     {
         $calendrier->load(['modules', 'evenements']);
@@ -109,7 +159,7 @@ class CalendrierAcademiqueService
             'id' => $calendrier->id,
             'id_annee_academique' => $calendrier->id_annee_academique,
             'modules' => $calendrier->modules->map(fn ($module) => [
-                'libelle' => $module->libelle, ...$periode($module),
+                'id' => $module->id, 'libelle' => $module->libelle, ...$periode($module),
                 'examens' => $evenements->where('id_module_calendrier', $module->id)->where('type', 'examen')->map($periodeAvecLibelle)->values()->all(),
                 'rattrapages' => $evenements->where('id_module_calendrier', $module->id)->where('type', 'rattrapage')->map($periodeAvecLibelle)->values()->all(),
             ])->all(),
