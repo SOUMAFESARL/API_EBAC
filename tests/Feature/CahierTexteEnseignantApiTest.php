@@ -25,7 +25,7 @@ class CahierTexteEnseignantApiTest extends TestCase
         parent::tearDown();
     }
 
-    private function contexte(): array
+    private function contexte(bool $creerSeances = true): array
     {
         Carbon::setTestNow('2026-09-14 10:00:00');
         $adminRole = Role::create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
@@ -42,17 +42,51 @@ class CahierTexteEnseignantApiTest extends TestCase
             'enseignant_id' => $enseignant->id, 'id_salle' => $salle->id, 'jour' => 1, 'heure_debut' => '08:00:00', 'heure_fin' => '10:00:00']);
         Sanctum::actingAs($admin);
         $this->postJson('/api/v1/administration/publication-programme/'.$module->id_calendrier.'/publier')->assertOk();
+        if ($creerSeances) {
+            Carbon::setTestNow('2026-09-07 10:00:00');
+            Sanctum::actingAs($enseignant);
+            foreach (['2026-09-07', '2026-09-14', '2026-09-21', '2026-09-28'] as $date) {
+                $this->postJson('/api/v1/enseignant/cahier-de-texte', [
+                    'id_creneau' => $creneau->id, 'date_prevue' => $date, 'statut' => 'prevue',
+                ])->assertCreated();
+            }
+            Carbon::setTestNow('2026-09-14 10:00:00');
+        }
 
         return compact('admin', 'enseignant', 'autre', 'creneau');
     }
 
-    public function test_publication_genere_les_seances_et_enseignant_peut_consulter_son_cahier(): void
+    public function test_enseignant_consulte_uniquement_les_seances_qu_il_a_creees(): void
     {
         $data = $this->contexte();
         $this->assertDatabaseCount('seances_cahier_texte', 4);
         Sanctum::actingAs($data['enseignant']);
         $this->getJson('/api/v1/enseignant/cahier-de-texte?date_debut=2026-09-01&date_fin=2026-09-30')->assertOk()
             ->assertJsonPath('meta.total', 4)->assertJsonPath('seances.0.statut', 'prevue');
+    }
+
+    public function test_creneaux_et_publications_ne_creent_aucune_seance(): void
+    {
+        $data = $this->contexte(false);
+        $this->assertDatabaseCount('seances_cahier_texte', 0);
+        $payload = $data['creneau']->only(['id_module_calendrier', 'id_niveau', 'id_matiere', 'enseignant_id', 'id_salle']);
+        $this->postJson('/api/v1/parametres/creneaux', [...$payload, 'jour' => 2, 'heure_debut' => '08:00', 'heure_fin' => '10:00'])->assertCreated();
+        $this->patchJson('/api/v1/parametres/creneaux/'.$data['creneau']->id, ['heure_fin' => '11:00'])->assertOk();
+        $url = '/api/v1/administration/publication-programme/'.$data['creneau']->moduleCalendrier->id_calendrier;
+        $this->postJson($url.'/publier')->assertOk();
+        $this->assertDatabaseCount('seances_cahier_texte', 0);
+        Sanctum::actingAs($data['autre']);
+        $seance = ['id_creneau' => $data['creneau']->id, 'date_prevue' => '2026-09-14', 'statut' => 'prevue'];
+        $this->postJson('/api/v1/enseignant/cahier-de-texte', $seance)->assertNotFound();
+        Sanctum::actingAs($data['enseignant']);
+        $id = $this->postJson('/api/v1/enseignant/cahier-de-texte', $seance)->assertCreated()
+            ->assertJsonPath('seance.source', 'manuelle')->assertJsonPath('seance.created_by', $data['enseignant']->id)->json('seance.id');
+        $avant = SeanceCahierTexte::findOrFail($id)->toArray();
+        Sanctum::actingAs($data['admin']);
+        $this->postJson($url.'/retire')->assertOk();
+        $this->postJson($url.'/publier')->assertOk();
+        $this->assertDatabaseCount('seances_cahier_texte', 1);
+        $this->assertSame($avant, SeanceCahierTexte::findOrFail($id)->toArray());
     }
 
     public function test_enseignant_consigne_modifie_et_consulte_une_seance(): void

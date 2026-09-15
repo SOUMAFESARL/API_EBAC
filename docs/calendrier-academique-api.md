@@ -106,7 +106,7 @@ La publication porte sur le calendrier académique entier : tous ses modules, ex
 
 Avant publication ou après retrait, `calendrier` vaut `null` dans la consultation utilisateur. Un étudiant sans inscription peut consulter le calendrier publié. Le filtre `id_module_calendrier` est désormais interdit sur ces endpoints. La consultation `/programme` renvoie le calendrier complet ; les horaires restent consultables par les endpoints d’emploi du temps.
 
-Publier de nouveau un calendrier déjà publié conserve la version. Après retrait, une nouvelle publication incrémente la version. Les modules héritent tous du statut global pour les contrôles de visibilité de l’emploi du temps et du cahier de texte. Modifier les créneaux retire également la publication globale. Les séances des modules sont synchronisées lors de la publication.
+Publier de nouveau un calendrier déjà publié conserve la version. Après retrait, une nouvelle publication incrémente la version. Les modules héritent tous du statut global pour les contrôles de visibilité de l’emploi du temps et du cahier de texte. Modifier les créneaux retire également la publication globale. La création des créneaux et la publication du calendrier ne créent aucune séance du cahier de texte. L’enseignant connecté crée explicitement chaque séance avec `POST /api/v1/enseignant/cahier-de-texte`, en indiquant son `id_creneau`, la `date_prevue` et le `statut`. Une republication conserve les séances saisies sans les régénérer.
 
 ### Migration de l’ancienne publication
 

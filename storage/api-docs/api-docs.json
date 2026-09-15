@@ -5016,7 +5016,8 @@
                 "tags": [
                     "Cahier de texte"
                 ],
-                "summary": "Consigner une séance exceptionnelle",
+                "summary": "Créer une séance du cahier de texte",
+                "description": "Création explicite par l’enseignant connecté pour un de ses créneaux. Les créneaux et la publication du calendrier ne génèrent aucune séance automatiquement. Le calendrier doit être publié ; les contrôles de date et de délai de 48 heures restent applicables.",
                 "operationId": "creerSeanceCahierTexte",
                 "requestBody": {
                     "required": true,

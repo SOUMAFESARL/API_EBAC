@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1\Administration;
 use App\Http\Controllers\Controller;
 use App\Models\AnneeAcademique;
 use App\Models\CalendrierAcademique;
-use App\Services\CahierTexteService;
 use App\Services\CalendrierAcademiqueService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class PublicationProgrammeController extends Controller
 {
-    public function __construct(private CahierTexteService $cahierTexte, private CalendrierAcademiqueService $service) {}
+    public function __construct(private CalendrierAcademiqueService $service) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -46,9 +45,6 @@ class PublicationProgrammeController extends Controller
             }
             $publication->fill(['statut' => 'publie', 'version' => $publication->version + 1, 'date_publication' => now(),
                 'date_retrait' => null, 'publie_par' => $request->user()->id, 'retire_par' => null])->save();
-            foreach ($calendrier->modules()->get() as $module) {
-                $this->cahierTexte->synchroniserModule($module);
-            }
 
             return $calendrier;
         });
