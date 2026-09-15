@@ -78,22 +78,44 @@ class EmploiDuTempsEnseignantApiTest extends TestCase
             ->assertUnprocessable()->assertJsonValidationErrors('id_module_calendrier');
     }
 
-    public function test_selectionne_le_module_courant_puis_permet_un_module_explicite(): void
+    public function test_retourne_tous_les_modules_et_matieres_sauf_filtre_explicite(): void
     {
         Carbon::setTestNow('2026-09-14 12:00:00');
         $role = Role::create(['code' => 'ENSEIGNANT', 'libelle' => 'Enseignant']);
-        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        $enseignant = User::factory()->create(['id_role' => $role->id]);
+        $autre = User::factory()->create(['id_role' => $role->id]);
+        Sanctum::actingAs($enseignant);
         $annee = AnneeAcademique::create(['libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31', 'active' => true]);
         $calendrier = $annee->calendrier()->create([]);
         $courant = $calendrier->modules()->create(['libelle' => 'Module courant', 'ordre' => 1, 'date_debut' => '2026-09-01', 'date_fin' => '2026-12-20']);
         $suivant = $calendrier->modules()->create(['libelle' => 'Module suivant', 'ordre' => 2, 'date_debut' => '2027-01-01', 'date_fin' => '2027-03-31']);
+        $niveau = Niveau::create(['code' => 'N1', 'libelle' => 'Niveau 1', 'rang' => 1]);
+        $salle = Salle::create(['nom' => 'Salle A', 'code' => 'A']);
+        $ids = [];
+        foreach ([$courant, $suivant] as $index => $module) {
+            $matiere = Matiere::create(['code' => 'MAT-'.$index, 'libelle' => 'Matière '.$index,
+                'id_niveau' => $niveau->id, 'enseignant_id' => $enseignant->id]);
+            $base = ['id_module_calendrier' => $module->id, 'id_niveau' => $niveau->id, 'id_matiere' => $matiere->id,
+                'id_salle' => $salle->id, 'jour' => $index + 1, 'heure_debut' => '08:00:00', 'heure_fin' => '10:00:00'];
+            $ids[] = Creneau::create([...$base, 'enseignant_id' => $enseignant->id])->id;
+            Creneau::create([...$base, 'enseignant_id' => $autre->id]);
+        }
         PublicationProgramme::create(['id_calendrier' => $calendrier->id, 'statut' => 'publie', 'version' => 1, 'date_publication' => now()]);
 
         $this->getJson('/api/v1/enseignant/emploi-du-temps')->assertOk()
-            ->assertJsonPath('module_calendrier.id', $courant->id)
+            ->assertJsonPath('module_calendrier', null)
+            ->assertJsonPath('nombre_creneaux', 2)
+            ->assertJsonPath('heures_hebdomadaires', 4)
+            ->assertJsonCount(2, 'jours')
+            ->assertJsonPath('creneaux.0.id', $ids[0])
+            ->assertJsonPath('creneaux.1.id', $ids[1])
             ->assertJsonCount(2, 'modules_disponibles');
         $this->getJson('/api/v1/enseignant/emploi-du-temps?id_module_calendrier='.$suivant->id)->assertOk()
-            ->assertJsonPath('module_calendrier.id', $suivant->id);
+            ->assertJsonPath('module_calendrier.id', $suivant->id)
+            ->assertJsonPath('nombre_creneaux', 1)->assertJsonPath('creneaux.0.id', $ids[1]);
+        $calendrier->publication()->update(['statut' => 'non_publie']);
+        $this->getJson('/api/v1/enseignant/emploi-du-temps')->assertOk()
+            ->assertJsonPath('publication.statut', 'non_publie')->assertJsonCount(0, 'creneaux');
     }
 
     public function test_refuse_un_module_appartenant_a_une_autre_annee(): void

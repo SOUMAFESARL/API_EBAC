@@ -4179,17 +4179,6 @@
                 ],
                 "summary": "Obtenir les indicateurs des affectations",
                 "operationId": "tableauDeBordAffectationsEnseignants",
-                "parameters": [
-                    {
-                        "name": "id_annee_academique",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "minimum": 1
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Indicateurs.",
@@ -4245,14 +4234,6 @@
                 "summary": "Charger enseignants, matières et cours éligibles",
                 "operationId": "optionsAffectationsEnseignants",
                 "parameters": [
-                    {
-                        "name": "id_annee_academique",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
                     {
                         "name": "id_matiere",
                         "in": "query",
@@ -4321,14 +4302,6 @@
                 "summary": "Lister les affectations et leur historique",
                 "operationId": "listerAffectationsEnseignants",
                 "parameters": [
-                    {
-                        "name": "id_annee_academique",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
                     {
                         "name": "statut",
                         "in": "query",
@@ -6092,7 +6065,7 @@
                     "Espace enseignant"
                 ],
                 "summary": "Afficher l’emploi du temps hebdomadaire de l’enseignant connecté",
-                "description": "Retourne exclusivement les créneaux publiés attribués au compte enseignant authentifié, groupés par jour. Tant que l’administrateur n’a pas publié le programme, aucun créneau n’est exposé.",
+                "description": "Retourne tous les créneaux attribués au compte enseignant authentifié dans l’année sélectionnée, pour toutes ses matières et tous les modules du calendrier, groupés par jour. Sans filtre de module, module_calendrier vaut null et aucun module courant n’est sélectionné automatiquement. id_module_calendrier permet de limiter explicitement les résultats à un module. Le calendrier académique doit être publié. Chaque créneau précise sa matière, son module et ses dates. Le total heures_hebdomadaires additionne les créneaux retournés, y compris ceux de modules ayant lieu à des périodes différentes.",
                 "operationId": "afficherEmploiDuTempsEnseignant",
                 "parameters": [
                     {
@@ -6714,6 +6687,7 @@
                     "Espace enseignant"
                 ],
                 "summary": "Lister les matières et cours affectés à l’enseignant connecté",
+                "description": "Les affectations sont indépendantes de l’année académique. Le filtre année ne concerne que les promotions, créneaux et indicateurs de progression. Les matières affectées restent consultables sans année configurée.",
                 "operationId": "listerMesCoursEnseignant",
                 "parameters": [
                     {
@@ -8955,19 +8929,14 @@
     "components": {
         "schemas": {
             "AffectationEnseignantPayload": {
+                "description": "Affectation indépendante de toute année académique. La prise d’effet et la fin servent uniquement à gérer la période et l’historique de la responsabilité pédagogique.",
                 "required": [
-                    "id_annee_academique",
                     "enseignant_id",
                     "portee",
                     "id_matiere",
                     "date_debut"
                 ],
                 "properties": {
-                    "id_annee_academique": {
-                        "type": "integer",
-                        "example": 1,
-                        "minimum": 1
-                    },
                     "enseignant_id": {
                         "type": "integer",
                         "example": 12,
@@ -9004,9 +8973,6 @@
             "AffectationEnseignant": {
                 "properties": {
                     "id": {
-                        "type": "integer"
-                    },
-                    "id_annee_academique": {
                         "type": "integer"
                     },
                     "enseignant_id": {
@@ -9059,9 +9025,6 @@
                     "cours": {
                         "type": "object",
                         "nullable": true
-                    },
-                    "annee_academique": {
-                        "type": "object"
                     }
                 },
                 "type": "object"
@@ -10803,7 +10766,7 @@
                         "type": "integer"
                     },
                     "enseignant_id": {
-                        "description": "Utilisateur ayant le rôle Enseignant",
+                        "description": "Enseignant actif. Crée automatiquement une affectation de matière sans année académique, à la date du jour. Un changement termine l’ancienne affectation ; null retire l’enseignant en conservant son historique.",
                         "type": "integer",
                         "nullable": true
                     },

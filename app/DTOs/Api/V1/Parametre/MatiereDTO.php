@@ -11,7 +11,7 @@ final readonly class MatiereDTO
     public static function fromArray(array $donnees): self
     {
         foreach (['id_niveau', 'enseignant_id', 'version'] as $champ) {
-            if (array_key_exists($champ, $donnees)) {
+            if (array_key_exists($champ, $donnees) && $donnees[$champ] !== null) {
                 $donnees[$champ] = (int) $donnees[$champ];
             }
         }
@@ -30,5 +30,8 @@ final readonly class MatiereDTO
     }
 
     /** @return array<string, mixed> */
-    public function toArray(): array { return $this->donnees; }
+    public function toArray(): array
+    {
+        return $this->donnees;
+    }
 }

@@ -39,11 +39,12 @@ class MonEmploiDuTempsController extends Controller
             ->orderBy('ordre')->get();
         $module = isset($filtres['id_module_calendrier'])
             ? $modules->firstWhere('id', $filtres['id_module_calendrier'])
-            : $this->moduleCourant($modules);
+            : null;
         if (isset($filtres['id_module_calendrier']) && ! $module) {
             abort(422, 'Le module calendrier sélectionné n’appartient pas à cette année académique.');
         }
-        $estPublie = $module?->publication?->statut === 'publie';
+        $publication = $annee->calendrier?->publication;
+        $estPublie = $publication?->statut === 'publie';
 
         $creneaux = Creneau::query()
             ->where('enseignant_id', $request->user()->id)
@@ -62,8 +63,8 @@ class MonEmploiDuTempsController extends Controller
         return response()->json([
             'annee_academique' => $annee->only(['id', 'libelle', 'date_debut', 'date_fin']),
             'module_calendrier' => $module?->only(['id', 'libelle', 'ordre', 'date_debut', 'date_fin']),
-            'publication' => ['statut' => $module?->publication?->statut ?? 'non_publie', 'version' => $module?->publication?->version ?? 0,
-                'date_publication' => $module?->publication?->date_publication],
+            'publication' => ['statut' => $publication?->statut ?? 'non_publie', 'version' => $publication?->version ?? 0,
+                'date_publication' => $publication?->date_publication],
             'message' => $estPublie ? null : 'Le programme n’est pas encore disponible.',
             'modules_disponibles' => $modules->filter(fn ($item) => $item->publication?->statut === 'publie')->values()->map->only(['id', 'libelle', 'ordre', 'date_debut', 'date_fin']),
             'planning_hebdomadaire' => true,
@@ -82,14 +83,5 @@ class MonEmploiDuTempsController extends Controller
 
         return AnneeAcademique::where('active', true)->first()
             ?? AnneeAcademique::whereDate('date_debut', '<=', $date)->whereDate('date_fin', '>=', $date)->first();
-    }
-
-    private function moduleCourant($modules): ?ModuleCalendrier
-    {
-        $date = now()->toDateString();
-
-        return $modules->first(fn ($module) => $module->date_debut->toDateString() <= $date && $module->date_fin->toDateString() >= $date)
-            ?? $modules->first(fn ($module) => $module->date_debut->toDateString() > $date)
-            ?? $modules->last();
     }
 }

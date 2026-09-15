@@ -9,6 +9,7 @@ use App\Http\Requests\Api\V1\Parametre\ModifierMatiereRequest;
 use App\Models\Cours;
 use App\Models\Matiere;
 use App\Models\Module;
+use App\Services\AffectationEnseignantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,8 @@ use OpenApi\Attributes as OA;
 
 class MatiereController extends Controller
 {
+    public function __construct(private AffectationEnseignantService $affectations) {}
+
     #[OA\Get(path: '/parametres/matieres', operationId: 'listerMatieres', tags: ['Matières'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'niveau', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'type', in: 'query', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'active', in: 'query', schema: new OA\Schema(type: 'boolean')), new OA\Parameter(name: 'obligatoire', in: 'query', schema: new OA\Schema(type: 'boolean')), new OA\Parameter(name: 'version', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'q', in: 'query', schema: new OA\Schema(type: 'string'))], responses: [new OA\Response(response: 200, description: 'Liste filtrée des matières')])]
     public function index(Request $request): JsonResponse
     {
@@ -62,6 +65,9 @@ class MatiereController extends Controller
                 'created_by' => $utilisateur->id,
             ]);
             $matiere->modulesCalendrier()->sync($modulesCalendrier);
+            if (isset($donnees['enseignant_id'])) {
+                $this->affectations->synchroniserMatiere($matiere, (int) $donnees['enseignant_id'], $utilisateur->id);
+            }
 
             foreach ($modules as $indexModule => $donneesModule) {
                 $cours = $donneesModule['cours'];
@@ -117,6 +123,9 @@ class MatiereController extends Controller
             $matiere->update([...$dto->toArray(), 'updated_by' => $request->user()->id]);
             if ($synchroniser) {
                 $matiere->modulesCalendrier()->sync($modulesCalendrier);
+            }
+            if (array_key_exists('enseignant_id', $donnees)) {
+                $this->affectations->synchroniserMatiere($matiere, $donnees['enseignant_id'] === null ? null : (int) $donnees['enseignant_id'], $request->user()->id);
             }
 
             return $matiere;

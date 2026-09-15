@@ -14,6 +14,57 @@ class MatiereApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_enseignant_synchronise_sans_annee_et_changements_historises(): void
+    {
+        $role = Role::create(['code' => 'ADMIN', 'libelle' => 'Admin']);
+        $admin = User::factory()->create(['id_role' => $role->id]);
+        Sanctum::actingAs($admin);
+        $role = Role::create(['code' => 'ENSEIGNANT', 'libelle' => 'Enseignant']);
+        $enseignant = User::factory()->create(['id_role' => $role->id]);
+        $suivant = User::factory()->create(['id_role' => $role->id]);
+        $niveau = Niveau::create(['code' => 'N1', 'libelle' => 'Niveau 1', 'rang' => 1]);
+        $id = $this->postJson('/api/v1/parametres/matieres', ['code' => 'MAT-SYNC', 'libelle' => 'Matière',
+            'id_niveau' => $niveau->id, 'enseignant_id' => $enseignant->id])->assertCreated()->json('matiere.id');
+        $url = '/api/v1/parametres/matieres/'.$id;
+        $this->assertDatabaseCount('annees_academiques', 0);
+        $this->assertDatabaseHas('affectations_enseignants', ['id_matiere' => $id, 'enseignant_id' => $enseignant->id,
+            'id_annee_academique' => null, 'portee' => 'matiere', 'date_fin' => null]);
+        $this->getJson('/api/v1/administration/affectations-enseignants')->assertOk()
+            ->assertJsonCount(1, 'affectations')->assertJsonMissingPath('affectations.0.id_annee_academique');
+        $this->patchJson($url, ['enseignant_id' => $enseignant->id])->assertOk();
+        $this->assertDatabaseCount('affectations_enseignants', 1);
+
+        Sanctum::actingAs($enseignant);
+        $this->getJson('/api/v1/enseignant/mes-cours')->assertOk()->assertJsonPath('matieres.0.id', $id);
+        $this->getJson('/api/v1/enseignant/mes-cours/'.$id)->assertOk()->assertJsonPath('matiere.id', $id);
+        $annee = AnneeAcademique::create(['libelle' => 'Autre année', 'date_debut' => '2030-09-01', 'date_fin' => '2031-07-31']);
+        $this->getJson('/api/v1/enseignant/mes-cours?id_annee_academique='.$annee->id)->assertOk()->assertJsonPath('matieres.0.id', $id);
+
+        Sanctum::actingAs($admin);
+        $this->patchJson($url, ['enseignant_id' => $suivant->id])->assertOk()->assertJsonPath('matiere.enseignant.id', $suivant->id);
+        $this->assertDatabaseCount('affectations_enseignants', 2);
+        $this->assertDatabaseHas('affectations_enseignants', ['enseignant_id' => $enseignant->id, 'date_fin' => now()->toDateString()]);
+        $this->patchJson($url, ['enseignant_id' => null])->assertOk()->assertJsonPath('matiere.enseignant', null);
+        $this->assertDatabaseHas('affectations_enseignants', ['enseignant_id' => $suivant->id, 'date_fin' => now()->toDateString()]);
+        $this->getJson('/api/v1/administration/affectations-enseignants?statut=en_cours')->assertOk()->assertJsonCount(0, 'affectations');
+        $this->getJson('/api/v1/administration/affectations-enseignants?statut=terminee')->assertOk()->assertJsonCount(2, 'affectations');
+        Sanctum::actingAs($suivant);
+        $this->getJson('/api/v1/enseignant/mes-cours/'.$id)->assertNotFound();
+    }
+
+    public function test_enseignant_inactif_ne_cree_ni_matiere_ni_affectation(): void
+    {
+        $role = Role::create(['code' => 'ADMIN', 'libelle' => 'Admin']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        $role = Role::create(['code' => 'ENSEIGNANT', 'libelle' => 'Enseignant']);
+        $enseignant = User::factory()->create(['id_role' => $role->id, 'is_active' => false]);
+        $niveau = Niveau::create(['code' => 'N1', 'libelle' => 'Niveau 1', 'rang' => 1]);
+        $this->postJson('/api/v1/parametres/matieres', ['code' => 'MAT-INACTIVE', 'libelle' => 'Matière',
+            'id_niveau' => $niveau->id, 'enseignant_id' => $enseignant->id])->assertUnprocessable()->assertJsonValidationErrors('enseignant_id');
+        $this->assertDatabaseCount('matieres', 0);
+        $this->assertDatabaseCount('affectations_enseignants', 0);
+    }
+
     public function test_crud_et_filtres_des_matieres(): void
     {
         $role = Role::query()->create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);

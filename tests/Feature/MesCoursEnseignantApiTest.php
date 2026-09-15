@@ -37,8 +37,8 @@ class MesCoursEnseignantApiTest extends TestCase
         $module = Module::create(['id_matiere' => $matiere->id, 'libelle' => 'Doctrine de Dieu', 'ordre' => 1]);
         $cours1 = Cours::create(['id_module' => $module->id, 'code' => 'C-1', 'libelle' => 'Les attributs de Dieu', 'ordre' => 1]);
         Cours::create(['id_module' => $module->id, 'code' => 'C-2', 'libelle' => 'La Trinité', 'ordre' => 2]);
-        AffectationEnseignant::create(['id_annee_academique' => $annee->id, 'enseignant_id' => $enseignant->id, 'id_matiere' => $matiere->id, 'id_cours' => $cours1->id, 'portee' => 'cours', 'date_debut' => '2026-09-01']);
-        AffectationEnseignant::create(['id_annee_academique' => $annee->id, 'enseignant_id' => $autre->id, 'id_matiere' => $matiere->id, 'portee' => 'matiere', 'date_debut' => '2026-09-01']);
+        AffectationEnseignant::create(['enseignant_id' => $enseignant->id, 'id_matiere' => $matiere->id, 'id_cours' => $cours1->id, 'portee' => 'cours', 'date_debut' => '2026-09-01']);
+        AffectationEnseignant::create(['enseignant_id' => $autre->id, 'id_matiere' => $matiere->id, 'portee' => 'matiere', 'date_debut' => '2026-09-01']);
 
         Sanctum::actingAs($enseignant);
         $this->getJson('/api/v1/enseignant/mes-cours')->assertOk()

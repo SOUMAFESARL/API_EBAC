@@ -8,12 +8,14 @@ use Illuminate\Validation\Rule;
 
 class CreerAffectationEnseignantRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool
+    {
+        return true;
+    }
 
     public function rules(): array
     {
         return [
-            'id_annee_academique' => ['required', 'integer', 'exists:annees_academiques,id'],
             'enseignant_id' => ['required', 'integer', new UtilisateurEstEnseignant],
             'portee' => ['required', Rule::in(['matiere', 'cours'])],
             'id_matiere' => ['required', 'integer', 'exists:matieres,id'],

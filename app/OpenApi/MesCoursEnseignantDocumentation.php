@@ -8,6 +8,7 @@ use OpenApi\Attributes as OA;
     path: '/enseignant/mes-cours',
     operationId: 'listerMesCoursEnseignant',
     summary: 'Lister les matières et cours affectés à l’enseignant connecté',
+    description: 'Les affectations sont indépendantes de l’année académique. Le filtre année ne concerne que les promotions, créneaux et indicateurs de progression. Les matières affectées restent consultables sans année configurée.',
     tags: ['Espace enseignant'], security: [['sanctum' => []]],
     parameters: [
         new OA\Parameter(name: 'id_annee_academique', in: 'query', schema: new OA\Schema(type: 'integer')),
