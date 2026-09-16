@@ -79,6 +79,18 @@ class ListePresenceEnseignantApiTest extends TestCase
             ->assertJsonMissing(['matricule' => $data['horsPromotion']->matricule]);
     }
 
+    public function test_liste_seances_pour_enseignant(): void
+    {
+        $data = $this->contexte();
+        Sanctum::actingAs($data['enseignant']);
+        $this->getJson('/api/v1/enseignant/liste-presence')->assertOk()
+            ->assertJsonCount(1, 'seances')
+            ->assertJsonPath('nombre_seances', 1)
+            ->assertJsonCount(2, 'seances.0.etudiants')
+            ->assertJsonMissing(['matricule' => $data['horsPromotion']->matricule]);
+    }
+
+
     public function test_enregistre_et_valide_definitivement_la_presence_et_cree_le_cours_a_faire(): void
     {
         $data = $this->contexte();

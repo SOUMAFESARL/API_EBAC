@@ -6502,6 +6502,7 @@
                     "Liste de présence"
                 ],
                 "summary": "Lister les séances accessibles pour l’appel",
+                "description": "Retourne les séances de l’enseignant connecté avec pour chacune les étudiants concernés et leur statut de présence.",
                 "operationId": "listerSeancesPresence",
                 "parameters": [
                     {
@@ -6544,7 +6545,26 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Séances de l’enseignant et état de leur feuille."
+                        "description": "Séances de l’enseignant avec étudiants et état de leur feuille.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "seances": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/FeuillePresenceDetail"
+                                            }
+                                        },
+                                        "nombre_seances": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Non authentifié."
@@ -6565,8 +6585,8 @@
                 "tags": [
                     "Liste de présence"
                 ],
-                "summary": "Afficher les étudiants concernés par une séance",
-                "description": "Les étudiants sont calculés côté serveur depuis l’année, le niveau et la promotion de la séance.",
+                "summary": "Afficher les étudiants concernés par une séance pour l’appel",
+                "description": "Les étudiants sont calculés côté serveur depuis l’année académique, le niveau et la promotion de la séance.",
                 "operationId": "afficherListePresence",
                 "parameters": [
                     {
@@ -6580,7 +6600,19 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Feuille et étudiants concernés."
+                        "description": "Feuille et étudiants concernés avec leur statut de présence.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "feuille_presence": {
+                                            "$ref": "#/components/schemas/FeuillePresenceDetail"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Séance absente ou appartenant à un autre enseignant."
@@ -6597,6 +6629,7 @@
                     "Liste de présence"
                 ],
                 "summary": "Enregistrer la liste de présence en brouillon",
+                "description": "Enregistre les statuts (présent ou absent) pour tous les étudiants concernés. La liste doit contenir exactement tous les étudiants sans doublon.",
                 "operationId": "enregistrerListePresence",
                 "parameters": [
                     {
@@ -6620,7 +6653,23 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Brouillon enregistré."
+                        "description": "Brouillon enregistré avec succès.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Liste de présence enregistrée."
+                                        },
+                                        "feuille_presence": {
+                                            "$ref": "#/components/schemas/FeuillePresenceDetail"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Séance inaccessible."
@@ -6642,7 +6691,7 @@
                     "Liste de présence"
                 ],
                 "summary": "Valider définitivement la liste de présence",
-                "description": "Opération irréversible. Chaque absent reçoit automatiquement un cours à faire.",
+                "description": "Opération irréversible. La séance doit être réalisée. Chaque absent reçoit automatiquement un cours à faire.",
                 "operationId": "validerListePresence",
                 "parameters": [
                     {
@@ -6666,7 +6715,23 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Liste validée définitivement."
+                        "description": "Liste validée définitivement.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Liste de présence validée définitivement."
+                                        },
+                                        "feuille_presence": {
+                                            "$ref": "#/components/schemas/FeuillePresenceDetail"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Séance inaccessible."
@@ -10372,6 +10437,132 @@
                 },
                 "type": "object"
             },
+            "EtudiantPresence": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "matricule": {
+                        "type": "string",
+                        "example": "ETU-2026-001"
+                    },
+                    "nom": {
+                        "type": "string",
+                        "example": "KOUAME"
+                    },
+                    "prenoms": {
+                        "type": "string",
+                        "example": "Jean"
+                    },
+                    "statut_presence": {
+                        "type": "string",
+                        "example": "present",
+                        "nullable": true,
+                        "enum": [
+                            "present",
+                            "absent"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "FeuillePresenceDetail": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "date_prevue": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-09-14"
+                    },
+                    "heure_debut_prevue": {
+                        "type": "string",
+                        "example": "08:00:00"
+                    },
+                    "heure_fin_prevue": {
+                        "type": "string",
+                        "example": "10:00:00",
+                        "nullable": true
+                    },
+                    "statut": {
+                        "type": "string",
+                        "example": "realisee"
+                    },
+                    "matiere": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "module": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "cours": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "promotion": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "presence": {
+                        "properties": {
+                            "statut": {
+                                "type": "string",
+                                "example": "a_soumettre"
+                            },
+                            "presents": {
+                                "type": "integer",
+                                "example": 15
+                            },
+                            "absents": {
+                                "type": "integer",
+                                "example": 2
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "etudiants": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/EtudiantPresence"
+                        }
+                    },
+                    "modifiable": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "date_validation": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "PresenceItemPayload": {
+                "required": [
+                    "id_etudiant",
+                    "statut"
+                ],
+                "properties": {
+                    "id_etudiant": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "statut": {
+                        "type": "string",
+                        "example": "present",
+                        "enum": [
+                            "present",
+                            "absent"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
             "PresencePayload": {
                 "required": [
                     "presences"
@@ -10380,23 +10571,7 @@
                     "presences": {
                         "type": "array",
                         "items": {
-                            "required": [
-                                "id_etudiant",
-                                "statut"
-                            ],
-                            "properties": {
-                                "id_etudiant": {
-                                    "type": "integer"
-                                },
-                                "statut": {
-                                    "type": "string",
-                                    "enum": [
-                                        "present",
-                                        "absent"
-                                    ]
-                                }
-                            },
-                            "type": "object"
+                            "$ref": "#/components/schemas/PresenceItemPayload"
                         },
                         "minItems": 1
                     }
