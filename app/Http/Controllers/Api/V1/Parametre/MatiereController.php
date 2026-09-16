@@ -17,6 +17,39 @@ use OpenApi\Attributes as OA;
 
 class MatiereController extends Controller
 {
+
+    private function synchroniserModules(
+    Matiere $matiere,
+    array $modules,
+    int $userId
+): void {
+    $idsConserves = [];
+
+    foreach ($modules as $moduleData) {
+        $moduleId = $moduleData['id'] ?? null;
+
+        unset($moduleData['id']);
+
+        $moduleData['updated_by'] = $userId;
+
+        if ($moduleId) {
+            $module = $matiere->modules()->findOrFail($moduleId);
+            $module->update($moduleData);
+        } else {
+            $module = $matiere->modules()->create([
+                ...$moduleData,
+                'created_by' => $userId,
+            ]);
+        }
+
+        $idsConserves[] = $module->id;
+    }
+
+    // Supprimer les anciens modules absents de la requête
+    $matiere->modules()
+        ->whereNotIn('id', $idsConserves)
+        ->delete();
+}
     public function __construct(private AffectationEnseignantService $affectations) {}
 
     #[OA\Get(path: '/parametres/matieres', operationId: 'listerMatieres', tags: ['Matières'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'niveau', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'type', in: 'query', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'active', in: 'query', schema: new OA\Schema(type: 'boolean')), new OA\Parameter(name: 'obligatoire', in: 'query', schema: new OA\Schema(type: 'boolean')), new OA\Parameter(name: 'version', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'q', in: 'query', schema: new OA\Schema(type: 'string'))], responses: [new OA\Response(response: 200, description: 'Liste filtrée des matières')])]
