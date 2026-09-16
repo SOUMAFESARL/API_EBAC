@@ -33,5 +33,6 @@ class ModifierMatiereRequest extends FormRequest
             'module_calendrier_id' => ['sometimes', 'array'],
             'module_calendrier_id.*' => ['integer', 'distinct', 'exists:modules_calendrier,id'],
         ];
+        
     }
 }

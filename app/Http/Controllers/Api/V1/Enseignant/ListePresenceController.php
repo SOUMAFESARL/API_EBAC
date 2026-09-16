@@ -17,21 +17,42 @@ use Illuminate\Validation\ValidationException;
 class ListePresenceController extends Controller
 {
     public function index(Request $request): JsonResponse
-    {
-        $data = $request->validate([
-            'id_matiere' => ['sometimes', 'integer', 'exists:matieres,id'], 'id_cours' => ['sometimes', 'integer', 'exists:cours,id'],
-            'id_promotion' => ['sometimes', 'integer', 'exists:promotions,id'], 'date_debut' => ['sometimes', 'date'],
-            'date_fin' => ['sometimes', 'date', 'after_or_equal:date_debut'],
-        ]);
-        $seances = $this->seances($request)->when($data['id_matiere'] ?? null, fn ($q, $id) => $q->where('id_matiere', $id))
-            ->when($data['id_cours'] ?? null, fn ($q, $id) => $q->where('id_cours', $id))
-            ->when($data['id_promotion'] ?? null, fn ($q, $id) => $q->where('id_promotion', $id))
-            ->when($data['date_debut'] ?? null, fn ($q, $date) => $q->whereDate('date_prevue', '>=', $date))
-            ->when($data['date_fin'] ?? null, fn ($q, $date) => $q->whereDate('date_prevue', '<=', $date))
-            ->with(['matiere', 'cours.module', 'promotion', 'feuillePresence.presences'])->orderByDesc('date_prevue')->orderByDesc('heure_debut_prevue')->get();
+{
+    $data = $request->validate([
+        'id_matiere' => ['sometimes', 'integer', 'exists:matieres,id'],
+        'id_cours' => ['sometimes', 'integer', 'exists:cours,id'],
+        'id_promotion' => ['sometimes', 'integer', 'exists:promotions,id'],
+        'date_debut' => ['sometimes', 'date'],
+        'date_fin' => ['sometimes', 'date', 'after_or_equal:date_debut'],
+    ]);
 
-        return response()->json(['seances' => $seances->map(fn ($seance) => $this->resume($seance)), 'nombre_seances' => $seances->count()]);
-    }
+    $seances = $this->seances($request)
+        ->when($data['id_matiere'] ?? null, fn ($q, $id) => $q->where('id_matiere', $id))
+        ->when($data['id_cours'] ?? null, fn ($q, $id) => $q->where('id_cours', $id))
+        ->when($data['id_promotion'] ?? null, fn ($q, $id) => $q->where('id_promotion', $id))
+        ->when($data['date_debut'] ?? null, fn ($q, $date) => $q->whereDate('date_prevue', '>=', $date))
+        ->when($data['date_fin'] ?? null, fn ($q, $date) => $q->whereDate('date_prevue', '<=', $date))
+        ->with([
+            'matiere',
+            'cours.module',
+            'promotion',
+            'niveau',
+            'salle',
+            'moduleCalendrier.calendrier',
+            'feuillePresence.presences',
+        ])
+        ->orderByDesc('date_prevue')
+        ->orderByDesc('heure_debut_prevue')
+        ->get();
+
+    // ✅ On précharge les étudiants concernés en UNE seule requête
+    $this->prechargerEtudiants($seances);
+
+    return response()->json([
+        'seances' => $seances->map(fn ($seance) => $this->presenter($seance)),
+        'nombre_seances' => $seances->count(),
+    ]);
+}
 
     public function show(Request $request, int $seance): JsonResponse
     {

@@ -111,6 +111,7 @@ class MatiereController extends Controller
 
     #[OA\Put(path: '/parametres/matieres/{id}', operationId: 'remplacerMatiere', tags: ['Matières'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/MatierePayload')), responses: [new OA\Response(response: 200, description: 'Matière modifiée')])]
     #[OA\Patch(path: '/parametres/matieres/{id}', operationId: 'modifierMatiere', tags: ['Matières'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/MatierePayload')), responses: [new OA\Response(response: 200, description: 'Matière modifiée')])]
+    
     public function update(ModifierMatiereRequest $request, int $id): JsonResponse
     {
         $matiere = DB::transaction(function () use ($request, $id) {
