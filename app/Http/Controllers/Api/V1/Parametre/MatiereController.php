@@ -117,16 +117,30 @@ class MatiereController extends Controller
         $matiere = DB::transaction(function () use ($request, $id) {
             $matiere = Matiere::query()->lockForUpdate()->findOrFail($id);
             $donnees = $request->validated();
-            $synchroniser = array_key_exists('module_calendrier_id', $donnees);
+
+            // Extraire les données non-matière avant le DTO
+            $synchroniserCalendrier = array_key_exists('module_calendrier_id', $donnees);
             $modulesCalendrier = $donnees['module_calendrier_id'] ?? [];
-            unset($donnees['module_calendrier_id']);
+            $modulesPayload = $donnees['modules'] ?? null;
+            unset($donnees['module_calendrier_id'], $donnees['modules']);
+
+            // Mise à jour des champs de la matière
             $dto = MatiereDTO::fromArray($donnees);
             $matiere->update([...$dto->toArray(), 'updated_by' => $request->user()->id]);
-            if ($synchroniser) {
+
+            // Synchronisation des modules calendrier
+            if ($synchroniserCalendrier) {
                 $matiere->modulesCalendrier()->sync($modulesCalendrier);
             }
+
+            // Synchronisation de l'enseignant
             if (array_key_exists('enseignant_id', $donnees)) {
                 $this->affectations->synchroniserMatiere($matiere, $donnees['enseignant_id'] === null ? null : (int) $donnees['enseignant_id'], $request->user()->id);
+            }
+
+            // Synchronisation des modules imbriqués (si fournis)
+            if ($modulesPayload !== null) {
+                $this->synchroniserModules($matiere, $modulesPayload, $request->user()->id);
             }
 
             return $matiere;
@@ -137,6 +151,7 @@ class MatiereController extends Controller
             'matiere' => $this->charger($matiere->fresh()),
         ]);
     }
+
 
     #[OA\Delete(path: '/parametres/matieres/{id}', operationId: 'supprimerMatiere', tags: ['Matières'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Matière supprimée')])]
     public function destroy(ModifierMatiereRequest $request, int $id): JsonResponse
