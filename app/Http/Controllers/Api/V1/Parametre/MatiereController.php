@@ -18,20 +18,24 @@ use OpenApi\Attributes as OA;
 class MatiereController extends Controller
 {
 
-    private function synchroniserModules(
+   private function synchroniserModules(
     Matiere $matiere,
     array $modules,
     int $userId
 ): void {
-    $idsConserves = [];
+    $idsModulesConserves = [];
 
     foreach ($modules as $moduleData) {
-        $moduleId = $moduleData['id'] ?? null;
+        // 1. Extraire les cours AVANT de toucher au module
+        $cours = $moduleData['cours'] ?? [];
+        unset($moduleData['cours']);
 
+        $moduleId = $moduleData['id'] ?? null;
         unset($moduleData['id']);
 
         $moduleData['updated_by'] = $userId;
 
+        // 2. Créer ou mettre à jour le module
         if ($moduleId) {
             $module = $matiere->modules()->findOrFail($moduleId);
             $module->update($moduleData);
@@ -42,13 +46,21 @@ class MatiereController extends Controller
             ]);
         }
 
-        $idsConserves[] = $module->id;
+        // 3. Synchroniser les cours du module
+        $this->synchroniserCours($module, $cours, $userId);
+
+        $idsModulesConserves[] = $module->id;
     }
 
-    // Supprimer les anciens modules absents de la requête
-    $matiere->modules()
-        ->whereNotIn('id', $idsConserves)
-        ->delete();
+    // 4. Supprimer les modules absents (et leurs cours en cascade ou manuellement)
+    $modulesASupprimer = $matiere->modules()
+        ->whereNotIn('id', $idsModulesConserves)
+        ->get();
+
+    foreach ($modulesASupprimer as $module) {
+        $module->cours()->delete(); // supprime les cours du module
+        $module->delete();
+    }
 }
     public function __construct(private AffectationEnseignantService $affectations) {}
 
