@@ -17,51 +17,98 @@ use OpenApi\Attributes as OA;
 
 class MatiereController extends Controller
 {
+    /**
+     * Synchronise les modules d'une matière :
+     *  - met à jour ceux qui ont un id
+     *  - crée ceux qui n'en ont pas
+     *  - supprime ceux qui ne sont pas dans le payload
+     *  Et synchronise récursivement leurs cours.
+     */
+    private function synchroniserModules(
+        Matiere $matiere,
+        array $modules,
+        int $userId
+    ): void {
+        $idsModulesConserves = [];
 
-   private function synchroniserModules(
-    Matiere $matiere,
-    array $modules,
-    int $userId
-): void {
-    $idsModulesConserves = [];
+        foreach ($modules as $moduleData) {
+            // 1. Extraire les cours AVANT de toucher au module
+            $cours = $moduleData['cours'] ?? [];
+            unset($moduleData['cours']);
 
-    foreach ($modules as $moduleData) {
-        // 1. Extraire les cours AVANT de toucher au module
-        $cours = $moduleData['cours'] ?? [];
-        unset($moduleData['cours']);
+            $moduleId = $moduleData['id'] ?? null;
+            unset($moduleData['id']);
 
-        $moduleId = $moduleData['id'] ?? null;
-        unset($moduleData['id']);
+            $moduleData['updated_by'] = $userId;
 
-        $moduleData['updated_by'] = $userId;
+            // 2. Créer ou mettre à jour le module
+            if ($moduleId) {
+                $module = $matiere->modules()->findOrFail($moduleId);
+                $module->update($moduleData);
+            } else {
+                $module = $matiere->modules()->create([
+                    ...$moduleData,
+                    'created_by' => $userId,
+                ]);
+            }
 
-        // 2. Créer ou mettre à jour le module
-        if ($moduleId) {
-            $module = $matiere->modules()->findOrFail($moduleId);
-            $module->update($moduleData);
-        } else {
-            $module = $matiere->modules()->create([
-                ...$moduleData,
-                'created_by' => $userId,
-            ]);
+            // 3. Synchroniser les cours du module
+            $this->synchroniserCours($module, $cours, $userId);
+
+            $idsModulesConserves[] = $module->id;
         }
 
-        // 3. Synchroniser les cours du module
-        $this->synchroniserCours($module, $cours, $userId);
+        // 4. Supprimer les modules absents (et leurs cours)
+        $modulesASupprimer = $matiere->modules()
+            ->whereNotIn('id', $idsModulesConserves)
+            ->get();
 
-        $idsModulesConserves[] = $module->id;
+        foreach ($modulesASupprimer as $module) {
+            $module->cours()->delete();
+            $module->delete();
+        }
     }
 
-    // 4. Supprimer les modules absents (et leurs cours en cascade ou manuellement)
-    $modulesASupprimer = $matiere->modules()
-        ->whereNotIn('id', $idsModulesConserves)
-        ->get();
+    /**
+     * Synchronise les cours d'un module :
+     *  - met à jour ceux qui ont un id
+     *  - crée ceux qui n'en ont pas
+     *  - supprime ceux qui ne sont pas dans le payload
+     */
+    private function synchroniserCours(Module $module, array $cours, int $userId): void
+    {
+        $idsCoursConserves = [];
 
-    foreach ($modulesASupprimer as $module) {
-        $module->cours()->delete(); // supprime les cours du module
-        $module->delete();
+        foreach ($cours as $indexCours => $coursData) {
+            $coursId = $coursData['id'] ?? null;
+            unset($coursData['id']);
+
+            $coursData['updated_by'] = $userId;
+            $coursData['ordre'] = $coursData['ordre'] ?? $indexCours + 1;
+
+            if ($coursId) {
+                // Mise à jour d'un cours existant
+                $coursModel = $module->cours()->findOrFail($coursId);
+                $coursModel->update($coursData);
+            } else {
+                // Création d'un nouveau cours
+                $coursModel = $module->cours()->create([
+                    ...$coursData,
+                    'id_module'  => $module->id,
+                    'user_id'    => $userId,
+                    'created_by' => $userId,
+                ]);
+            }
+
+            $idsCoursConserves[] = $coursModel->id;
+        }
+
+        // Supprimer les cours absents de la requête
+        $module->cours()
+            ->whereNotIn('id', $idsCoursConserves)
+            ->delete();
     }
-}
+
     public function __construct(private AffectationEnseignantService $affectations) {}
 
     #[OA\Get(path: '/parametres/matieres', operationId: 'listerMatieres', tags: ['Matières'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'niveau', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'type', in: 'query', schema: new OA\Schema(type: 'string')), new OA\Parameter(name: 'active', in: 'query', schema: new OA\Schema(type: 'boolean')), new OA\Parameter(name: 'obligatoire', in: 'query', schema: new OA\Schema(type: 'boolean')), new OA\Parameter(name: 'version', in: 'query', schema: new OA\Schema(type: 'integer')), new OA\Parameter(name: 'q', in: 'query', schema: new OA\Schema(type: 'string'))], responses: [new OA\Response(response: 200, description: 'Liste filtrée des matières')])]
@@ -156,7 +203,6 @@ class MatiereController extends Controller
 
     #[OA\Put(path: '/parametres/matieres/{id}', operationId: 'remplacerMatiere', tags: ['Matières'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/MatierePayload')), responses: [new OA\Response(response: 200, description: 'Matière modifiée')])]
     #[OA\Patch(path: '/parametres/matieres/{id}', operationId: 'modifierMatiere', tags: ['Matières'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/MatierePayload')), responses: [new OA\Response(response: 200, description: 'Matière modifiée')])]
-    
     public function update(ModifierMatiereRequest $request, int $id): JsonResponse
     {
         $matiere = DB::transaction(function () use ($request, $id) {
@@ -196,7 +242,6 @@ class MatiereController extends Controller
             'matiere' => $this->charger($matiere->fresh()),
         ]);
     }
-
 
     #[OA\Delete(path: '/parametres/matieres/{id}', operationId: 'supprimerMatiere', tags: ['Matières'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Matière supprimée')])]
     public function destroy(ModifierMatiereRequest $request, int $id): JsonResponse
