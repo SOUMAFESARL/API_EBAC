@@ -164,6 +164,16 @@ Route::prefix('v1/enseignant/cahier-de-texte')
         Route::delete('{seance}', [CahierTexteController::class, 'destroy'])->whereNumber('seance')->name('destroy');
     });
 
+Route::prefix('v1/enseignant/notes')
+    ->name('api.v1.enseignant.notes.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ENSEIGNANT'])
+    ->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\V1\Enseignant\NoteController::class, 'index'])->name('index');
+        Route::get('{cours}', [\App\Http\Controllers\Api\V1\Enseignant\NoteController::class, 'show'])->whereNumber('cours')->name('show');
+        Route::put('{cours}', [\App\Http\Controllers\Api\V1\Enseignant\NoteController::class, 'update'])->whereNumber('cours')->name('update');
+        Route::post('{cours}/transmettre', [\App\Http\Controllers\Api\V1\Enseignant\NoteController::class, 'transmettre'])->whereNumber('cours')->name('transmettre');
+    });
+
 Route::prefix('v1/enseignant/liste-presence')
     ->name('api.v1.enseignant.liste-presence.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ENSEIGNANT'])
