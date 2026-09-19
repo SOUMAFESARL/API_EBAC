@@ -138,7 +138,7 @@ class ListePresenceController extends Controller
 
             if (! isset($cache[$cle])) {
                 $cache[$cle] = Etudiant::query()
-                    ->whereHas('inscriptions', fn ($q) => $q->where('id_annee_academique', $anneeId)
+                    ->whereHas('inscriptions', fn ($q) => $q->when(! $seance->id_promotion, fn ($i) => $i->where('id_annee_academique', $anneeId))
                         ->when($seance->id_promotion, fn ($i, $id) => $i->where('id_promotion', $id))
                         ->when(! $seance->id_promotion, fn ($i) => $i->whereHas('promotion', fn ($p) => $p->where('id_niveau', $seance->id_niveau))))
                     ->orderBy('nom')
@@ -187,7 +187,7 @@ class ListePresenceController extends Controller
         $anneeId = $seance->moduleCalendrier?->calendrier?->id_annee_academique
             ?? AnneeAcademique::where('active', true)->value('id');
 
-        return Etudiant::query()->whereHas('inscriptions', fn ($q) => $q->where('id_annee_academique', $anneeId)
+        return Etudiant::query()->whereHas('inscriptions', fn ($q) => $q->when(! $seance->id_promotion, fn ($i) => $i->where('id_annee_academique', $anneeId))
             ->when($seance->id_promotion, fn ($i, $id) => $i->where('id_promotion', $id))
             ->when(! $seance->id_promotion, fn ($i) => $i->whereHas('promotion', fn ($p) => $p->where('id_niveau', $seance->id_niveau))))
             ->orderBy('nom')

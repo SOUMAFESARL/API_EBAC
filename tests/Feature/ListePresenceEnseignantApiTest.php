@@ -39,6 +39,7 @@ class ListePresenceEnseignantApiTest extends TestCase
         $enseignant = User::factory()->create(['id_role' => $teacherRole->id]);
         $autreEnseignant = User::factory()->create(['id_role' => $teacherRole->id]);
         $annee = AnneeAcademique::create(['libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31', 'active' => true]);
+        $anneePrecedente = AnneeAcademique::create(['libelle' => '2025-2026', 'date_debut' => '2025-09-01', 'date_fin' => '2026-07-31', 'active' => false]);
         $moduleCalendrier = $annee->calendrier()->create([])->modules()->create(['libelle' => 'Module 1', 'ordre' => 1, 'date_debut' => '2026-09-01', 'date_fin' => '2026-09-30']);
         $niveau = Niveau::create(['code' => 'N1', 'libelle' => '1ère Année', 'rang' => 1]);
         $promotion = Promotion::create(['num_promotion' => 4, 'annee_entree' => 2026, 'id_niveau' => $niveau->id]);
@@ -57,6 +58,7 @@ class ListePresenceEnseignantApiTest extends TestCase
             return $etudiant;
         });
         $horsPromotion = Etudiant::create(['matricule' => 'ETU-3', 'nom' => 'HORS', 'prenoms' => 'Promotion', 'date_inscription' => '2026-09-01']);
+        $etudiants[1]->inscriptions()->update(['id_annee_academique' => $anneePrecedente->id, 'date_inscription' => '2025-09-01']);
         Inscription::create(['id_etudiant' => $horsPromotion->id, 'id_promotion' => $autrePromotion->id, 'id_annee_academique' => $annee->id, 'date_inscription' => '2026-09-01']);
         Sanctum::actingAs($admin);
         $this->postJson('/api/v1/administration/publication-programme/'.$moduleCalendrier->id_calendrier.'/publier')->assertOk();
@@ -70,7 +72,7 @@ class ListePresenceEnseignantApiTest extends TestCase
         return compact('admin', 'enseignant', 'autreEnseignant', 'seance', 'etudiants', 'horsPromotion');
     }
 
-    public function test_affiche_uniquement_les_etudiants_de_la_promotion_concernee(): void
+    public function test_affiche_tous_les_etudiants_de_la_promotion_sans_filtre_annee(): void
     {
         $data = $this->contexte();
         Sanctum::actingAs($data['enseignant']);

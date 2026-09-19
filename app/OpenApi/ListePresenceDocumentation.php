@@ -72,7 +72,7 @@ use OpenApi\Attributes as OA;
     path: '/enseignant/liste-presence',
     operationId: 'listerSeancesPresence',
     summary: 'Lister les séances accessibles pour l’appel',
-    description: 'Retourne les séances de l’enseignant connecté avec pour chacune les étudiants concernés et leur statut de présence.',
+    description: 'Retourne les séances de l’enseignant connecté avec tous les étudiants de leur promotion, quelle que soit leur année d’inscription, et leur statut de présence.',
     tags: ['Liste de présence'],
     security: [['sanctum' => []]],
     parameters: [
@@ -101,7 +101,7 @@ use OpenApi\Attributes as OA;
     path: '/enseignant/liste-presence/{seance}',
     operationId: 'afficherListePresence',
     summary: 'Afficher les étudiants concernés par une séance pour l’appel',
-    description: 'Les étudiants sont calculés côté serveur depuis l’année académique, le niveau et la promotion de la séance.',
+    description: 'Tous les étudiants inscrits dans la promotion de la séance sont concernés, quelle que soit leur année d’inscription. Sans promotion, la sélection utilise le niveau et l’année académique de la séance.',
     tags: ['Liste de présence'],
     security: [['sanctum' => []]],
     parameters: [
@@ -173,4 +173,3 @@ use OpenApi\Attributes as OA;
     ]
 )]
 final class ListePresenceDocumentation {}
-
