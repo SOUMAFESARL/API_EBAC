@@ -29,6 +29,7 @@ Les notes sont comprises entre 0 et 20, décimales acceptées (exemple JSON : `1
 Au moins un étudiant doit être évaluable, et chacun doit avoir une note. Après transmission, `statut = transmise` et `saisie_ouverte = false` : l’enseignant ne peut plus modifier la feuille. Cette opération enregistre une transmission ; elle ne valide pas officiellement les moyennes. Les étapes de contrôle du secrétariat et de validation de la direction ne sont pas encore implémentées dans ces routes.
 DOC)]
 #[OA\Schema(schema: 'EtudiantNoteCours', type: 'object', properties: [
+    new OA\Property(property: 'id_note', type: 'integer', nullable: true, description: 'Identifiant de la note pour le circuit administratif de correction.', example: 1),
     new OA\Property(property: 'id', type: 'integer', example: 4),
     new OA\Property(property: 'matricule', type: 'string', example: 'EBAC-0004-2026'),
     new OA\Property(property: 'nom', type: 'string', example: 'Kadio'),

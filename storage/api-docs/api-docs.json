@@ -5533,6 +5533,269 @@
                 ]
             }
         },
+        "/administration/corrections-notes": {
+            "get": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Lister les demandes de correction",
+                "operationId": "287695c8a8618edc2ce34f11b01a5403",
+                "parameters": [
+                    {
+                        "name": "id_note",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "en_attente",
+                                "autorisee",
+                                "appliquee",
+                                "rejetee"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 20,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pagination Laravel : data, current_page, total et liens."
+                    },
+                    "401": {
+                        "description": "Non authentifié."
+                    },
+                    "403": {
+                        "description": "Accès interdit."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Demander une correction de note transmise",
+                "operationId": "9cff8cab8f595996330e1c8fc57945ae",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DemandeCorrectionNote"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "message et correction avec id, note_initiale, note_proposee, motif, demande_par, statut en_attente et dates."
+                    },
+                    "404": {
+                        "description": "Note introuvable."
+                    },
+                    "422": {
+                        "description": "Valeur invalide, note inchangée, feuille non transmise ou correction déjà en cours."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/corrections-notes/{id}": {
+            "get": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Consulter une correction et son historique",
+                "operationId": "e8c0ab6799e433105a3f2bf3c9d261b8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "correction et historique chronologique : id_acteur, action, details, created_at."
+                    },
+                    "404": {
+                        "description": "Correction introuvable."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/corrections-notes/{id}/autoriser": {
+            "post": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Autoriser une demande en attente (ADMIN, DIRECTION)",
+                "operationId": "66d1ff3f6fce9b12fa07f0d2aaefb8f8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message et correction autorisee ; aucune modification de note à cette étape."
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé."
+                    },
+                    "404": {
+                        "description": "Correction introuvable."
+                    },
+                    "422": {
+                        "description": "Statut incompatible."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/corrections-notes/{id}/rejeter": {
+            "post": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Rejeter une demande en attente (ADMIN, DIRECTION)",
+                "operationId": "469c61ac0da9586cf97de97d50ae6da4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "motif"
+                                ],
+                                "properties": {
+                                    "motif": {
+                                        "type": "string",
+                                        "example": "La copie ne justifie pas cette correction.",
+                                        "maxLength": 5000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "message et correction rejetee ; motif conservé dans l’historique."
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé."
+                    },
+                    "404": {
+                        "description": "Correction introuvable."
+                    },
+                    "422": {
+                        "description": "Motif manquant ou statut incompatible."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/corrections-notes/{id}/appliquer": {
+            "post": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Appliquer une correction autorisée (ADMIN, secrétariat)",
+                "operationId": "71f792d0a09f3b35a78aa6e52f117d0b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message et correction appliquee avec note_finale, appliquee_par et appliquee_le. Mise à jour atomique de la note et de l’historique."
+                    },
+                    "403": {
+                        "description": "Rôle non autorisé."
+                    },
+                    "404": {
+                        "description": "Correction introuvable."
+                    },
+                    "422": {
+                        "description": "Statut incompatible, feuille non transmise ou note modifiée depuis la demande. Une correction ne peut être appliquée deux fois."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/parametres/creneaux": {
             "get": {
                 "tags": [
@@ -9682,6 +9945,33 @@
                     }
                 ]
             },
+            "DemandeCorrectionNote": {
+                "required": [
+                    "id_note",
+                    "note_proposee",
+                    "motif"
+                ],
+                "properties": {
+                    "id_note": {
+                        "description": "Identifiant notes_cours, exposé dans etudiants[].id_note de la feuille enseignant.",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "note_proposee": {
+                        "description": "Deux décimales maximum, différente de la note actuelle.",
+                        "type": "number",
+                        "example": 15.5,
+                        "maximum": 20,
+                        "minimum": 0
+                    },
+                    "motif": {
+                        "type": "string",
+                        "example": "Erreur de saisie sur la copie corrigée",
+                        "maxLength": 5000
+                    }
+                },
+                "type": "object"
+            },
             "CreneauPayload": {
                 "description": "Creneau hebdomadaire dans un module du calendrier. Cours facultatif. Chaque créneau appartient à une promotion explicite : id_promotion obligatoire en création et PUT, conservé si absent en PATCH. Conflits de salle, enseignant ou promotion refusés avec 422. Les horaires adjacents sont autoris?s.",
                 "required": [
@@ -11005,6 +11295,12 @@
             },
             "EtudiantNoteCours": {
                 "properties": {
+                    "id_note": {
+                        "description": "Identifiant de la note pour le circuit administratif de correction.",
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
+                    },
                     "id": {
                         "type": "integer",
                         "example": 4
@@ -12234,6 +12530,10 @@
         {
             "name": "Comptes",
             "description": "Gestion accessible à tous les rôles authentifiés ayant un compte actif, sauf ETUDIANT et ENSEIGNANT qui sont toujours interdits."
+        },
+        {
+            "name": "Corrections des notes",
+            "description": "Correction des notes transmises : demande, autorisation puis application. Accès ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION avec un compte actif. Autoriser et rejeter : ADMIN ou DIRECTION. Appliquer : ADMIN ou secrétariat. Les brouillons restent modifiables via la saisie enseignant. La feuille reste transmise et les moyennes consultées reflètent la note corrigée. Chaque étape conserve son acteur et sa date dans l’historique."
         },
         {
             "name": "Dossier étudiant",

@@ -97,6 +97,7 @@ class NoteController extends Controller
 
             return [...$etudiant->only(['id', 'matricule', 'nom', 'prenoms']), 'evaluable' => $present,
                 'statut_presence' => $ouverte ? ($present ? 'present' : 'absent') : 'en_attente',
+                'id_note' => $notes->get($etudiant->id)?->id,
                 'note' => $notes->get($etudiant->id)?->note,
                 'moyenne_matiere' => isset($moyennes[$etudiant->id]) ? round((float) $moyennes[$etudiant->id], 2) : null,
                 'statut_moyenne' => 'provisoire'];

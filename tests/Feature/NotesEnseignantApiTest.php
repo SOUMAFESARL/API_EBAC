@@ -2,14 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Models\AffectationEnseignant;
 use App\Models\AnneeAcademique;
 use App\Models\Cours;
 use App\Models\Creneau;
 use App\Models\Etudiant;
+use App\Models\FeuilleNotes;
 use App\Models\Inscription;
 use App\Models\Matiere;
 use App\Models\Module;
 use App\Models\Niveau;
+use App\Models\NoteCours;
 use App\Models\Promotion;
 use App\Models\Role;
 use App\Models\Salle;
@@ -69,10 +72,10 @@ class NotesEnseignantApiTest extends TestCase
         $seance = SeanceCahierTexte::whereDate('date_prevue', '2026-09-14')->firstOrFail();
         $seance->update(['statut' => 'realisee', 'date_effective' => '2026-09-14', 'heure_effective' => '08:00', 'duree_reelle_minutes' => 120, 'theme_traite' => 'Les conciles']);
 
-        \App\Models\AffectationEnseignant::create(['enseignant_id' => $enseignant->id, 'id_matiere' => $matiere->id, 'portee' => 'matiere', 'date_debut' => '2026-09-01']);
+        AffectationEnseignant::create(['enseignant_id' => $enseignant->id, 'id_matiere' => $matiere->id, 'portee' => 'matiere', 'date_debut' => '2026-09-01']);
+
         return compact('admin', 'enseignant', 'autreEnseignant', 'seance', 'etudiants', 'horsPromotion', 'annee', 'promotion', 'cours');
     }
-
 
     private function url(array $data): string
     {
@@ -149,16 +152,16 @@ class NotesEnseignantApiTest extends TestCase
         $data = $this->contexte();
         $this->presences($data);
         $autreCours = Cours::create(['id_module' => $data['cours']->id_module, 'libelle' => 'Autre cours', 'ordre' => 2, 'coefficient' => 3]);
-        $feuille = \App\Models\FeuilleNotes::create(['id_annee_academique' => $data['annee']->id,
+        $feuille = FeuilleNotes::create(['id_annee_academique' => $data['annee']->id,
             'id_promotion' => $data['promotion']->id, 'id_cours' => $autreCours->id, 'updated_by' => $data['enseignant']->id]);
         $feuille->notes()->create(['id_etudiant' => $data['etudiants'][0]->id, 'note' => 10]);
         $ancienne = AnneeAcademique::whereKeyNot($data['annee']->id)->firstOrFail();
-        $feuille = \App\Models\FeuilleNotes::create(['id_annee_academique' => $ancienne->id,
+        $feuille = FeuilleNotes::create(['id_annee_academique' => $ancienne->id,
             'id_promotion' => $data['promotion']->id, 'id_cours' => $autreCours->id, 'updated_by' => $data['enseignant']->id]);
         $feuille->notes()->create(['id_etudiant' => $data['etudiants'][0]->id, 'note' => 20]);
         $this->putJson($this->url($data), ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 18]]])
             ->assertOk()->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 12);
-        \App\Models\AffectationEnseignant::where('enseignant_id', $data['enseignant']->id)->update(['date_fin' => '2026-09-14']);
+        AffectationEnseignant::where('enseignant_id', $data['enseignant']->id)->update(['date_fin' => '2026-09-14']);
         $this->getJson($this->url($data))->assertNotFound();
     }
 
@@ -174,5 +177,65 @@ class NotesEnseignantApiTest extends TestCase
         $autre->save();
         $this->getJson($this->url($data))->assertOk()->assertJsonPath('feuille_notes.saisie_ouverte', false)
             ->assertJsonPath('feuille_notes.seances_realisees', 2);
+    }
+
+    public function test_correction_autorisee_appliquee_et_tracee_sans_deverrouillage(): void
+    {
+        $data = $this->contexte();
+        $this->presences($data);
+        $this->postJson(str_replace('?', '/transmettre?', $this->url($data)), [
+            'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12]],
+        ])->assertOk();
+        $note = NoteCours::firstOrFail();
+        $base = '/api/v1/administration/corrections-notes';
+        $payload = ['id_note' => $note->id, 'note_proposee' => 16.5, 'motif' => 'Erreur de saisie'];
+        $this->postJson($base, $payload)->assertForbidden();
+        Sanctum::actingAs($data['admin']);
+        $id = $this->postJson($base, $payload)->assertCreated()->json('correction.id');
+        $this->postJson($base, $payload)->assertUnprocessable();
+        $this->postJson("$base/$id/appliquer")->assertUnprocessable();
+        $this->assertEquals(12, $note->fresh()->note);
+        $this->postJson("$base/$id/autoriser")->assertOk()->assertJsonPath('correction.statut', 'autorisee');
+        $this->postJson("$base/$id/appliquer")->assertOk()->assertJsonPath('correction.note_finale', 16.5);
+        $this->postJson("$base/$id/appliquer")->assertUnprocessable();
+        $this->getJson("$base/$id")->assertOk()->assertJsonCount(3, 'historique');
+        $this->getJson($base.'?statut=appliquee')->assertOk()->assertJsonCount(1, 'data');
+        Sanctum::actingAs($data['enseignant']);
+        $this->getJson($this->url($data))->assertOk()
+            ->assertJsonPath('feuille_notes.saisie_ouverte', false)
+            ->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 16.5);
+    }
+
+    public function test_validation_rejet_roles_et_detection_note_modifiee(): void
+    {
+        $data = $this->contexte();
+        $this->presences($data);
+        $this->putJson($this->url($data), ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12]]])->assertOk();
+        $note = NoteCours::firstOrFail();
+        $base = '/api/v1/administration/corrections-notes';
+        $payload = ['id_note' => $note->id, 'note_proposee' => 16, 'motif' => 'Erreur'];
+        Sanctum::actingAs($data['admin']);
+        $this->postJson($base, $payload)->assertUnprocessable();
+        FeuilleNotes::firstOrFail()->update(['statut' => 'transmise']);
+        foreach ([null, -1, 21, 12, 12.123] as $valeur) {
+            $this->postJson($base, [...$payload, 'note_proposee' => $valeur])->assertUnprocessable();
+        }
+        $this->postJson($base, [...$payload, 'motif' => ' '])->assertUnprocessable();
+        $this->postJson($base, [...$payload, 'id_note' => 99999])->assertNotFound();
+        $id = $this->postJson($base, $payload)->assertCreated()->json('correction.id');
+        $role = Role::create(['code' => 'SECRETARIAT', 'libelle' => 'Secrétariat']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        $this->postJson("$base/$id/autoriser")->assertForbidden();
+        $this->postJson("$base/$id/rejeter", ['motif' => 'Non justifiée'])->assertForbidden();
+        Sanctum::actingAs($data['admin']);
+        $this->postJson("$base/$id/rejeter")->assertUnprocessable();
+        $this->postJson("$base/$id/rejeter", ['motif' => 'Non justifiée'])->assertOk();
+        $this->postJson("$base/$id/autoriser")->assertUnprocessable();
+        $id = $this->postJson($base, [...$payload, 'note_proposee' => 0])->assertCreated()->json('correction.id');
+        $this->postJson("$base/$id/autoriser")->assertOk();
+        $note->update(['note' => 13]);
+        $this->postJson("$base/$id/appliquer")->assertUnprocessable();
+        $this->assertEquals(13, $note->fresh()->note);
+        $this->assertDatabaseHas('corrections_notes', ['id' => $id, 'statut' => 'autorisee', 'note_finale' => null]);
     }
 }
