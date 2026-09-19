@@ -9,6 +9,7 @@ use App\Models\Matiere;
 use App\Models\Module;
 use App\Models\ModuleCalendrier;
 use App\Models\Niveau;
+use App\Models\Promotion;
 use App\Models\PublicationProgramme;
 use App\Models\Role;
 use App\Models\Salle;
@@ -33,6 +34,7 @@ class CreneauApiTest extends TestCase
         $calendrier = $annee->calendrier()->create([]);
         $module = $calendrier->modules()->create(['libelle' => 'Module 1', 'ordre' => 1, 'date_debut' => '2026-09-01', 'date_fin' => '2026-12-20']);
         $niveau = Niveau::create(['code' => 'N1', 'libelle' => 'Niveau 1', 'rang' => 1]);
+        Promotion::create(['num_promotion' => 1, 'annee_entree' => 2026, 'id_niveau' => $niveau->id]);
         $matiere = Matiere::create(['code' => 'MAT1', 'libelle' => 'Matière 1', 'id_niveau' => $niveau->id]);
         $salle = Salle::create(['nom' => 'Salle A', 'code' => 'A']);
 
@@ -61,6 +63,7 @@ class CreneauApiTest extends TestCase
         $data = $this->contexte();
         $this->postJson(self::URL, $data)->assertCreated();
         $niveau = Niveau::create(['code' => 'N2', 'libelle' => 'Niveau 2', 'rang' => 2]);
+        Promotion::create(['num_promotion' => 2, 'annee_entree' => 2026, 'id_niveau' => $niveau->id]);
         $matiere = Matiere::create(['code' => 'MAT2', 'libelle' => 'Matière 2', 'id_niveau' => $niveau->id]);
         $teacher = User::factory()->create(['id_role' => Role::where('code', 'ENSEIGNANT')->first()->id]);
         $salle = Salle::create(['nom' => 'B', 'code' => 'B']);
@@ -76,6 +79,36 @@ class CreneauApiTest extends TestCase
         $this->postJson(self::URL, [...$data, 'heure_debut' => '10:00', 'heure_fin' => '11:00'])->assertCreated();
         $this->postJson(self::URL, [...$data, 'heure_debut' => '07:00', 'heure_fin' => '08:00'])->assertCreated();
         $this->postJson(self::URL, [...$data, 'jour' => 2])->assertCreated();
+    }
+
+    public function test_promotion_automatique_et_conservation_en_modification(): void
+    {
+        $data = $this->contexte();
+        $promotion = Promotion::firstOrFail();
+        $id = $this->postJson(self::URL, [...$data, 'id_promotion' => null])->assertCreated()
+            ->assertJsonPath('creneau.promotion.id', $promotion->id)->json('creneau.id');
+        $this->assertDatabaseHas('creneaux', ['id' => $id, 'id_promotion' => $promotion->id]);
+        Promotion::create(['num_promotion' => 2, 'annee_entree' => 2026, 'id_niveau' => $data['id_niveau']]);
+        $this->patchJson(self::URL.'/'.$id, ['jour' => 2])->assertOk()
+            ->assertJsonPath('creneau.promotion.id', $promotion->id);
+    }
+
+    public function test_promotion_ambigue_exige_un_choix_explicite(): void
+    {
+        $data = $this->contexte();
+        $promotion = Promotion::create(['num_promotion' => 2, 'annee_entree' => 2026, 'id_niveau' => $data['id_niveau']]);
+        $this->postJson(self::URL, $data)->assertUnprocessable()->assertJsonValidationErrors('id_promotion');
+        $this->assertDatabaseCount('creneaux', 0);
+        $this->postJson(self::URL, [...$data, 'id_promotion' => $promotion->id])->assertCreated()
+            ->assertJsonPath('creneau.promotion.id', $promotion->id);
+    }
+
+    public function test_refuse_creation_sans_promotion_disponible(): void
+    {
+        $data = $this->contexte();
+        Promotion::firstOrFail()->delete();
+        $this->postJson(self::URL, $data)->assertUnprocessable()->assertJsonValidationErrors('id_promotion');
+        $this->assertDatabaseCount('creneaux', 0);
     }
 
     public function test_validation_references_et_heures(): void

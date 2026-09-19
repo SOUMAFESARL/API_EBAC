@@ -6,6 +6,7 @@ use App\Models\AnneeAcademique;
 use App\Models\Creneau;
 use App\Models\Matiere;
 use App\Models\Niveau;
+use App\Models\Promotion;
 use App\Models\Role;
 use App\Models\Salle;
 use App\Models\SeanceCahierTexte;
@@ -68,6 +69,7 @@ class CahierTexteEnseignantApiTest extends TestCase
     public function test_creneaux_et_publications_ne_creent_aucune_seance(): void
     {
         $data = $this->contexte(false);
+        $promotion = Promotion::create(['num_promotion' => 1, 'annee_entree' => 2026, 'id_niveau' => $data['creneau']->id_niveau]);
         $this->assertDatabaseCount('seances_cahier_texte', 0);
         $payload = $data['creneau']->only(['id_module_calendrier', 'id_niveau', 'id_matiere', 'enseignant_id', 'id_salle']);
         $this->postJson('/api/v1/parametres/creneaux', [...$payload, 'jour' => 2, 'heure_debut' => '08:00', 'heure_fin' => '10:00'])->assertCreated();
@@ -80,8 +82,11 @@ class CahierTexteEnseignantApiTest extends TestCase
         $this->postJson('/api/v1/enseignant/cahier-de-texte', $seance)->assertNotFound();
         Sanctum::actingAs($data['enseignant']);
         $id = $this->postJson('/api/v1/enseignant/cahier-de-texte', $seance)->assertCreated()
+            ->assertJsonPath('seance.id_promotion', $promotion->id)
             ->assertJsonPath('seance.source', 'manuelle')->assertJsonPath('seance.created_by', $data['enseignant']->id)->json('seance.id');
         $avant = SeanceCahierTexte::findOrFail($id)->toArray();
+        $this->getJson('/api/v1/enseignant/cahier-de-texte/'.$id)->assertOk()
+            ->assertJsonPath('seance.promotion.id', $promotion->id);
         Sanctum::actingAs($data['admin']);
         $this->postJson($url.'/retire')->assertOk();
         $this->postJson($url.'/publier')->assertOk();

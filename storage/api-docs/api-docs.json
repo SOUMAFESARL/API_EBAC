@@ -9410,7 +9410,7 @@
                 ]
             },
             "CreneauPayload": {
-                "description": "Creneau hebdomadaire dans un module du calendrier. Cours et promotion facultatifs. Conflits de salle, enseignant ou niveau refusés avec 422. Les horaires adjacents sont autoris?s.",
+                "description": "Creneau hebdomadaire dans un module du calendrier. Cours facultatif. Si id_promotion est absent ou null, la promotion unique du niveau est affectée automatiquement ; sinon une sélection explicite est requise (422). En modification, la promotion existante est conservée si le champ est absent. Conflits de salle, enseignant ou niveau refusés avec 422. Les horaires adjacents sont autoris?s.",
                 "required": [
                     "id_module_calendrier",
                     "id_niveau",
@@ -9471,7 +9471,7 @@
                 "type": "object"
             },
             "CreneauModification": {
-                "description": "Cr?neau hebdomadaire dans un module du calendrier. Cours et promotion facultatifs. Conflits de salle, enseignant ou niveau refusés avec 422. Les horaires adjacents sont autorisés.",
+                "description": "Cr?neau hebdomadaire dans un module du calendrier. Cours facultatif. Si id_promotion est absent ou null, la promotion unique du niveau est affectée automatiquement ; sinon une sélection explicite est requise (422). En modification, la promotion existante est conservée si le champ est absent. Conflits de salle, enseignant ou niveau refusés avec 422. Les horaires adjacents sont autorisés.",
                 "properties": {
                     "id_module_calendrier": {
                         "type": "integer",

@@ -62,6 +62,13 @@ class CreneauService
                 $refuser('id_cours', 'Le cours doit être actif et appartenir à la matière sélectionnée.');
             }
         }
+        if (empty($data['id_promotion'])) {
+            $promotions = Promotion::where('id_niveau', $niveau->id)->limit(2)->pluck('id');
+            if ($promotions->count() !== 1) {
+                $refuser('id_promotion', 'Sélectionnez une promotion du niveau : aucune promotion unique ne peut être déterminée automatiquement.');
+            }
+            $data['id_promotion'] = $promotions->first();
+        }
         if ($data['id_promotion'] ?? null) {
             $promotion = Promotion::find($data['id_promotion']);
             if (! $promotion || $promotion->id_niveau != $niveau->id) {
