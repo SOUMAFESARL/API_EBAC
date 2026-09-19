@@ -9410,8 +9410,9 @@
                 ]
             },
             "CreneauPayload": {
-                "description": "Creneau hebdomadaire dans un module du calendrier. Cours facultatif. Si id_promotion est absent ou null, la promotion unique du niveau est affectée automatiquement ; sinon une sélection explicite est requise (422). En modification, la promotion existante est conservée si le champ est absent. Conflits de salle, enseignant ou niveau refusés avec 422. Les horaires adjacents sont autoris?s.",
+                "description": "Creneau hebdomadaire dans un module du calendrier. Cours facultatif. Chaque créneau appartient à une promotion explicite : id_promotion obligatoire en création et PUT, conservé si absent en PATCH. Conflits de salle, enseignant ou promotion refusés avec 422. Les horaires adjacents sont autoris?s.",
                 "required": [
+                    "id_promotion",
                     "id_module_calendrier",
                     "id_niveau",
                     "id_matiere",
@@ -9440,7 +9441,7 @@
                     },
                     "id_promotion": {
                         "type": "integer",
-                        "nullable": true
+                        "minimum": 1
                     },
                     "enseignant_id": {
                         "type": "integer",
@@ -9471,7 +9472,7 @@
                 "type": "object"
             },
             "CreneauModification": {
-                "description": "Cr?neau hebdomadaire dans un module du calendrier. Cours facultatif. Si id_promotion est absent ou null, la promotion unique du niveau est affectée automatiquement ; sinon une sélection explicite est requise (422). En modification, la promotion existante est conservée si le champ est absent. Conflits de salle, enseignant ou niveau refusés avec 422. Les horaires adjacents sont autorisés.",
+                "description": "Cr?neau hebdomadaire dans un module du calendrier. Cours facultatif. Chaque créneau appartient à une promotion explicite : id_promotion obligatoire en création et PUT, conservé si absent en PATCH. Conflits de salle, enseignant ou promotion refusés avec 422. Les horaires adjacents sont autorisés.",
                 "properties": {
                     "id_module_calendrier": {
                         "type": "integer",
@@ -9491,7 +9492,7 @@
                     },
                     "id_promotion": {
                         "type": "integer",
-                        "nullable": true
+                        "minimum": 1
                     },
                     "enseignant_id": {
                         "type": "integer",

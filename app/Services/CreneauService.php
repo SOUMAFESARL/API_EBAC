@@ -62,23 +62,14 @@ class CreneauService
                 $refuser('id_cours', 'Le cours doit être actif et appartenir à la matière sélectionnée.');
             }
         }
-        if (empty($data['id_promotion'])) {
-            $promotions = Promotion::where('id_niveau', $niveau->id)->limit(2)->pluck('id');
-            if ($promotions->count() !== 1) {
-                $refuser('id_promotion', 'Sélectionnez une promotion du niveau : aucune promotion unique ne peut être déterminée automatiquement.');
-            }
-            $data['id_promotion'] = $promotions->first();
-        }
-        if ($data['id_promotion'] ?? null) {
-            $promotion = Promotion::find($data['id_promotion']);
-            if (! $promotion || $promotion->id_niveau != $niveau->id) {
-                $refuser('id_promotion', 'La promotion doit appartenir au niveau sélectionné.');
-            }
+        $promotion = Promotion::query()->lockForUpdate()->find($data['id_promotion'] ?? null);
+        if (! $promotion || $promotion->id_niveau != $niveau->id) {
+            $refuser('id_promotion', 'La promotion doit appartenir au niveau sélectionné.');
         }
         $concurrents = Creneau::query()->where('jour', $data['jour'])
             ->where('heure_debut', '<', $data['heure_fin'].':00')->where('heure_fin', '>', $data['heure_debut'].':00')
             ->when($creneau, fn ($q) => $q->whereKeyNot($creneau->id))
-            ->where(fn ($q) => $q->where('id_niveau', $niveau->id)->orWhere('enseignant_id', $enseignant->id)->orWhere('id_salle', $salle->id))
+            ->where(fn ($q) => $q->where('id_promotion', $promotion->id)->orWhere('enseignant_id', $enseignant->id)->orWhere('id_salle', $salle->id))
             ->whereHas('moduleCalendrier', fn ($q) => $q->where('date_debut', '<=', $module->date_fin)->where('date_fin', '>=', $module->date_debut)
                 ->whereHas('calendrier.anneeAcademique'))->with('moduleCalendrier')->lockForUpdate()->get();
         $errors = [];
@@ -90,7 +81,7 @@ class CreneauService
             if ($date->toDateString() > $fin) {
                 continue;
             }
-            foreach (['id_niveau' => 'niveau', 'enseignant_id' => 'enseignant', 'id_salle' => 'salle'] as $key => $label) {
+            foreach (['id_promotion' => 'promotion', 'enseignant_id' => 'enseignant', 'id_salle' => 'salle'] as $key => $label) {
                 if ($data[$key] == $autre->$key) {
                     $errors[$key][] = "Conflit avec le créneau {$autre->id} : même $label, jour et horaires qui se chevauchent.";
                 }

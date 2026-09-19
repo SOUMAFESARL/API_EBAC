@@ -34,11 +34,11 @@ class CreneauApiTest extends TestCase
         $calendrier = $annee->calendrier()->create([]);
         $module = $calendrier->modules()->create(['libelle' => 'Module 1', 'ordre' => 1, 'date_debut' => '2026-09-01', 'date_fin' => '2026-12-20']);
         $niveau = Niveau::create(['code' => 'N1', 'libelle' => 'Niveau 1', 'rang' => 1]);
-        Promotion::create(['num_promotion' => 1, 'annee_entree' => 2026, 'id_niveau' => $niveau->id]);
+        $promotion = Promotion::create(['num_promotion' => 1, 'annee_entree' => 2026, 'id_niveau' => $niveau->id]);
         $matiere = Matiere::create(['code' => 'MAT1', 'libelle' => 'Matière 1', 'id_niveau' => $niveau->id]);
         $salle = Salle::create(['nom' => 'Salle A', 'code' => 'A']);
 
-        return ['id_module_calendrier' => $module->id, 'id_niveau' => $niveau->id, 'id_matiere' => $matiere->id,
+        return ['id_promotion' => $promotion->id, 'id_module_calendrier' => $module->id, 'id_niveau' => $niveau->id, 'id_matiere' => $matiere->id,
             'enseignant_id' => $teacher->id, 'id_salle' => $salle->id, 'jour' => 1, 'heure_debut' => '08:00', 'heure_fin' => '10:00'];
     }
 
@@ -62,15 +62,15 @@ class CreneauApiTest extends TestCase
     {
         $data = $this->contexte();
         $this->postJson(self::URL, $data)->assertCreated();
-        $niveau = Niveau::create(['code' => 'N2', 'libelle' => 'Niveau 2', 'rang' => 2]);
-        Promotion::create(['num_promotion' => 2, 'annee_entree' => 2026, 'id_niveau' => $niveau->id]);
+        $niveau = Niveau::findOrFail($data['id_niveau']);
+        $promotion = Promotion::create(['num_promotion' => 2, 'annee_entree' => 2026, 'id_niveau' => $niveau->id]);
         $matiere = Matiere::create(['code' => 'MAT2', 'libelle' => 'Matière 2', 'id_niveau' => $niveau->id]);
         $teacher = User::factory()->create(['id_role' => Role::where('code', 'ENSEIGNANT')->first()->id]);
         $salle = Salle::create(['nom' => 'B', 'code' => 'B']);
-        $autre = [...$data, 'id_niveau' => $niveau->id, 'id_matiere' => $matiere->id, 'enseignant_id' => $teacher->id, 'id_salle' => $salle->id];
-        foreach (['enseignant_id', 'id_salle', 'id_niveau'] as $key) {
+        $autre = [...$data, 'id_promotion' => $promotion->id, 'id_niveau' => $niveau->id, 'id_matiere' => $matiere->id, 'enseignant_id' => $teacher->id, 'id_salle' => $salle->id];
+        foreach (['enseignant_id', 'id_salle', 'id_promotion'] as $key) {
             $payload = [...$autre, $key => $data[$key], 'heure_debut' => '09:00'];
-            if ($key === 'id_niveau') {
+            if ($key === 'id_promotion') {
                 $payload['id_matiere'] = $data['id_matiere'];
             }
             $this->postJson(self::URL, $payload)->assertUnprocessable()->assertJsonValidationErrors($key);
@@ -81,11 +81,11 @@ class CreneauApiTest extends TestCase
         $this->postJson(self::URL, [...$data, 'jour' => 2])->assertCreated();
     }
 
-    public function test_promotion_automatique_et_conservation_en_modification(): void
+    public function test_promotion_explicite_et_conservation_en_modification(): void
     {
         $data = $this->contexte();
         $promotion = Promotion::firstOrFail();
-        $id = $this->postJson(self::URL, [...$data, 'id_promotion' => null])->assertCreated()
+        $id = $this->postJson(self::URL, $data)->assertCreated()
             ->assertJsonPath('creneau.promotion.id', $promotion->id)->json('creneau.id');
         $this->assertDatabaseHas('creneaux', ['id' => $id, 'id_promotion' => $promotion->id]);
         Promotion::create(['num_promotion' => 2, 'annee_entree' => 2026, 'id_niveau' => $data['id_niveau']]);
@@ -93,10 +93,12 @@ class CreneauApiTest extends TestCase
             ->assertJsonPath('creneau.promotion.id', $promotion->id);
     }
 
-    public function test_promotion_ambigue_exige_un_choix_explicite(): void
+    public function test_promotion_obligatoire_meme_si_unique(): void
     {
         $data = $this->contexte();
-        $promotion = Promotion::create(['num_promotion' => 2, 'annee_entree' => 2026, 'id_niveau' => $data['id_niveau']]);
+        $promotion = Promotion::firstOrFail();
+        unset($data['id_promotion']);
+        $this->postJson(self::URL, [...$data, 'id_promotion' => null])->assertUnprocessable()->assertJsonValidationErrors('id_promotion');
         $this->postJson(self::URL, $data)->assertUnprocessable()->assertJsonValidationErrors('id_promotion');
         $this->assertDatabaseCount('creneaux', 0);
         $this->postJson(self::URL, [...$data, 'id_promotion' => $promotion->id])->assertCreated()

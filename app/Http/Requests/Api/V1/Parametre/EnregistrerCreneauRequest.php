@@ -19,7 +19,7 @@ class EnregistrerCreneauRequest extends FormRequest
             'heure_debut' => [$presence, 'required', 'date_format:H:i'],
             'heure_fin' => [$presence, 'required', 'date_format:H:i'],
             'id_cours' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'id_promotion' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'id_promotion' => [$presence, 'required', 'integer', 'min:1'],
         ];
         foreach (['id_module_calendrier', 'id_niveau', 'id_matiere', 'enseignant_id', 'id_salle'] as $key) {
             $rules[$key] = [$presence, 'required', 'integer', 'min:1'];

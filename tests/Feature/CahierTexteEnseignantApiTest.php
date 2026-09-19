@@ -71,9 +71,9 @@ class CahierTexteEnseignantApiTest extends TestCase
         $data = $this->contexte(false);
         $promotion = Promotion::create(['num_promotion' => 1, 'annee_entree' => 2026, 'id_niveau' => $data['creneau']->id_niveau]);
         $this->assertDatabaseCount('seances_cahier_texte', 0);
-        $payload = $data['creneau']->only(['id_module_calendrier', 'id_niveau', 'id_matiere', 'enseignant_id', 'id_salle']);
+        $payload = [...$data['creneau']->only(['id_module_calendrier', 'id_niveau', 'id_matiere', 'enseignant_id', 'id_salle']), 'id_promotion' => $promotion->id];
         $this->postJson('/api/v1/parametres/creneaux', [...$payload, 'jour' => 2, 'heure_debut' => '08:00', 'heure_fin' => '10:00'])->assertCreated();
-        $this->patchJson('/api/v1/parametres/creneaux/'.$data['creneau']->id, ['heure_fin' => '11:00'])->assertOk();
+        $this->patchJson('/api/v1/parametres/creneaux/'.$data['creneau']->id, ['heure_fin' => '11:00', 'id_promotion' => $promotion->id])->assertOk();
         $url = '/api/v1/administration/publication-programme/'.$data['creneau']->moduleCalendrier->id_calendrier;
         $this->postJson($url.'/publier')->assertOk();
         $this->assertDatabaseCount('seances_cahier_texte', 0);
