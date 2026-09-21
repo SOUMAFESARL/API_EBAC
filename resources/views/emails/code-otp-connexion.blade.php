@@ -58,7 +58,7 @@
                             </a>
                             <p style="margin:10px 0 0; font-size:13px; line-height:20px; color:#64748b;">
                                 Adresse de connexion :
-                                <a href="https://edu-ebac.soumafe.com" target="_blank" style="color:#123b8f; font-weight:700; text-decoration:none;">ebac.ci</a>
+                                <a href="https://edu-ebac.soumafe.com" target="_blank" style="color:#123b8f; font-weight:700; text-decoration:none;">edu-ebac.soumafe.com</a>
                             </p>
                         </div>
                     </td>
@@ -68,7 +68,7 @@
                         <div style="font-size:15px; line-height:22px; font-weight:700; color:#ffffff;">École Biblique de l'Alliance Chrétienne</div>
                         <div style="margin-top:4px; font-size:13px; line-height:20px;">Équipe EBAC</div>
                         <div style="margin-top:7px; font-size:13px; line-height:20px;">
-                            <a href="https://ebac.ci" target="_blank" style="color:#ffffff; font-weight:700; text-decoration:none;">www.ebac.ci</a>
+                            <a href="https://edu-ebac.soumafe.com" target="_blank" style="color:#ffffff; font-weight:700; text-decoration:none;">edu-ebac.soumafe.com</a>
                         </div>
                         <div style="margin-top:8px; font-size:12px; line-height:18px; color:#bfdbfe;">E-mail automatique — merci de ne pas répondre.</div>
                     </td>

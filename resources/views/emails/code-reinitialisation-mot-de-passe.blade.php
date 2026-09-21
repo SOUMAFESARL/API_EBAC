@@ -25,7 +25,7 @@
     <tr><td align="center" style="padding:22px 30px;background:#102a56;color:#dbeafe;">
         <div style="font-size:15px;line-height:22px;font-weight:700;color:#fff;">École Biblique de l'Alliance Chrétienne</div>
         <div style="margin-top:4px;font-size:13px;line-height:20px;">Équipe EBAC</div>
-        <div style="margin-top:7px;"><a href="https://edu-ebac.soumafe.com" style="color:#fff;font-size:13px;font-weight:700;text-decoration:none;">www.ebac.ci</a></div>
+        <div style="margin-top:7px;"><a href="https://edu-ebac.soumafe.com" style="color:#fff;font-size:13px;font-weight:700;text-decoration:none;">edu-ebac.soumafe.com</a></div>
     </td></tr>
 </table>
 <div style="max-width:600px;padding:18px 20px 0;font-size:12px;color:#94a3b8;text-align:center;">© {{ date('Y') }} EBAC. Tous droits réservés.</div>

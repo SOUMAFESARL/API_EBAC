@@ -36,7 +36,7 @@ class CompteEtudiantCreeNotification extends Notification
                 'eglise' => $this->eglise,
                 'numeroDossier' => $this->numeroDossier,
                 'statutDossier' => $this->statutDossier === 'Validé' ? 'Complet' : $this->statutDossier,
-                'urlConnexion' => rtrim((string) config('app.frontend_url', 'https://ebac.ci'), '/'),
+                'urlConnexion' => rtrim((string) config('app.frontend_url', 'https://edu-ebac.soumafe.com'), '/'),
             ]);
     }
 }

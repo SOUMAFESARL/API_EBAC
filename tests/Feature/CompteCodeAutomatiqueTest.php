@@ -258,14 +258,14 @@ class CompteCodeAutomatiqueTest extends TestCase
             'email' => 'severin.zran@soumafe.ci',
             'motDePasseTemporaire' => 'Temporaire123',
             'role' => 'Administrateur',
-            'urlConnexion' => 'https://ebac.ci',
+            'urlConnexion' => 'https://edu-ebac.soumafe.com',
             'message' => $message,
         ])->render();
 
         $this->assertStringContainsString('cid:logo-ebac', $html);
         $this->assertStringContainsString('border-radius:50%', $html);
         $this->assertStringContainsString('Temporaire123', $html);
-        $this->assertStringContainsString('https://ebac.ci', $html);
+        $this->assertStringContainsString('https://edu-ebac.soumafe.com', $html);
         $this->assertStringNotContainsString('127.0.0.1', $html);
         $this->assertStringNotContainsString("If you're having trouble", $html);
     }
@@ -284,7 +284,7 @@ class CompteCodeAutomatiqueTest extends TestCase
             'nomComplet' => 'Severin Zran',
             'email' => 'severin.zran@soumafe.ci',
             'motDePasseTemporaire' => 'Temporaire123',
-            'urlConnexion' => 'https://ebac.ci',
+            'urlConnexion' => 'https://edu-ebac.soumafe.com',
             'message' => $message,
         ];
 
