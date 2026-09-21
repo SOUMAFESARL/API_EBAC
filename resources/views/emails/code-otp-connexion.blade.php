@@ -53,12 +53,12 @@
                             </tr>
                         </table>
                         <div style="padding-top:24px; text-align:center;">
-                            <a href="https://ebac.ci" target="_blank" style="display:inline-block; padding:13px 26px; background:#123b8f; border-radius:8px; color:#ffffff; font-size:15px; line-height:20px; font-weight:700; text-decoration:none;">
+                            <a href="https://edu-ebac.soumafe.com" target="_blank" style="display:inline-block; padding:13px 26px; background:#123b8f; border-radius:8px; color:#ffffff; font-size:15px; line-height:20px; font-weight:700; text-decoration:none;">
                                 Accéder à EBAC
                             </a>
                             <p style="margin:10px 0 0; font-size:13px; line-height:20px; color:#64748b;">
                                 Adresse de connexion :
-                                <a href="https://ebac.ci" target="_blank" style="color:#123b8f; font-weight:700; text-decoration:none;">ebac.ci</a>
+                                <a href="https://edu-ebac.soumafe.com" target="_blank" style="color:#123b8f; font-weight:700; text-decoration:none;">ebac.ci</a>
                             </p>
                         </div>
                     </td>

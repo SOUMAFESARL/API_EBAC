@@ -86,7 +86,7 @@ class CompteCodeAutomatiqueTest extends TestCase
                 $motDePasseEnvoye = $message->viewData['motDePasseTemporaire'] ?? null;
 
                 return is_string($motDePasseEnvoye)
-                    && strlen($motDePasseEnvoye) === 16
+                    && $motDePasseEnvoye === 'Ebac@7780'
                     && Hash::check($motDePasseEnvoye, $compteEglise->password);
             },
         );
@@ -139,7 +139,7 @@ class CompteCodeAutomatiqueTest extends TestCase
                 $motDePasse = $notification->toMail($compte)->viewData['motDePasseTemporaire'] ?? null;
 
                 return is_string($motDePasse)
-                    && strlen($motDePasse) === 16
+                    && $motDePasse === 'Ebac@7780'
                     && Hash::check($motDePasse, $compte->password);
             },
         );

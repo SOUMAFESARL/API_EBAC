@@ -19,11 +19,12 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CompteController extends Controller
 {
+    private const MOT_DE_PASSE_PAR_DEFAUT = 'Ebac@7780';
+
     public function create(): JsonResponse
     {
         return response()->json([
@@ -72,7 +73,7 @@ class CompteController extends Controller
     public function store(EnregistrerCompteRequest $request): JsonResponse
     {
         $donnees = $request->validated();
-        $motDePasseTemporaire = Str::password(16);
+        $motDePasseTemporaire = self::MOT_DE_PASSE_PAR_DEFAUT;
         $administrateur = $request->user();
 
         if ($request->hasFile('photo')) {
@@ -127,7 +128,7 @@ class CompteController extends Controller
             ], 422);
         }
 
-        $motDePasseTemporaire = Str::password(16);
+        $motDePasseTemporaire = self::MOT_DE_PASSE_PAR_DEFAUT;
         $createur = $request->user();
 
         if ($request->hasFile('photo')) {
