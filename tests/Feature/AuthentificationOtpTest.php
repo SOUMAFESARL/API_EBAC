@@ -102,7 +102,7 @@ class AuthentificationOtpTest extends TestCase
         $this->assertStringContainsString('background:#123b8f', $html);
         $this->assertStringContainsString('color:#ffffff', $html);
         $this->assertStringContainsString('border-radius:50%', $html);
-        $this->assertStringContainsString('https://ebac.ci', $html);
+        $this->assertStringContainsString('href="https://edu-ebac.soumafe.com"', $html);
         $this->assertStringContainsString('Adresse de connexion', $html);
         $this->assertStringNotContainsString('Regards,<br>Laravel', $html);
     }
