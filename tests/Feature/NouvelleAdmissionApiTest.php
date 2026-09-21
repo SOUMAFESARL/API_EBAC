@@ -38,7 +38,7 @@ class NouvelleAdmissionApiTest extends TestCase
 
     public static function rolesAutorises(): array
     {
-        return [['ADMIN'], ['DIRECTION'], ['SECRETAIRE_ACADEMIQUE']];
+        return [['ADMIN'], ['SECRETAIRE_ACADEMIQUE']];
     }
 
     #[DataProvider('rolesAutorises')]
@@ -75,6 +75,32 @@ class NouvelleAdmissionApiTest extends TestCase
         $this->assertSame('0102030405', NouvelleAdmission::findOrFail($id)->telephone);
         $this->postJson(self::URL.'/importer', ['annee_entree' => 2027, 'liste' => $this->liste()])
             ->assertCreated()->assertJsonPath('importes', 2);
+    }
+
+    public function test_direction_peut_consulter_mais_pas_ecrire(): void
+    {
+        Storage::fake('local');
+        $this->connecter('ADMIN');
+        $import = $this->postJson(self::URL.'/importer', [
+            'annee_entree' => 2026,
+            'liste' => $this->liste(),
+            'document_pdf' => UploadedFile::fake()->createWithContent('arrete.pdf', "%PDF-1.4\n%%EOF"),
+        ])->assertCreated();
+        $idImport = $import->json('import_id');
+        $admis = NouvelleAdmission::query()->firstOrFail();
+        $avant = $admis->getAttributes();
+
+        $this->connecter('DIRECTION');
+        $this->getJson(self::URL.'?annee_entree=2026')->assertOk()->assertJsonPath('admis.total', 2);
+        foreach (['/pdf?annee_entree=2026', '/imports/'.$idImport.'/arrete', '/imports/'.$idImport.'/document-pdf', '/imports/'.$idImport.'/document-pdf/telecharger'] as $suffixe) {
+            $this->get(self::URL.$suffixe)->assertOk()->assertHeader('content-type', 'application/pdf');
+        }
+        $this->postJson(self::URL.'/importer', ['annee_entree' => 2027, 'liste' => $this->liste()])->assertForbidden();
+        $this->patchJson(self::URL.'/'.$admis->id, ['telephone' => '0102030405'])->assertForbidden();
+        $this->deleteJson(self::URL.'/'.$admis->id)->assertStatus(405);
+        $this->assertSame($avant, $admis->fresh()->getAttributes());
+        $this->assertDatabaseCount('nouvelles_admissions', 2);
+        $this->assertDatabaseCount('imports_admissions', 1);
     }
 
     public static function formatsExcel(): array

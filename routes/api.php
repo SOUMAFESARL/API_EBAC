@@ -59,12 +59,12 @@ Route::prefix('v1/administration/nouvelles-admissions')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,DIRECTION'])
     ->group(function () {
         Route::get('/', [NouvelleAdmissionController::class, 'index'])->name('index');
-        Route::post('/importer', [NouvelleAdmissionController::class, 'importer'])->middleware('throttle:10,1')->name('importer');
+        Route::post('/importer', [NouvelleAdmissionController::class, 'importer'])->middleware(['roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE', 'throttle:10,1'])->name('importer');
         Route::get('/pdf', [NouvelleAdmissionController::class, 'pdf'])->name('pdf');
         Route::get('/imports/{id}/arrete', [NouvelleAdmissionController::class, 'arrete'])->whereNumber('id')->name('arrete');
         Route::get('/imports/{id}/document-pdf', [NouvelleAdmissionController::class, 'afficherDocumentPdf'])->whereNumber('id')->name('document_pdf');
         Route::get('/imports/{id}/document-pdf/telecharger', [NouvelleAdmissionController::class, 'telechargerDocumentPdf'])->whereNumber('id')->name('document_pdf.telecharger');
-        Route::patch('/{id}', [NouvelleAdmissionController::class, 'update'])->whereNumber('id')->name('update');
+        Route::patch('/{id}', [NouvelleAdmissionController::class, 'update'])->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE')->name('update');
     });
 
 Route::prefix('v1/administration/affectations-enseignants')
