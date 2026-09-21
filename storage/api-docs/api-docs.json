@@ -1246,6 +1246,168 @@
                 ]
             }
         },
+        "/etudiant/emploi-du-temps": {
+            "get": {
+                "tags": [
+                    "Espace étudiant"
+                ],
+                "summary": "Consulter l’emploi du temps de l’étudiant connecté",
+                "description": "Planning publié de la promotion et des cours communs au niveau de l’étudiant authentifié. Année active par défaut, sinon année couvrant la date du jour. La dernière inscription de cette année détermine la promotion. Sans année, inscription ou programme publié, le planning est vide (200). Sans filtre de module, tous les modules sont retournés ; le total des heures additionne leurs créneaux, même sur des périodes différentes. Aucun identifiant étudiant n’est nécessaire.",
+                "operationId": "emploiDuTempsEtudiant",
+                "parameters": [
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_module_calendrier",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Planning hebdomadaire de l’étudiant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "etudiant": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "matricule": {
+                                                    "type": "string"
+                                                },
+                                                "nom": {
+                                                    "type": "string"
+                                                },
+                                                "prenoms": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "annee_academique": {
+                                            "type": "object",
+                                            "nullable": true
+                                        },
+                                        "promotion": {
+                                            "type": "object",
+                                            "nullable": true
+                                        },
+                                        "niveau": {
+                                            "type": "object",
+                                            "nullable": true
+                                        },
+                                        "module_calendrier": {
+                                            "type": "object",
+                                            "nullable": true
+                                        },
+                                        "publication": {
+                                            "properties": {
+                                                "statut": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "publie",
+                                                        "non_publie"
+                                                    ]
+                                                },
+                                                "version": {
+                                                    "type": "integer"
+                                                },
+                                                "date_publication": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "nullable": true
+                                        },
+                                        "modules_disponibles": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "planning_hebdomadaire": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "jours": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "numero": {
+                                                        "type": "integer",
+                                                        "maximum": 7,
+                                                        "minimum": 1
+                                                    },
+                                                    "libelle": {
+                                                        "type": "string",
+                                                        "example": "Lundi"
+                                                    },
+                                                    "creneaux": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "creneaux": {
+                                            "description": "Horaires, durée en minutes, module calendrier, niveau, matière, cours, promotion, enseignant et salle.",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "nombre_creneaux": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "heures_hebdomadaires": {
+                                            "type": "number",
+                                            "example": 4
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise"
+                    },
+                    "403": {
+                        "description": "Compte etudiant actif requis"
+                    },
+                    "404": {
+                        "description": "Fiche etudiant introuvable"
+                    },
+                    "422": {
+                        "description": "Filtres invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/administration/nouvelles-admissions": {
             "get": {
                 "tags": [
@@ -12576,6 +12738,10 @@
             "description": "Administration des préinscriptions"
         },
         {
+            "name": "Espace étudiant",
+            "description": "Espace étudiant"
+        },
+        {
             "name": "Nouvelles admissions",
             "description": "Nouvelles admissions"
         },
@@ -12646,10 +12812,6 @@
         {
             "name": "Liste de présence",
             "description": "Liste de présence"
-        },
-        {
-            "name": "Espace étudiant",
-            "description": "Espace étudiant"
         },
         {
             "name": "Modules calendrier",

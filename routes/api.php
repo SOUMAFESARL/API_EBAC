@@ -101,6 +101,10 @@ Route::get('v1/etudiant/dossier', [DossierEtudiantCompletController::class, 'mon
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->name('api.v1.etudiant.dossier');
 
+Route::get('v1/etudiant/emploi-du-temps', \App\Http\Controllers\Api\V1\Etudiant\MonEmploiDuTempsController::class)
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ETUDIANT'])
+    ->name('api.v1.etudiant.emploi-du-temps');
+
 Route::prefix('v1/etudiant/mes-matieres')
     ->name('api.v1.etudiant.mes-matieres.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ETUDIANT'])
