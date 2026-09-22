@@ -6,6 +6,8 @@ use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'Saisie des notes', description: <<<'DOC'
 ## Parcours enseignant
+La saisie directe par matière ne nécessite aucun cours : consulter `GET /enseignant/notes/feuille`, enregistrer `PUT /enseignant/notes`, puis transmettre `POST /enseignant/notes/transmettre`. Fournir `id_matiere`, `id_promotion` et `id_annee_academique` en query pour GET et dans le JSON pour PUT/POST, avec `notes` pour la saisie. Les options avec `cours = null` correspondent à ce parcours. Une affectation active de portée matière et un créneau correspondant sont requis. Les présences de toutes les séances réalisées de la matière, de la promotion et de l’année sont contrôlées, y compris les séances sans cours. La feuille est distincte par année + promotion + matière ; `cours` et `module` sont null. La note directe est retournée comme `moyenne_matiere` provisoire, sans être mélangée aux moyennes pondérées des feuilles par cours. Les routes par cours ci-dessous restent disponibles.
+
 Ces routes nécessitent un Bearer Token appartenant à un compte actif de rôle ENSEIGNANT. Dans Swagger, utiliser **Authorize**. Le préfixe des routes est `/api/v1`.
 
 1. **Choisir un enseignement** avec `GET /enseignant/notes?id_annee_academique=1`. La réponse fournit les combinaisons matière, module, cours et promotion accessibles à cet enseignant.

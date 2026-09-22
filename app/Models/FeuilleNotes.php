@@ -9,7 +9,7 @@ class FeuilleNotes extends Model
 {
     protected $table = 'feuilles_notes';
 
-    protected $fillable = ['id_annee_academique', 'id_promotion', 'id_cours', 'statut', 'date_transmission', 'updated_by'];
+    protected $fillable = ['id_annee_academique', 'id_promotion', 'id_cours', 'id_matiere', 'statut', 'date_transmission', 'updated_by'];
 
     public function notes(): HasMany
     {

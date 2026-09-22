@@ -9,6 +9,7 @@ use App\Models\Cours;
 use App\Models\Creneau;
 use App\Models\Etudiant;
 use App\Models\FeuilleNotes;
+use App\Models\Matiere;
 use App\Models\Promotion;
 use App\Models\SeanceCahierTexte;
 use Illuminate\Http\Request;
@@ -17,6 +18,14 @@ use Illuminate\Validation\ValidationException;
 
 class NoteController extends Controller
 {
+    private function matieresAutorisees(Request $request)
+    {
+        return Matiere::whereIn('id', AffectationEnseignant::select('id_matiere')
+            ->where('enseignant_id', $request->user()->id)->where('portee', 'matiere')
+            ->whereDate('date_debut', '<=', today())
+            ->where(fn ($q) => $q->whereNull('date_fin')->orWhereDate('date_fin', '>', today())));
+    }
+
     private function coursAutorises(Request $request)
     {
         $affectations = AffectationEnseignant::where('enseignant_id', $request->user()->id)
@@ -43,7 +52,15 @@ class NoteController extends Controller
             ->when($data['id_promotion'] ?? null, fn ($q, $id) => $q->where('id_promotion', $id))
             ->when($data['id_matiere'] ?? null, fn ($q, $id) => $q->where('id_matiere', $id))->get();
         $options = collect();
+        $matieres = $this->matieresAutorisees($request)->get()->keyBy('id');
         foreach ($creneaux as $creneau) {
+            if ($matiere = $matieres->get($creneau->id_matiere)) {
+                $options->put($creneau->id_promotion.'_matiere_'.$matiere->id, [
+                    'promotion' => $creneau->promotion->only(['id', 'code', 'num_promotion']),
+                    'matiere' => $matiere->only(['id', 'code', 'libelle']),
+                    'module' => null, 'cours' => null,
+                ]);
+            }
             foreach ($cours as $item) {
                 if ($item->module->id_matiere == $creneau->id_matiere && (! $creneau->id_cours || $creneau->id_cours == $item->id)) {
                     $options->put($creneau->id_promotion.'_'.$item->id, [
@@ -59,11 +76,20 @@ class NoteController extends Controller
         return response()->json(['enseignements' => $options->values()]);
     }
 
-    private function contexte(Request $request, int $cours): array
+    private function contexte(Request $request, ?int $cours): array
     {
         $data = $request->validate(['id_annee_academique' => ['required', 'integer'], 'id_promotion' => ['required', 'integer']]);
         AnneeAcademique::findOrFail($data['id_annee_academique']);
         $promotion = Promotion::findOrFail($data['id_promotion']);
+        if ($cours === null) {
+            $selection = $request->validate(['id_matiere' => ['required', 'integer']]);
+            $matiere = $this->matieresAutorisees($request)->findOrFail($selection['id_matiere']);
+            abort_unless(Creneau::where('enseignant_id', $request->user()->id)
+                ->where('id_promotion', $promotion->id)->where('id_matiere', $matiere->id)
+                ->whereHas('moduleCalendrier.calendrier', fn ($q) => $q->where('id_annee_academique', $data['id_annee_academique']))->exists(), 404);
+
+            return [$matiere, $promotion, [...$data, 'id_matiere' => $matiere->id, 'id_cours' => null]];
+        }
         $item = $this->coursAutorises($request)->findOrFail($cours);
         abort_unless(Creneau::where('enseignant_id', $request->user()->id)->where('id_promotion', $promotion->id)
             ->where('id_matiere', $item->module->id_matiere)
@@ -73,11 +99,13 @@ class NoteController extends Controller
         return [$item, $promotion, [...$data, 'id_cours' => $cours]];
     }
 
-    private function presenter(Cours $cours, Promotion $promotion, array $cle): array
+    private function presenter(Cours|Matiere $cours, Promotion $promotion, array $cle): array
     {
+        $parMatiere = $cours instanceof Matiere;
+        $matiere = $parMatiere ? $cours : $cours->module->matiere;
         $etudiants = Etudiant::whereHas('inscriptions', fn ($q) => $q->where('id_promotion', $promotion->id))
             ->orderBy('nom')->orderBy('prenoms')->get();
-        $seances = SeanceCahierTexte::with('feuillePresence.presences')->where('id_cours', $cours->id)
+        $seances = SeanceCahierTexte::with('feuillePresence.presences')->where($parMatiere ? 'id_matiere' : 'id_cours', $cours->id)
             ->where('id_promotion', $promotion->id)->where('statut', 'realisee')
             ->whereHas('moduleCalendrier.calendrier', fn ($q) => $q->where('id_annee_academique', $cle['id_annee_academique']))->get();
         $validees = $seances->filter(fn ($s) => $s->feuillePresence?->statut === 'validee');
@@ -85,7 +113,7 @@ class NoteController extends Controller
             && $validees->every(fn ($s) => $etudiants->pluck('id')->diff($s->feuillePresence->presences->pluck('id_etudiant'))->isEmpty());
         $feuille = FeuilleNotes::with('notes')->where($cle)->first();
         $notes = $feuille?->notes->keyBy('id_etudiant') ?? collect();
-        $moyennes = DB::table('notes_cours as n')->join('feuilles_notes as f', 'f.id', '=', 'n.id_feuille_notes')
+        $moyennes = $parMatiere ? $notes->pluck('note', 'id_etudiant') : DB::table('notes_cours as n')->join('feuilles_notes as f', 'f.id', '=', 'n.id_feuille_notes')
             ->join('cours as c', 'c.id', '=', 'f.id_cours')->join('modules as m', 'm.id', '=', 'c.id_module')
             ->where('f.id_promotion', $promotion->id)->where('f.id_annee_academique', $cle['id_annee_academique'])
             ->where('m.id_matiere', $cours->module->id_matiere)->whereNull('c.deleted_at')->whereNull('m.deleted_at')
@@ -103,8 +131,8 @@ class NoteController extends Controller
                 'statut_moyenne' => 'provisoire'];
         });
 
-        return ['cours' => $cours->only(['id', 'libelle', 'coefficient']),
-            'module' => $cours->module->only(['id', 'libelle']), 'matiere' => $cours->module->matiere->only(['id', 'libelle']),
+        return ['cours' => $parMatiere ? null : $cours->only(['id', 'libelle', 'coefficient']),
+            'module' => $parMatiere ? null : $cours->module->only(['id', 'libelle']), 'matiere' => $matiere->only(['id', 'libelle']),
             'promotion' => $promotion->only(['id', 'code', 'num_promotion']), 'id_annee_academique' => $cle['id_annee_academique'],
             'statut' => $feuille?->statut ?? 'brouillon', 'date_transmission' => $feuille?->date_transmission,
             'saisie_ouverte' => $ouverte && (! $feuille || $feuille->statut === 'brouillon'),
@@ -113,22 +141,22 @@ class NoteController extends Controller
             'notes_manquantes' => $lignes->where('evaluable', true)->whereNull('note')->count(), 'etudiants' => $lignes];
     }
 
-    public function show(Request $request, int $cours)
+    public function show(Request $request, ?int $cours = null)
     {
         return response()->json(['feuille_notes' => $this->presenter(...$this->contexte($request, $cours))]);
     }
 
-    public function update(Request $request, int $cours)
+    public function update(Request $request, ?int $cours = null)
     {
         return $this->enregistrer($request, $cours, false);
     }
 
-    public function transmettre(Request $request, int $cours)
+    public function transmettre(Request $request, ?int $cours = null)
     {
         return $this->enregistrer($request, $cours, true);
     }
 
-    private function enregistrer(Request $request, int $cours, bool $transmettre)
+    private function enregistrer(Request $request, ?int $cours, bool $transmettre)
     {
         [$item, $promotion, $cle] = $this->contexte($request, $cours);
         $data = $request->validate([
