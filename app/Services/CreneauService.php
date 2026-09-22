@@ -114,7 +114,7 @@ class CreneauService
             'module_calendrier' => $creneau->moduleCalendrier?->only(['id', 'libelle', 'date_debut', 'date_fin']),
             'id_annee_academique' => $creneau->moduleCalendrier?->calendrier?->id_annee_academique,
             'niveau' => $creneau->niveau?->only(['id', 'libelle']), 'matiere' => $creneau->matiere?->only(['id', 'libelle']),
-            'cours' => $creneau->cours?->only(['id', 'libelle']), 'promotion' => $creneau->promotion?->only(['id', 'code']),
+            'cours' => $creneau->cours?->only(['id', 'libelle']), 'promotion' => $creneau->promotion?->only(['id', 'code', 'num_promotion']),
             'enseignant' => $creneau->enseignant?->only(['id', 'nom', 'prenoms']), 'salle' => $creneau->salle?->only(['id', 'nom', 'code']),
         ];
     }
