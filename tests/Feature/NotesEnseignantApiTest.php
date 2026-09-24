@@ -269,6 +269,41 @@ class NotesEnseignantApiTest extends TestCase
             ->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 16.5);
     }
 
+    public function test_correction_note_matiere_sans_cours(): void
+    {
+        $data = $this->contexte();
+        $data['seance']->update(['id_cours' => null]);
+        $data['seance']->creneau->update(['id_cours' => null]);
+        $this->presences($data);
+        $contexte = ['id_matiere' => $data['cours']->module->id_matiere,
+            'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
+        $reponse = $this->putJson('/api/v1/enseignant/notes', [...$contexte,
+            'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12]],
+        ])->assertOk();
+        $idNote = $reponse->json('feuille_notes.etudiants.0.id_note');
+        $base = '/api/v1/administration/corrections-notes';
+        $payload = ['id_note' => $idNote, 'note_proposee' => 16.5, 'motif' => 'Erreur de saisie par matière'];
+        $this->postJson($base, $payload)->assertForbidden();
+        Sanctum::actingAs($data['admin']);
+        $this->postJson($base, $payload)->assertUnprocessable();
+        Sanctum::actingAs($data['enseignant']);
+        $this->postJson('/api/v1/enseignant/notes/transmettre', $contexte)->assertOk();
+        Sanctum::actingAs($data['admin']);
+        $id = $this->postJson($base, $payload)->assertCreated()->json('correction.id');
+        $this->postJson($base, $payload)->assertUnprocessable();
+        $this->postJson("$base/$id/appliquer")->assertUnprocessable();
+        $this->postJson("$base/$id/autoriser")->assertOk();
+        $this->postJson("$base/$id/appliquer")->assertOk()->assertJsonPath('correction.note_finale', 16.5);
+        $this->getJson("$base/$id")->assertOk()->assertJsonCount(3, 'historique');
+        $this->assertDatabaseHas('feuilles_notes', [...$contexte, 'id_cours' => null, 'statut' => 'transmise']);
+        $this->assertDatabaseHas('notes_cours', ['id' => $idNote, 'note' => 16.5]);
+        Sanctum::actingAs($data['enseignant']);
+        $this->getJson('/api/v1/enseignant/notes/feuille?'.http_build_query($contexte))->assertOk()
+            ->assertJsonPath('feuille_notes.cours', null)->assertJsonPath('feuille_notes.saisie_ouverte', false)
+            ->assertJsonPath('feuille_notes.etudiants.0.note', 16.5)
+            ->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 16.5);
+    }
+
     public function test_validation_rejet_roles_et_detection_note_modifiee(): void
     {
         $data = $this->contexte();

@@ -6,7 +6,7 @@ use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'Corrections des notes', description: 'Correction des notes transmises : demande, autorisation puis application. Accès ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION avec un compte actif. Autoriser et rejeter : ADMIN ou DIRECTION. Appliquer : ADMIN ou secrétariat. Les brouillons restent modifiables via la saisie enseignant. La feuille reste transmise et les moyennes consultées reflètent la note corrigée. Chaque étape conserve son acteur et sa date dans l’historique.')]
 #[OA\Schema(schema: 'DemandeCorrectionNote', required: ['id_note', 'note_proposee', 'motif'], properties: [
-    new OA\Property(property: 'id_note', type: 'integer', description: 'Identifiant notes_cours, exposé dans etudiants[].id_note de la feuille enseignant.', example: 1),
+    new OA\Property(property: 'id_note', type: 'integer', description: 'Identifiant de la note, exposé dans feuille_notes.etudiants[].id_note, pour une feuille par matière comme par cours. Pour une matière : GET /enseignant/notes/feuille avec id_matiere, id_promotion et id_annee_academique. Aucun id_cours ni id_matiere à fournir dans la demande de correction : id_note identifie déjà le contexte. La feuille doit être transmise.', example: 1),
     new OA\Property(property: 'note_proposee', type: 'number', minimum: 0, maximum: 20, description: 'Deux décimales maximum, différente de la note actuelle.', example: 15.5),
     new OA\Property(property: 'motif', type: 'string', maxLength: 5000, example: 'Erreur de saisie sur la copie corrigée'),
 ])]

@@ -10245,7 +10245,7 @@
                 ],
                 "properties": {
                     "id_note": {
-                        "description": "Identifiant notes_cours, exposé dans etudiants[].id_note de la feuille enseignant.",
+                        "description": "Identifiant de la note, exposé dans feuille_notes.etudiants[].id_note, pour une feuille par matière comme par cours. Pour une matière : GET /enseignant/notes/feuille avec id_matiere, id_promotion et id_annee_academique. Aucun id_cours ni id_matiere à fournir dans la demande de correction : id_note identifie déjà le contexte. La feuille doit être transmise.",
                         "type": "integer",
                         "example": 1
                     },
