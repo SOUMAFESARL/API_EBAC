@@ -5829,7 +5829,7 @@
                 "tags": [
                     "Corrections des notes"
                 ],
-                "summary": "Autoriser une demande en attente (ADMIN, DIRECTION)",
+                "summary": "Autoriser une demande en attente (ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE, DIRECTION)",
                 "operationId": "66d1ff3f6fce9b12fa07f0d2aaefb8f8",
                 "parameters": [
                     {
@@ -5867,7 +5867,7 @@
                 "tags": [
                     "Corrections des notes"
                 ],
-                "summary": "Rejeter une demande en attente (ADMIN, DIRECTION)",
+                "summary": "Rejeter une demande en attente (ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE, DIRECTION)",
                 "operationId": "469c61ac0da9586cf97de97d50ae6da4",
                 "parameters": [
                     {
@@ -5949,6 +5949,171 @@
                     },
                     "422": {
                         "description": "Statut incompatible, feuille non transmise ou note modifiée depuis la demande. Une correction ne peut être appliquée deux fois."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/enseignant/corrections-notes": {
+            "get": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Lister mes demandes de correction",
+                "operationId": "1106da2989b085a049163fe7f0ea1377",
+                "parameters": [
+                    {
+                        "name": "id_note",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "en_attente",
+                                "autorisee",
+                                "appliquee",
+                                "rejetee"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Demandes du seul enseignant connecte, pagination Laravel."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role ENSEIGNANT requis."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Demander la modification d une ou plusieurs notes transmises",
+                "description": "Format unitaire : id_note, note_proposee, motif. Format groupe : motif commun et notes contenant jusqu a 100 couples id_note/note_proposee distincts. Les formats ne peuvent pas etre melanges. id_note est fourni par la feuille de notes. Chaque note doit etre accessible a l enseignant et transmise. Si une ligne echoue, aucune demande ni trace n est creee. Les notes restent inchangees. Chaque correction retournee doit etre autorisee par l administration puis appliquee par l enseignant.",
+                "operationId": "4ae295e38a64eefb142c9ef2ffb37e6a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/components/schemas/DemandeCorrectionNote"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/DemandesCorrectionsNotesGroupees"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Format unitaire : correction. Format groupe : corrections et nombre_demandes. Toutes les demandes sont en_attente."
+                    },
+                    "404": {
+                        "description": "Note inexistante ou enseignement non affecte."
+                    },
+                    "422": {
+                        "description": "Motif ou note invalide, feuille non transmise ou demande deja en cours."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/enseignant/corrections-notes/{id}": {
+            "get": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Consulter ma demande et son historique",
+                "operationId": "abcdf9dcdfc831894720d3e0ed69b671",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "correction et historique."
+                    },
+                    "404": {
+                        "description": "Demande inexistante ou appartenant a un autre enseignant."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/enseignant/corrections-notes/{id}/appliquer": {
+            "post": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Modifier la note apres validation de ma demande",
+                "description": "Sans corps : applique uniquement note_proposee autorisee, pour la note de la demande. La feuille reste transmise et verrouillee. Une demande ne peut etre appliquee qu une seule fois. Une nouvelle valeur necessite une nouvelle demande.",
+                "operationId": "414ead3f42fb5f6e4b8c546556ea293e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Note modifiee, correction appliquee et historique mis a jour."
+                    },
+                    "404": {
+                        "description": "Demande d un autre enseignant ou affectation non autorisee."
+                    },
+                    "422": {
+                        "description": "Demande non autorisee, rejetee, deja appliquee ou note modifiee depuis la demande."
                     }
                 },
                 "security": [
@@ -7172,6 +7337,154 @@
                 ]
             }
         },
+        "/etudiant/bulletins": {
+            "get": {
+                "tags": [
+                    "Espace étudiant"
+                ],
+                "summary": "Lister les bulletins publies de l etudiant connecte",
+                "description": "Authentification Sanctum, compte actif et role ETUDIANT requis. Seuls les bulletins au statut Publié avec date_publication sont visibles, tries par annee academique decroissante. Aucun identifiant etudiant n est accepte. Aucun brouillon ni bulletin provisoire calcule n est expose.",
+                "operationId": "listerMesBulletins",
+                "parameters": [
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "etudiant, bulletins avec annee/promotion/niveau/moyenne/rang/mention et meta de pagination. Liste vide si aucun bulletin publie."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Compte actif et role ETUDIANT requis."
+                    },
+                    "404": {
+                        "description": "Fiche etudiant introuvable."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/etudiant/bulletins/{id}": {
+            "get": {
+                "tags": [
+                    "Espace étudiant"
+                ],
+                "summary": "Afficher le detail de mon bulletin publie",
+                "description": "Retourne les lignes enregistrees du bulletin et leur coefficient, note, appreciation et statut selon le seuil de validation de la matiere. La moyenne, le rang et la mention proviennent du bulletin publie et ne sont pas recalcules depuis les notes en saisie. Les cours a faire sont limites a l etudiant et a l annee du bulletin. Le statut de l annee est determine depuis sa date de fin. Versions, QR et telechargement PDF ne sont pas geres par ces routes.",
+                "operationId": "afficherMonBulletin",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "etudiant et bulletin avec matieres, recapitulatif_uv (validees, non_validees, a_completer) et cours_a_faire."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Compte actif et role ETUDIANT requis."
+                    },
+                    "404": {
+                        "description": "Bulletin inexistant, non publie ou appartenant a un autre etudiant."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/etudiant/cours-a-faire": {
+            "get": {
+                "tags": [
+                    "Espace étudiant"
+                ],
+                "summary": "Lister les cours a rattraper de l etudiant connecte",
+                "description": "Retourne uniquement ses entrees au statut a_faire, creees lors de la validation des absences, avec la matiere, le cours si renseigne et le contenu de la seance.",
+                "operationId": "listerMesCoursAFaire",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "cours_a_faire et meta de pagination. Liste vide si aucun rattrapage."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Compte actif et role ETUDIANT requis."
+                    },
+                    "404": {
+                        "description": "Fiche etudiant introuvable."
+                    },
+                    "422": {
+                        "description": "Pagination invalide."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/enseignant/mes-cours": {
             "get": {
                 "tags": [
@@ -8380,6 +8693,113 @@
                     },
                     "422": {
                         "description": "Feuille incomplète ou saisie fermée."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/notes-transmises": {
+            "get": {
+                "tags": [
+                    "Administration des notes"
+                ],
+                "summary": "Consulter les feuilles de notes transmises par les enseignants",
+                "description": "Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Les brouillons sont exclus. La transmission ne publie pas les notes aux etudiants.",
+                "operationId": "listerNotesTransmisesAdministration",
+                "parameters": [
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_matiere",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "feuilles_notes et meta de pagination."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Acces reserve a l administration."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/notes-transmises/{id}": {
+            "get": {
+                "tags": [
+                    "Administration des notes"
+                ],
+                "summary": "Consulter les notes et les etudiants d une feuille transmise",
+                "operationId": "afficherNotesTransmisesAdministration",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "feuille_notes avec contexte et notes des etudiants."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Acces reserve a l administration."
+                    },
+                    "404": {
+                        "description": "Feuille inexistante ou non transmise."
                     }
                 },
                 "security": [
@@ -10260,6 +10680,44 @@
                         "type": "string",
                         "example": "Erreur de saisie sur la copie corrigée",
                         "maxLength": 5000
+                    }
+                },
+                "type": "object"
+            },
+            "DemandesCorrectionsNotesGroupees": {
+                "required": [
+                    "motif",
+                    "notes"
+                ],
+                "properties": {
+                    "motif": {
+                        "type": "string",
+                        "example": "Erreur de report des notes",
+                        "maxLength": 5000
+                    },
+                    "notes": {
+                        "type": "array",
+                        "items": {
+                            "required": [
+                                "id_note",
+                                "note_proposee"
+                            ],
+                            "properties": {
+                                "id_note": {
+                                    "type": "integer",
+                                    "example": 12
+                                },
+                                "note_proposee": {
+                                    "type": "number",
+                                    "example": 16,
+                                    "maximum": 20,
+                                    "minimum": 0
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "maxItems": 100,
+                        "minItems": 1
                     }
                 },
                 "type": "object"
@@ -12871,7 +13329,7 @@
         },
         {
             "name": "Corrections des notes",
-            "description": "Correction des notes transmises : demande, autorisation puis application. Accès ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION avec un compte actif. Autoriser et rejeter : ADMIN ou DIRECTION. Appliquer : ADMIN ou secrétariat. Les brouillons restent modifiables via la saisie enseignant. La feuille reste transmise et les moyennes consultées reflètent la note corrigée. Chaque étape conserve son acteur et sa date dans l’historique."
+            "description": "Correction des notes transmises : demande, autorisation puis application. Accès ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION avec un compte actif. Autoriser et rejeter : ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE ou DIRECTION. Les enseignants peuvent demander puis appliquer leur correction via /enseignant/corrections-notes apres autorisation. Appliquer : ADMIN ou secrétariat. Les brouillons restent modifiables via la saisie enseignant. La feuille reste transmise et les moyennes consultées reflètent la note corrigée. Chaque étape conserve son acteur et sa date dans l’historique."
         },
         {
             "name": "Dossier étudiant",
@@ -12992,6 +13450,10 @@
         {
             "name": "Modules calendrier",
             "description": "Modules calendrier"
+        },
+        {
+            "name": "Administration des notes",
+            "description": "Administration des notes"
         },
         {
             "name": "Publication du programme",

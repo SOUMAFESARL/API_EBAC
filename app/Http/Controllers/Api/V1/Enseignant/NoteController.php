@@ -190,7 +190,7 @@ class NoteController extends Controller
             $feuille->update(['updated_by' => $request->user()->id, ...($transmettre ? ['statut' => 'transmise', 'date_transmission' => now()] : [])]);
         });
 
-        return response()->json(['message' => $transmettre ? 'Notes transmises au secrétariat.' : 'Notes enregistrées.',
+        return response()->json(['message' => $transmettre ? 'Notes transmises à l’administration.' : 'Notes enregistrées. Transmettez-les à l’administration après la saisie.',
             'feuille_notes' => $this->presenter($item, $promotion, $cle)]);
     }
 }

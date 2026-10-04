@@ -13,6 +13,13 @@ use Illuminate\Validation\ValidationException;
 
 class CorrectionNoteController extends Controller
 {
+    protected function corrections(Request $request)
+    {
+        return CorrectionNote::query();
+    }
+
+    protected function verifierAccesNote(Request $request, NoteCours $note): void {}
+
     public function index(Request $request)
     {
         $data = $request->validate([
@@ -21,15 +28,15 @@ class CorrectionNoteController extends Controller
             'per_page' => ['sometimes', 'integer', 'between:1,100'],
         ]);
 
-        return response()->json(CorrectionNote::query()
+        return response()->json($this->corrections($request)
             ->when(isset($data['id_note']), fn ($q) => $q->where('id_note', $data['id_note']))
             ->when(isset($data['statut']), fn ($q) => $q->where('statut', $data['statut']))
             ->latest('id')->paginate($data['per_page'] ?? 20));
     }
 
-    public function show(int $id)
+    public function show(Request $request, int $id)
     {
-        return response()->json(['correction' => CorrectionNote::findOrFail($id),
+        return response()->json(['correction' => $this->corrections($request)->findOrFail($id),
             'historique' => DB::table('traces_corrections_notes')->where('id_correction', $id)->orderBy('id')->get()]);
     }
 
@@ -40,23 +47,27 @@ class CorrectionNoteController extends Controller
             'note_proposee' => ['required', 'numeric', 'between:0,20', 'decimal:0,2'],
             'motif' => ['required', 'string', 'max:5000'],
         ]);
-        $correction = DB::transaction(function () use ($request, $data) {
-            $note = NoteCours::whereKey($data['id_note'])->lockForUpdate()->firstOrFail();
-            $this->verifierFeuille($note);
-            if (CorrectionNote::where('id_note', $note->id)->whereIn('statut', ['en_attente', 'autorisee'])->exists()) {
-                throw ValidationException::withMessages(['id_note' => 'Une correction est déjà en cours pour cette note.']);
-            }
-            if ((float) $data['note_proposee'] === $note->note) {
-                throw ValidationException::withMessages(['note_proposee' => 'La nouvelle note doit être différente de la note actuelle.']);
-            }
-            $correction = CorrectionNote::create([...$data, 'note_initiale' => $note->note,
-                'demande_par' => $request->user()->id, 'statut' => 'en_attente']);
-            $this->tracer($correction, $request, 'demande', $data['motif']);
-
-            return $correction;
-        });
+        $correction = DB::transaction(fn () => $this->creerDemande($request, $data));
 
         return response()->json(['message' => 'Demande de correction enregistrée.', 'correction' => $correction], 201);
+    }
+
+    protected function creerDemande(Request $request, array $data): CorrectionNote
+    {
+        $note = NoteCours::whereKey($data['id_note'])->lockForUpdate()->firstOrFail();
+        $this->verifierAccesNote($request, $note);
+        $this->verifierFeuille($note);
+        if (CorrectionNote::where('id_note', $note->id)->whereIn('statut', ['en_attente', 'autorisee'])->exists()) {
+            throw ValidationException::withMessages(['id_note' => 'Une correction est déjà en cours pour cette note.']);
+        }
+        if ((float) $data['note_proposee'] === $note->note) {
+            throw ValidationException::withMessages(['note_proposee' => 'La nouvelle note doit être différente de la note actuelle.']);
+        }
+        $correction = CorrectionNote::create([...$data, 'note_initiale' => $note->note,
+            'demande_par' => $request->user()->id, 'statut' => 'en_attente']);
+        $this->tracer($correction, $request, 'demande', $data['motif']);
+
+        return $correction;
     }
 
     public function autoriser(Request $request, int $id)
@@ -76,16 +87,17 @@ class CorrectionNoteController extends Controller
         return $this->transition($request, $id, 'appliquee');
     }
 
-    private function transition(Request $request, int $id, string $statut)
+    protected function transition(Request $request, int $id, string $statut)
     {
         $correction = DB::transaction(function () use ($request, $id, $statut) {
-            $correction = CorrectionNote::whereKey($id)->lockForUpdate()->firstOrFail();
+            $correction = $this->corrections($request)->whereKey($id)->lockForUpdate()->firstOrFail();
             $attendu = $statut === 'appliquee' ? 'autorisee' : 'en_attente';
             if ($correction->statut !== $attendu) {
                 throw ValidationException::withMessages(['statut' => 'Cette transition est impossible depuis le statut actuel.']);
             }
             if ($statut === 'appliquee') {
                 $note = NoteCours::whereKey($correction->id_note)->lockForUpdate()->firstOrFail();
+                $this->verifierAccesNote($request, $note);
                 $feuille = $this->verifierFeuille($note);
                 if ($note->note !== $correction->note_initiale) {
                     throw ValidationException::withMessages(['id_note' => 'La note a changé depuis la demande de correction.']);

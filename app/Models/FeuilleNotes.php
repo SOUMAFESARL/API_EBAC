@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FeuilleNotes extends Model
@@ -14,5 +15,30 @@ class FeuilleNotes extends Model
     public function notes(): HasMany
     {
         return $this->hasMany(NoteCours::class, 'id_feuille_notes');
+    }
+
+    public function anneeAcademique(): BelongsTo
+    {
+        return $this->belongsTo(AnneeAcademique::class, 'id_annee_academique');
+    }
+
+    public function promotion(): BelongsTo
+    {
+        return $this->belongsTo(Promotion::class, 'id_promotion');
+    }
+
+    public function matiere(): BelongsTo
+    {
+        return $this->belongsTo(Matiere::class, 'id_matiere');
+    }
+
+    public function cours(): BelongsTo
+    {
+        return $this->belongsTo(Cours::class, 'id_cours');
+    }
+
+    public function dernierModificateur(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }

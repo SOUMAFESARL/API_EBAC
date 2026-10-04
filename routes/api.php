@@ -41,6 +41,14 @@ use App\Http\Controllers\Api\V1\Parametre\SalleController;
 use App\Http\Controllers\Api\V1\ProgrammePublieController;
 use Illuminate\Support\Facades\Route;
 
+Route::prefix('v1/administration/notes-transmises')
+    ->name('api.v1.administration.notes-transmises.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
+    ->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\V1\Administration\NotesTransmisesController::class, 'index'])->name('index');
+        Route::get('{id}', [\App\Http\Controllers\Api\V1\Administration\NotesTransmisesController::class, 'show'])->whereNumber('id')->name('show');
+    });
+
 Route::prefix('v1/administration/corrections-notes')
     ->name('api.v1.administration.corrections-notes.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
@@ -49,9 +57,20 @@ Route::prefix('v1/administration/corrections-notes')
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
         Route::get('{id}', 'show')->whereNumber('id')->name('show');
-        Route::post('{id}/autoriser', 'autoriser')->whereNumber('id')->middleware('roles.autorises:ADMIN,DIRECTION')->name('autoriser');
-        Route::post('{id}/rejeter', 'rejeter')->whereNumber('id')->middleware('roles.autorises:ADMIN,DIRECTION')->name('rejeter');
+        Route::post('{id}/autoriser', 'autoriser')->whereNumber('id')->middleware('roles.autorises:ADMIN,DIRECTION,SECRETARIAT,SECRETAIRE_ACADEMIQUE')->name('autoriser');
+        Route::post('{id}/rejeter', 'rejeter')->whereNumber('id')->middleware('roles.autorises:ADMIN,DIRECTION,SECRETARIAT,SECRETAIRE_ACADEMIQUE')->name('rejeter');
         Route::post('{id}/appliquer', 'appliquer')->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE')->name('appliquer');
+    });
+
+Route::prefix('v1/enseignant/corrections-notes')
+    ->name('api.v1.enseignant.corrections-notes.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ENSEIGNANT'])
+    ->controller(\App\Http\Controllers\Api\V1\Enseignant\CorrectionNoteController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('{id}', 'show')->whereNumber('id')->name('show');
+        Route::post('{id}/appliquer', 'appliquer')->whereNumber('id')->name('appliquer');
     });
 
 Route::prefix('v1/administration/nouvelles-admissions')
@@ -112,6 +131,17 @@ Route::prefix('v1/etudiant/mes-matieres')
         Route::get('/', [MesMatieresController::class, 'index'])->name('index');
         Route::get('{matiere}', [MesMatieresController::class, 'show'])->whereNumber('matiere')->name('show');
     });
+Route::prefix('v1/etudiant/bulletins')
+    ->name('api.v1.etudiant.bulletins.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ETUDIANT'])
+    ->controller(\App\Http\Controllers\Api\V1\Etudiant\MesBulletinsController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('{id}', 'show')->whereNumber('id')->name('show');
+    });
+Route::get('v1/etudiant/cours-a-faire', \App\Http\Controllers\Api\V1\Etudiant\MesCoursAFaireController::class)
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ETUDIANT'])
+    ->name('api.v1.etudiant.cours-a-faire');
 Route::match(['patch', 'post'], 'v1/etudiant/dossier', [DossierEtudiantCompletController::class, 'modifierMonDossier'])
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->name('api.v1.etudiant.dossier.update');
