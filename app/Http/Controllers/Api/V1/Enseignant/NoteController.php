@@ -123,7 +123,14 @@ class NoteController extends Controller
             $present = $ouverte && $validees->every(fn ($s) => $s->feuillePresence->presences
                 ->contains(fn ($p) => $p->id_etudiant == $etudiant->id && $p->statut === 'present'));
 
-            return [...$etudiant->only(['id', 'matricule', 'nom', 'prenoms']), 'evaluable' => $present,
+            $absences = $validees->flatMap(fn ($s) => $s->feuillePresence->presences
+                ->filter(fn ($p) => $p->id_etudiant == $etudiant->id && $p->statut === 'absent'));
+            $nonAutorisees = $absences->whereNull('evaluation_autorisee_le');
+            $autorise = $ouverte && $absences->isNotEmpty() && $nonAutorisees->isEmpty();
+
+            return [...$etudiant->only(['id', 'matricule', 'nom', 'prenoms']), 'evaluable' => $present || $autorise,
+                'evaluation_autorisee' => $autorise,
+                'absences_non_autorisees' => $nonAutorisees->pluck('id')->values(),
                 'statut_presence' => $ouverte ? ($present ? 'present' : 'absent') : 'en_attente',
                 'id_note' => $notes->get($etudiant->id)?->id,
                 'note' => $notes->get($etudiant->id)?->note,
@@ -175,7 +182,7 @@ class NoteController extends Controller
             $feuille = FeuilleNotes::firstOrCreate($cle, ['updated_by' => $request->user()->id]);
             foreach ($data['notes'] ?? [] as $note) {
                 if (! $eligibles->contains((int) $note['id_etudiant'])) {
-                    throw ValidationException::withMessages(['notes' => ['Un étudiant absent ou hors promotion ne peut pas être noté.']]);
+                    throw ValidationException::withMessages(['notes' => ['Un étudiant absent sans autorisation administrative ou hors promotion ne peut pas être noté.']]);
                 }
                 if ($note['note'] === null) {
                     $feuille->notes()->where('id_etudiant', $note['id_etudiant'])->delete();

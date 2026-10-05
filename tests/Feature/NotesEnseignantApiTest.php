@@ -155,6 +155,75 @@ class NotesEnseignantApiTest extends TestCase
         ])->assertOk();
     }
 
+    public function test_absent_evaluable_uniquement_apres_autorisation_de_toutes_ses_absences(): void
+    {
+        $data = $this->contexte();
+        $this->presences($data);
+        $autre = $data['seance']->replicate();
+        $autre->date_prevue = '2026-09-21';
+        $autre->save();
+        $this->presences([...$data, 'seance' => $autre]);
+        $absences = \App\Models\Presence::where('id_etudiant', $data['etudiants'][1]->id)->get();
+        $base = '/api/v1/administration/autorisations-evaluations';
+        $payload = ['notes' => [['id_etudiant' => $data['etudiants'][1]->id, 'note' => 13]]];
+        $this->putJson($this->url($data), $payload)->assertUnprocessable();
+        $this->postJson($base.'/'.$absences[0]->id.'/autoriser', ['motif' => 'Justificatif accepté'])->assertForbidden();
+        Sanctum::actingAs($data['admin']);
+        $this->getJson($base.'?autorisee=0')->assertOk()->assertJsonPath('total', 2);
+        $this->postJson($base.'/'.$absences[0]->id.'/autoriser', ['motif' => ' '])->assertUnprocessable();
+        $this->postJson($base.'/'.$absences[0]->id.'/autoriser', ['motif' => 'Justificatif accepté'])->assertOk()
+            ->assertJsonPath('absence.evaluation_autorisee_par', $data['admin']->id);
+        Sanctum::actingAs($data['enseignant']);
+        $this->putJson($this->url($data), $payload)->assertUnprocessable();
+        Sanctum::actingAs($data['admin']);
+        $this->postJson($base.'/'.$absences[1]->id.'/autoriser', ['motif' => 'Justificatif accepté'])->assertOk();
+        $date = $absences[1]->fresh()->evaluation_autorisee_le->toISOString();
+        $this->postJson($base.'/'.$absences[1]->id.'/autoriser', ['motif' => 'Autre motif'])->assertOk()
+            ->assertJsonPath('absence.evaluation_autorisee_le', $date)
+            ->assertJsonPath('absence.motif_autorisation_evaluation', 'Justificatif accepté');
+        $present = \App\Models\Presence::where('statut', 'present')->firstOrFail();
+        $this->postJson($base.'/'.$present->id.'/autoriser', ['motif' => 'Test'])->assertUnprocessable();
+        $this->getJson($base.'/'.$absences[0]->id)->assertOk();
+        $this->postJson($base.'/999999/autoriser', ['motif' => 'Test'])->assertNotFound();
+        Sanctum::actingAs($data['enseignant']);
+        $this->putJson($this->url($data), $payload)->assertOk()
+            ->assertJsonPath('feuille_notes.etudiants.1.evaluable', true)
+            ->assertJsonPath('feuille_notes.etudiants.1.statut_presence', 'absent')
+            ->assertJsonPath('feuille_notes.etudiants.1.evaluation_autorisee', true);
+        $contexte = ['id_matiere' => $data['cours']->module->id_matiere,
+            'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
+        $this->putJson('/api/v1/enseignant/notes', [...$contexte, ...$payload])->assertOk();
+        $this->postJson(str_replace('?', '/transmettre?', $this->url($data)), [
+            'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 15]],
+        ])->assertOk()->assertJsonPath('feuille_notes.statut', 'transmise');
+        $this->assertDatabaseHas('presences', ['id' => $absences[0]->id, 'statut' => 'absent']);
+    }
+
+    public function test_autorisation_evaluation_roles_et_presence_non_validee(): void
+    {
+        $data = $this->contexte();
+        $feuille = $data['seance']->feuillePresence()->create(['statut' => 'brouillon']);
+        $absence = $feuille->presences()->create(['id_etudiant' => $data['etudiants'][1]->id, 'statut' => 'absent']);
+        $base = '/api/v1/administration/autorisations-evaluations';
+        Sanctum::actingAs($data['admin']);
+        $this->postJson($base.'/'.$absence->id.'/autoriser', ['motif' => 'Test'])->assertUnprocessable();
+        $feuille->update(['statut' => 'validee']);
+        foreach (['DIRECTION', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'] as $code) {
+            $role = Role::create(['code' => $code, 'libelle' => $code]);
+            Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+            $this->postJson($base.'/'.$absence->id.'/autoriser', ['motif' => 'Test'])->assertOk();
+        }
+        foreach (['ETUDIANT', 'GESTIONNAIRE'] as $code) {
+            $role = Role::create(['code' => $code, 'libelle' => $code]);
+            Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+            $this->getJson($base)->assertForbidden();
+            $this->postJson($base.'/'.$absence->id.'/autoriser', ['motif' => 'Test'])->assertForbidden();
+        }
+        $data['admin']->update(['is_active' => false]);
+        Sanctum::actingAs($data['admin']);
+        $this->postJson($base.'/'.$absence->id.'/autoriser', ['motif' => 'Test'])->assertForbidden();
+    }
+
     public function test_demande_groupee_atomique_et_validation_des_notes(): void
     {
         $data = $this->contexte();

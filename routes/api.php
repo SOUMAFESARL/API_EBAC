@@ -41,6 +41,42 @@ use App\Http\Controllers\Api\V1\Parametre\SalleController;
 use App\Http\Controllers\Api\V1\ProgrammePublieController;
 use Illuminate\Support\Facades\Route;
 
+Route::prefix('v1/administration/autorisations-evaluations')->name('api.v1.administration.autorisations-evaluations.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,DIRECTION,SECRETARIAT,SECRETAIRE_ACADEMIQUE'])
+    ->controller(\App\Http\Controllers\Api\V1\Administration\AutorisationEvaluationController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('{id}', 'show')->whereNumber('id')->name('show');
+        Route::post('{id}/autoriser', 'autoriser')->whereNumber('id')->name('autoriser');
+    });
+
+Route::prefix('v1/administration/bulletins')->name('api.v1.administration.bulletins.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,DIRECTION,SECRETARIAT,SECRETAIRE_ACADEMIQUE'])
+    ->controller(\App\Http\Controllers\Api\V1\Administration\BulletinController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('{id}', 'show')->whereNumber('id')->name('show');
+        Route::post('{id}/publier', 'publier')->whereNumber('id')->name('publier');
+    });
+
+Route::prefix('v1/etudiant/reclamations-notes')->name('api.v1.etudiant.reclamations-notes.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ETUDIANT'])
+    ->controller(\App\Http\Controllers\Api\V1\Etudiant\ReclamationNoteController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('{id}', 'show')->whereNumber('id')->name('show');
+    });
+
+Route::prefix('v1/administration/reclamations-notes')->name('api.v1.administration.reclamations-notes.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
+    ->controller(\App\Http\Controllers\Api\V1\Administration\ReclamationNoteController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('{id}', 'show')->whereNumber('id')->name('show');
+        Route::post('{id}/traiter', 'traiter')->whereNumber('id')->name('traiter');
+    });
+
 Route::prefix('v1/administration/notes-transmises')
     ->name('api.v1.administration.notes-transmises.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])

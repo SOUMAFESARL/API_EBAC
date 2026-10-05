@@ -39,7 +39,7 @@ class CorrectionNoteController extends Controller
         return response()->json(['correction' => $this->corrections($request)->findOrFail($id),
             'historique' => DB::table('traces_corrections_notes')->where('id_correction', $id)->orderBy('id')->get()]);
     }
-
+//do
     public function store(Request $request)
     {
         $data = $request->validate([

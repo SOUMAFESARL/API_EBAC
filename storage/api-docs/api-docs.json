@@ -5090,6 +5090,180 @@
                 ]
             }
         },
+        "/administration/autorisations-evaluations": {
+            "get": {
+                "tags": [
+                    "Autorisations des évaluations"
+                ],
+                "summary": "Lister les absences pour autoriser une évaluation",
+                "operationId": "fa0e8854cd4e4f3fa349ad104db22e15",
+                "parameters": [
+                    {
+                        "name": "id_etudiant",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_seance",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "autorisee",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "enum": [
+                                0,
+                                1
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pagination Laravel des absences avec étudiant, feuille et séance."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Accès refusé."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/autorisations-evaluations/{id}": {
+            "get": {
+                "tags": [
+                    "Autorisations des évaluations"
+                ],
+                "summary": "Consulter une absence et son autorisation",
+                "operationId": "41987afc02c92459299e8683b91269f6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifiant de la ligne presences.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "absence."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Accès refusé."
+                    },
+                    "404": {
+                        "description": "Absence inaccessible."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/autorisations-evaluations/{id}/autoriser": {
+            "post": {
+                "tags": [
+                    "Autorisations des évaluations"
+                ],
+                "summary": "Autoriser un étudiant absent à être évalué",
+                "description": "ADMIN, DIRECTION, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Absence sur séance réalisée avec présence validée requise. Auteur, date et motif conservés. Toutes les absences concernées doivent être autorisées pour la saisie par cours ou matière. Ne rouvre pas une feuille transmise et ne modifie pas les présences.",
+                "operationId": "3ccfea6c36e9fbe79829d48ed45860d0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifiant de la ligne presences.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "motif"
+                                ],
+                                "properties": {
+                                    "motif": {
+                                        "type": "string",
+                                        "example": "Justificatif accepté",
+                                        "maxLength": 5000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "message et absence avec evaluation_autorisee_par, evaluation_autorisee_le, motif_autorisation_evaluation."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Accès refusé."
+                    },
+                    "404": {
+                        "description": "Présence introuvable."
+                    },
+                    "422": {
+                        "description": "Motif ou présence invalide."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/enseignant/cahier-de-texte": {
             "get": {
                 "tags": [
@@ -8398,7 +8572,7 @@
                     "Saisie des notes"
                 ],
                 "summary": "Consulter les étudiants et notes du cours par promotion",
-                "description": "Retourne feuille_notes : matière, module, cours, promotion, statut, saisie_ouverte, seances_realisees, presences_validees, seances_a_relever, notes_manquantes et etudiants. Chaque étudiant expose evaluable, statut_presence (present, absent ou en_attente), note et moyenne_matiere provisoire pondérée par les coefficients des cours notés. Tous les étudiants de la promotion sont listés, indépendamment de leur année d’inscription. Une absence à une séance réalisée exclut de la notation du cours. Toutes les présences doivent être validées.",
+                "description": "Retourne feuille_notes : matière, module, cours, promotion, statut, saisie_ouverte, seances_realisees, presences_validees, seances_a_relever, notes_manquantes et etudiants. Chaque étudiant expose evaluable, statut_presence (present, absent ou en_attente), note et moyenne_matiere provisoire pondérée par les coefficients des cours notés. Tous les étudiants de la promotion sont listés, indépendamment de leur année d’inscription. Une absence sans autorisation administrative exclut de la notation du cours. Toutes les présences doivent être validées.",
                 "operationId": "enseignantAfficherNotes",
                 "parameters": [
                     {
@@ -8457,7 +8631,7 @@
                     "Saisie des notes"
                 ],
                 "summary": "Enregistrer un brouillon de notes sur 20",
-                "description": "Dans Swagger, renseigner cours, id_promotion et id_annee_academique, puis envoyer un corps JSON contenant notes. Exemple : {\"notes\":[{\"id_etudiant\":4,\"note\":15.5}]}. Seuls les étudiants évaluables doivent être envoyés. Un enregistrement partiel conserve les notes des autres étudiants toujours évaluables ; une note null efface la note de cet étudiant. Les notes d’étudiants devenus non évaluables sont retirées à l’enregistrement. La requête entière est annulée si une ligne est invalide. Refuse les doublons, absents, étudiants hors promotion et valeurs hors de 0 à 20. La réponse contient la feuille et les moyennes provisoires recalculées. Répéter cet appel pour compléter ou corriger le brouillon avant transmission.",
+                "description": "Dans Swagger, renseigner cours, id_promotion et id_annee_academique, puis envoyer un corps JSON contenant notes. Exemple : {\"notes\":[{\"id_etudiant\":4,\"note\":15.5}]}. Seuls les étudiants évaluables doivent être envoyés. Un enregistrement partiel conserve les notes des autres étudiants toujours évaluables ; une note null efface la note de cet étudiant. Les notes d’étudiants devenus non évaluables sont retirées à l’enregistrement. La requête entière est annulée si une ligne est invalide. Refuse les doublons, absents sans autorisation, étudiants hors promotion et valeurs hors de 0 à 20. La réponse contient la feuille et les moyennes provisoires recalculées. Répéter cet appel pour compléter ou corriger le brouillon avant transmission.",
                 "operationId": "enseignantEnregistrerNotes",
                 "parameters": [
                     {
@@ -8515,10 +8689,10 @@
                             "application/json": {
                                 "schema": {},
                                 "example": {
-                                    "message": "Un étudiant absent ou hors promotion ne peut pas être noté.",
+                                    "message": "Un étudiant absent sans autorisation administrative ou hors promotion ne peut pas être noté.",
                                     "errors": {
                                         "notes": [
-                                            "Un étudiant absent ou hors promotion ne peut pas être noté."
+                                            "Un étudiant absent sans autorisation administrative ou hors promotion ne peut pas être noté."
                                         ]
                                     }
                                 }
@@ -9067,6 +9241,173 @@
                 ]
             }
         },
+        "/administration/bulletins": {
+            "get": {
+                "tags": [
+                    "Publication des bulletins"
+                ],
+                "summary": "Lister les bulletins à publier",
+                "operationId": "d938db6fa30cf39972dce67400c97f07",
+                "parameters": [
+                    {
+                        "name": "id_inscription",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "periode",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 50
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Brouillon",
+                                "Publié"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pagination Laravel avec inscriptions."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Rôle interdit ou compte inactif."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/bulletins/{id}": {
+            "get": {
+                "tags": [
+                    "Publication des bulletins"
+                ],
+                "summary": "Consulter un bulletin et ses matières",
+                "operationId": "5b36668eacd4f30e954209d0f76eccd2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "bulletin avec inscription et lignes."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Accès refusé."
+                    },
+                    "404": {
+                        "description": "Bulletin introuvable."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/bulletins/{id}/publier": {
+            "post": {
+                "tags": [
+                    "Publication des bulletins"
+                ],
+                "summary": "Publier un bulletin existant",
+                "description": "ADMIN, DIRECTION, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Aucun corps requis. Passe un Brouillon à Publié avec date_publication et updated_by. Un bulletin déjà publié conserve sa date et son auteur. Ne génère pas de bulletin et ne recalcule pas les notes.",
+                "operationId": "b055691dda2a20f3431941810cab7674",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message et bulletin publié."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Accès refusé."
+                    },
+                    "404": {
+                        "description": "Bulletin introuvable."
+                    },
+                    "422": {
+                        "description": "Statut incompatible."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/programme": {
             "get": {
                 "tags": [
@@ -9305,6 +9646,261 @@
                     },
                     "422": {
                         "description": "Calendrier non publié."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/etudiant/reclamations-notes": {
+            "get": {
+                "tags": [
+                    "Réclamations des notes"
+                ],
+                "summary": "Lister mes réclamations",
+                "operationId": "e7fc133cf5dfbd23fc2b58442692946c",
+                "parameters": [
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "en_attente",
+                                "acceptee",
+                                "rejetee"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pagination Laravel des réclamations de l’étudiant connecté."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Réclamations des notes"
+                ],
+                "summary": "Contester une note de mon bulletin publié",
+                "description": "id_ligne_bulletin est bulletin.matieres[].id dans GET /etudiant/bulletins/{id}. Motif obligatoire. Note non nulle, bulletin publié et appartenant à l’étudiant connecté requis. Une seule réclamation en attente par note. Ne modifie pas les notes.",
+                "operationId": "338aa2b817421ccba7b4d24d6c4aa93a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_ligne_bulletin",
+                                    "motif"
+                                ],
+                                "properties": {
+                                    "id_ligne_bulletin": {
+                                        "type": "integer"
+                                    },
+                                    "motif": {
+                                        "type": "string",
+                                        "maxLength": 5000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "reclamation en_attente avec note_contestee."
+                    },
+                    "404": {
+                        "description": "Note inaccessible."
+                    },
+                    "422": {
+                        "description": "Motif invalide, note manquante ou doublon."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/etudiant/reclamations-notes/{id}": {
+            "get": {
+                "tags": [
+                    "Réclamations des notes"
+                ],
+                "summary": "Consulter ma réclamation et sa réponse",
+                "operationId": "d3c4200abcefea48b56e42659ac63793",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "reclamation."
+                    },
+                    "404": {
+                        "description": "Réclamation inaccessible."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/reclamations-notes": {
+            "get": {
+                "tags": [
+                    "Réclamations des notes"
+                ],
+                "summary": "Lister les réclamations des étudiants",
+                "operationId": "dd4a0ad0074905a97dd3cb8bd0cf0028",
+                "parameters": [
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "en_attente",
+                                "acceptee",
+                                "rejetee"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pagination Laravel. ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE, DIRECTION."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/reclamations-notes/{id}": {
+            "get": {
+                "tags": [
+                    "Réclamations des notes"
+                ],
+                "summary": "Consulter une réclamation",
+                "operationId": "1efd2624f745d4de825c760c3e15f2fa",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "reclamation."
+                    },
+                    "404": {
+                        "description": "Introuvable."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/reclamations-notes/{id}/traiter": {
+            "post": {
+                "tags": [
+                    "Réclamations des notes"
+                ],
+                "summary": "Accepter ou rejeter une réclamation avec réponse",
+                "description": "Traitement unique avec acteur et date conservés. Accepter ne modifie aucune note et ne remplace pas le circuit de correction autorisée.",
+                "operationId": "f18f42f7e8dce9f6f2090a0651ef79ee",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "statut",
+                                    "reponse"
+                                ],
+                                "properties": {
+                                    "statut": {
+                                        "type": "string",
+                                        "enum": [
+                                            "acceptee",
+                                            "rejetee"
+                                        ]
+                                    },
+                                    "reponse": {
+                                        "type": "string",
+                                        "maxLength": 5000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Réclamation traitée."
+                    },
+                    "422": {
+                        "description": "Réponse invalide ou demande déjà traitée."
                     }
                 },
                 "security": [
@@ -12068,7 +12664,7 @@
                         "example": "Yves"
                     },
                     "evaluable": {
-                        "description": "Présent à toutes les séances réalisées, avec toutes les feuilles de présence validées et complètes.",
+                        "description": "Présent à toutes les séances ou toutes ses absences autorisées par l’administration, avec les feuilles de présence validées et complètes.",
                         "type": "boolean",
                         "example": true
                     },
@@ -12081,6 +12677,17 @@
                             "absent",
                             "en_attente"
                         ]
+                    },
+                    "evaluation_autorisee": {
+                        "description": "Toutes les absences concernées sont autorisées et les présences sont validées et complètes.",
+                        "type": "boolean"
+                    },
+                    "absences_non_autorisees": {
+                        "description": "Identifiants des lignes presences encore bloquantes.",
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
                     },
                     "note": {
                         "type": "number",
@@ -13345,7 +13952,7 @@
         },
         {
             "name": "Saisie des notes",
-            "description": "## Parcours enseignant\nLa saisie directe par matière ne nécessite aucun cours : consulter `GET /enseignant/notes/feuille`, enregistrer `PUT /enseignant/notes`, puis transmettre `POST /enseignant/notes/transmettre`. Fournir `id_matiere`, `id_promotion` et `id_annee_academique` en query pour GET et dans le JSON pour PUT/POST, avec `notes` pour la saisie. Les options avec `cours = null` correspondent à ce parcours. Une affectation active de portée matière et un créneau correspondant sont requis. Les présences de toutes les séances réalisées de la matière, de la promotion et de l’année sont contrôlées, y compris les séances sans cours. La feuille est distincte par année + promotion + matière ; `cours` et `module` sont null. La note directe est retournée comme `moyenne_matiere` provisoire, sans être mélangée aux moyennes pondérées des feuilles par cours. Les routes par cours ci-dessous restent disponibles.\n\nCes routes nécessitent un Bearer Token appartenant à un compte actif de rôle ENSEIGNANT. Dans Swagger, utiliser **Authorize**. Le préfixe des routes est `/api/v1`.\n\n1. **Choisir un enseignement** avec `GET /enseignant/notes?id_annee_academique=1`. La réponse fournit les combinaisons matière, module, cours et promotion accessibles à cet enseignant.\n2. **Consulter la feuille** avec `GET /enseignant/notes/41?id_promotion=3&id_annee_academique=1`.\n3. **Enregistrer les notes** avec `PUT` sur la même URL. Les enregistrements partiels sont autorisés.\n4. **Transmettre la feuille complète** avec `POST /enseignant/notes/41/transmettre?id_promotion=3&id_annee_academique=1`.\n\nLes identifiants ci-dessus sont des exemples à remplacer par ceux de la base. `id_promotion` est la clé technique de la promotion, pas son numéro affiché (`num_promotion`). `{cours}` est un identifiant de cours, pas un identifiant de séance ou de matière. La feuille est distincte pour chaque combinaison **année académique + promotion + cours**.\n\n## Conditions de saisie\n- L’enseignant doit avoir une affectation active couvrant le cours ou sa matière, et un créneau correspondant à cette promotion, cette matière et cette année. Un créneau sans cours couvre les cours de la matière autorisés par son affectation.\n- Il faut au moins une séance réalisée pour ce cours et cette promotion dans cette année.\n- Toutes les séances réalisées doivent avoir une feuille de présence validée couvrant tous les étudiants de la promotion.\n- Un étudiant doit être présent à **toutes** ces séances pour être évaluable. Une absence le rend non évaluable pour le cours.\n- Tous les étudiants inscrits dans la promotion sont affichés, quelle que soit leur année d’inscription.\n\n## Notes et moyenne\nLes notes sont comprises entre 0 et 20, décimales acceptées (exemple JSON : `15.5`). `0` est une note valide ; `null` efface une note et la rend manquante. La moyenne matière est provisoire : somme(note × coefficient du cours) / somme(coefficients des cours notés), pour le même étudiant, la même promotion et la même année. Les cours sans note ne comptent pas dans ce calcul. Exemple : 18 coefficient 1 et 10 coefficient 3 donnent 12/20.\n\n## Transmission\nAu moins un étudiant doit être évaluable, et chacun doit avoir une note. Après transmission, `statut = transmise` et `saisie_ouverte = false` : l’enseignant ne peut plus modifier la feuille. Cette opération enregistre une transmission ; elle ne valide pas officiellement les moyennes. Les étapes de contrôle du secrétariat et de validation de la direction ne sont pas encore implémentées dans ces routes."
+            "description": "## Parcours enseignant\r\nLa saisie directe par matière ne nécessite aucun cours : consulter `GET /enseignant/notes/feuille`, enregistrer `PUT /enseignant/notes`, puis transmettre `POST /enseignant/notes/transmettre`. Fournir `id_matiere`, `id_promotion` et `id_annee_academique` en query pour GET et dans le JSON pour PUT/POST, avec `notes` pour la saisie. Les options avec `cours = null` correspondent à ce parcours. Une affectation active de portée matière et un créneau correspondant sont requis. Les présences de toutes les séances réalisées de la matière, de la promotion et de l’année sont contrôlées, y compris les séances sans cours. La feuille est distincte par année + promotion + matière ; `cours` et `module` sont null. La note directe est retournée comme `moyenne_matiere` provisoire, sans être mélangée aux moyennes pondérées des feuilles par cours. Les routes par cours ci-dessous restent disponibles.\r\n\r\nCes routes nécessitent un Bearer Token appartenant à un compte actif de rôle ENSEIGNANT. Dans Swagger, utiliser **Authorize**. Le préfixe des routes est `/api/v1`.\r\n\r\n1. **Choisir un enseignement** avec `GET /enseignant/notes?id_annee_academique=1`. La réponse fournit les combinaisons matière, module, cours et promotion accessibles à cet enseignant.\r\n2. **Consulter la feuille** avec `GET /enseignant/notes/41?id_promotion=3&id_annee_academique=1`.\r\n3. **Enregistrer les notes** avec `PUT` sur la même URL. Les enregistrements partiels sont autorisés.\r\n4. **Transmettre la feuille complète** avec `POST /enseignant/notes/41/transmettre?id_promotion=3&id_annee_academique=1`.\r\n\r\nLes identifiants ci-dessus sont des exemples à remplacer par ceux de la base. `id_promotion` est la clé technique de la promotion, pas son numéro affiché (`num_promotion`). `{cours}` est un identifiant de cours, pas un identifiant de séance ou de matière. La feuille est distincte pour chaque combinaison **année académique + promotion + cours**.\r\n\r\n## Conditions de saisie\r\n- L’enseignant doit avoir une affectation active couvrant le cours ou sa matière, et un créneau correspondant à cette promotion, cette matière et cette année. Un créneau sans cours couvre les cours de la matière autorisés par son affectation.\r\n- Il faut au moins une séance réalisée pour ce cours et cette promotion dans cette année.\r\n- Toutes les séances réalisées doivent avoir une feuille de présence validée couvrant tous les étudiants de la promotion.\r\n- Un étudiant doit être présent à **toutes** ces séances ou disposer d'une autorisation administrative pour chacune de ses absences. Utiliser `POST /administration/autorisations-evaluations/{id}/autoriser`, avec l'identifiant de la ligne `presences`.\r\n- Tous les étudiants inscrits dans la promotion sont affichés, quelle que soit leur année d’inscription.\r\n\r\n## Notes et moyenne\r\nLes notes sont comprises entre 0 et 20, décimales acceptées (exemple JSON : `15.5`). `0` est une note valide ; `null` efface une note et la rend manquante. La moyenne matière est provisoire : somme(note × coefficient du cours) / somme(coefficients des cours notés), pour le même étudiant, la même promotion et la même année. Les cours sans note ne comptent pas dans ce calcul. Exemple : 18 coefficient 1 et 10 coefficient 3 donnent 12/20.\r\n\r\n## Transmission\r\nAu moins un étudiant doit être évaluable, et chacun doit avoir une note. Après transmission, `statut = transmise` et `saisie_ouverte = false` : l’enseignant ne peut plus modifier la feuille. Cette opération enregistre une transmission ; elle ne valide pas officiellement les moyennes. Les étapes de contrôle du secrétariat et de validation de la direction ne sont pas encore implémentées dans ces routes."
         },
         {
             "name": "Permissions",
@@ -13424,6 +14031,10 @@
             "description": "Affectations enseignants"
         },
         {
+            "name": "Autorisations des évaluations",
+            "description": "Autorisations des évaluations"
+        },
+        {
             "name": "Cahier de texte",
             "description": "Cahier de texte"
         },
@@ -13456,8 +14067,16 @@
             "description": "Administration des notes"
         },
         {
+            "name": "Publication des bulletins",
+            "description": "Publication des bulletins"
+        },
+        {
             "name": "Publication du programme",
             "description": "Publication du programme"
+        },
+        {
+            "name": "Réclamations des notes",
+            "description": "Réclamations des notes"
         },
         {
             "name": "Salles",
