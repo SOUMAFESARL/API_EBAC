@@ -7266,7 +7266,7 @@
                     "Liste de présence"
                 ],
                 "summary": "Lister les séances accessibles pour l’appel",
-                "description": "Retourne les séances de l’enseignant connecté avec tous les étudiants de leur promotion, quelle que soit leur année d’inscription, et leur statut de présence.",
+                "description": "Retourne les séances de l’enseignant connecté avec les étudiants inscrits au plus tard à la date effective de la séance (ou à sa date prévue si elle n’a pas encore eu lieu) et leur statut de présence. Pour une séance de promotion, l’année d’inscription ne filtre pas les étudiants. Les étudiants inscrits après la séance sont exclus de sa liste de présence.",
                 "operationId": "listerSeancesPresence",
                 "parameters": [
                     {
@@ -8713,7 +8713,7 @@
                     "Saisie des notes"
                 ],
                 "summary": "Transmettre une feuille complète au secrétariat",
-                "description": "Dernière étape enseignant. Utiliser les mêmes identifiants que pour la consultation et l’enregistrement. Le corps est facultatif : sans corps, transmet les notes déjà enregistrées ; avec notes, enregistre ces notes puis transmet dans une seule transaction. Il faut une saisie ouverte, au moins un étudiant évaluable et une note pour chacun. Si la feuille reste incomplète, la requête échoue avec 422 et les changements de cette requête sont annulés. En cas de succès, statut devient transmise, date_transmission est renseignée et saisie_ouverte devient false. Une deuxième transmission ou une modification ultérieure est refusée. Les moyennes restent provisoires : le contrôle du secrétariat et la validation officielle de la direction ne sont pas implémentés ici.",
+                "description": "Transmission au secrétariat académique. Utiliser les mêmes identifiants que pour la consultation et l’enregistrement. Le corps est facultatif : sans corps, transmet les notes déjà enregistrées ; avec notes, enregistre ces notes puis transmet dans une seule transaction. Il faut une saisie ouverte, au moins un étudiant évaluable et une note pour chacun. Si la feuille reste incomplète, la requête échoue avec 422 et les changements sont annulés. En cas de succès, statut devient transmise, date_transmission est renseignée et saisie_ouverte devient false. Une nouvelle saisie ou transmission exige un refus du secrétariat. Le secrétariat valide puis transmet à la direction via /administration/notes-transmises/{id}.",
                 "operationId": "enseignantTransmettreNotes",
                 "parameters": [
                     {
@@ -8882,7 +8882,7 @@
                     "Administration des notes"
                 ],
                 "summary": "Consulter les feuilles de notes transmises par les enseignants",
-                "description": "Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Les brouillons sont exclus. La transmission ne publie pas les notes aux etudiants.",
+                "description": "Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Circuit : transmise → validee_secretariat → transmise_direction → validee_direction. Un refus du secretariat (rejetee_secretariat) rouvre la saisie enseignant et exige une nouvelle transmission. Un rejet de la direction (rejetee_direction) exige un reexamen du secretariat, qui peut valider a nouveau ou renvoyer a l enseignant. Les brouillons sont exclus. Ces validations ne publient pas les notes aux etudiants.",
                 "operationId": "listerNotesTransmisesAdministration",
                 "parameters": [
                     {
@@ -8904,6 +8904,21 @@
                         "in": "query",
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "transmise",
+                                "validee_secretariat",
+                                "rejetee_secretariat",
+                                "transmise_direction",
+                                "validee_direction",
+                                "rejetee_direction"
+                            ]
                         }
                     },
                     {
@@ -8964,7 +8979,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "feuille_notes avec contexte et notes des etudiants."
+                        "description": "feuille_notes avec contexte, notes des etudiants et historique : action, statut_avant, statut_apres, motif, created_at et acteur."
                     },
                     "401": {
                         "description": "Authentification requise."
@@ -8974,6 +8989,256 @@
                     },
                     "404": {
                         "description": "Feuille inexistante ou non transmise."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/notes-transmises/{id}/valider-secretariat": {
+            "post": {
+                "tags": [
+                    "Administration des notes"
+                ],
+                "summary": "Valider une feuille au secretariat academique",
+                "description": "ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Accepte les statuts transmise et rejetee_direction et passe a validee_secretariat. Une correction en cours bloque la transition.",
+                "operationId": "validerNotesSecretariat",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message et feuille_notes avec historique."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role non autorise."
+                    },
+                    "404": {
+                        "description": "Feuille introuvable."
+                    },
+                    "422": {
+                        "description": "Transition impossible ou correction en cours."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/notes-transmises/{id}/rejeter-secretariat": {
+            "post": {
+                "tags": [
+                    "Administration des notes"
+                ],
+                "summary": "Refuser une feuille et la renvoyer a l enseignant",
+                "description": "ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Accepte transmise, validee_secretariat ou rejetee_direction. Passe a rejetee_secretariat et rouvre la saisie enseignant. Motif obligatoire conserve dans l historique.",
+                "operationId": "rejeterNotesSecretariat",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "motif"
+                                ],
+                                "properties": {
+                                    "motif": {
+                                        "type": "string",
+                                        "example": "Verifier les notes de la copie.",
+                                        "maxLength": 5000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "message et feuille_notes avec historique."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role non autorise."
+                    },
+                    "404": {
+                        "description": "Feuille introuvable."
+                    },
+                    "422": {
+                        "description": "Motif invalide, transition impossible ou correction en cours."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/notes-transmises/{id}/transmettre-direction": {
+            "post": {
+                "tags": [
+                    "Administration des notes"
+                ],
+                "summary": "Transmettre une feuille validee par le secretariat a la direction",
+                "description": "ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Seul le statut validee_secretariat permet la transmission. Passe a transmise_direction. Les notes restent verrouillees pour l enseignant.",
+                "operationId": "transmettreNotesDirection",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message et feuille_notes avec historique."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role non autorise."
+                    },
+                    "404": {
+                        "description": "Feuille introuvable."
+                    },
+                    "422": {
+                        "description": "Validation du secretariat requise ou correction en cours."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/notes-transmises/{id}/valider-direction": {
+            "post": {
+                "tags": [
+                    "Administration des notes"
+                ],
+                "summary": "Valider une feuille par la direction",
+                "description": "ADMIN, DIRECTION. Seul le statut transmise_direction est accepte. Passe a validee_direction. Une correction appliquee ensuite renvoie la feuille au statut transmise pour un nouveau controle du secretariat.",
+                "operationId": "validerNotesDirection",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message et feuille_notes avec historique."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role non autorise."
+                    },
+                    "404": {
+                        "description": "Feuille introuvable."
+                    },
+                    "422": {
+                        "description": "Transmission a la direction requise ou correction en cours."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/notes-transmises/{id}/rejeter-direction": {
+            "post": {
+                "tags": [
+                    "Administration des notes"
+                ],
+                "summary": "Rejeter une feuille avec motif et la renvoyer au secretariat",
+                "description": "ADMIN, DIRECTION. Seul le statut transmise_direction est accepte. Passe a rejetee_direction. Le secretariat doit reexaminer la feuille avant toute nouvelle transmission a la direction.",
+                "operationId": "rejeterNotesDirection",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "motif"
+                                ],
+                                "properties": {
+                                    "motif": {
+                                        "type": "string",
+                                        "example": "Incoherence dans les notes transmises.",
+                                        "maxLength": 5000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "message et feuille_notes avec historique."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role non autorise."
+                    },
+                    "404": {
+                        "description": "Feuille introuvable."
+                    },
+                    "422": {
+                        "description": "Motif invalide, transition impossible ou correction en cours."
                     }
                 },
                 "security": [
@@ -10826,6 +11091,167 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/enseignant/transmissions-notes": {
+            "get": {
+                "tags": [
+                    "Notes enseignant"
+                ],
+                "summary": "Suivre les transmissions de notes de l enseignant connecté",
+                "description": "ENSEIGNANT actif. Liste paginée de ses feuilles transmises par matière ou cours, avec le circuit en quatre étapes et l historique. Les brouillons et les transmissions des autres enseignants sont exclus. L accès dépend de transmise_par et reste disponible après les décisions administratives ou la fin d une affectation. Aucun identifiant enseignant à fournir. Les anciennes feuilles sans auteur identifiable ne sont pas attribuées arbitrairement.",
+                "operationId": "listerMesTransmissionsNotes",
+                "parameters": [
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_matiere",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_cours",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "transmise",
+                                "validee_secretariat",
+                                "rejetee_secretariat",
+                                "transmise_direction",
+                                "validee_direction",
+                                "rejetee_direction"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "transmissions et meta de pagination.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "transmissions": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/SuiviTransmissionNotes"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Compte enseignant actif requis."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/enseignant/transmissions-notes/{id}": {
+            "get": {
+                "tags": [
+                    "Notes enseignant"
+                ],
+                "summary": "Consulter le circuit de validation d une feuille transmise",
+                "description": "Utiliser l id retourné par transmissions[].id. Fournit l étape actuelle, les étapes terminées ou en attente, les motifs de rejet et l historique chronologique avec les acteurs. Un refus du secrétariat renvoie à la saisie enseignant ; un rejet de la direction renvoie au contrôle secrétariat. La validation finale termine les quatre étapes. Aucune publication des notes aux étudiants.",
+                "operationId": "afficherMaTransmissionNotes",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détail du suivi.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "transmission": {
+                                            "$ref": "#/components/schemas/SuiviTransmissionNotes"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Compte enseignant actif requis."
+                    },
+                    "404": {
+                        "description": "Feuille inexistante, brouillon ou transmise par un autre enseignant."
                     }
                 },
                 "security": [
@@ -12750,7 +13176,12 @@
                         "example": "brouillon",
                         "enum": [
                             "brouillon",
-                            "transmise"
+                            "transmise",
+                            "validee_secretariat",
+                            "rejetee_secretariat",
+                            "transmise_direction",
+                            "validee_direction",
+                            "rejetee_direction"
                         ]
                     },
                     "date_transmission": {
@@ -12759,9 +13190,16 @@
                         "nullable": true
                     },
                     "saisie_ouverte": {
-                        "description": "false si aucune séance réalisée, présence non validée ou incomplète, ou feuille déjà transmise.",
+                        "description": "Ouverte seulement pour un brouillon ou un refus du secrétariat, avec des séances réalisées et des présences validées et complètes.",
                         "type": "boolean",
                         "example": true
+                    },
+                    "historique": {
+                        "description": "Décisions et transmissions avec acteur, date et motif.",
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
                     },
                     "seances_realisees": {
                         "type": "integer",
@@ -13906,6 +14344,170 @@
                         "type": "object"
                     }
                 ]
+            },
+            "SuiviTransmissionNotes": {
+                "properties": {
+                    "id": {
+                        "description": "Identifiant de la feuille de notes.",
+                        "type": "integer"
+                    },
+                    "statut": {
+                        "type": "string",
+                        "enum": [
+                            "transmise",
+                            "validee_secretariat",
+                            "rejetee_secretariat",
+                            "transmise_direction",
+                            "validee_direction",
+                            "rejetee_direction"
+                        ]
+                    },
+                    "date_transmission": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "transmise_par": {
+                        "description": "Enseignant ayant transmis la feuille.",
+                        "type": "integer"
+                    },
+                    "id_annee_academique": {
+                        "type": "integer"
+                    },
+                    "id_promotion": {
+                        "type": "integer"
+                    },
+                    "id_matiere": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "id_cours": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "annee_academique": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "promotion": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "matiere": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "cours": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "nombre_notes": {
+                        "type": "integer"
+                    },
+                    "circuit_validation": {
+                        "properties": {
+                            "etape_actuelle": {
+                                "type": "integer",
+                                "example": 2,
+                                "maximum": 4,
+                                "minimum": 1
+                            },
+                            "libelle": {
+                                "type": "string",
+                                "example": "Contrôle secrétariat"
+                            },
+                            "message": {
+                                "type": "string",
+                                "example": "Notes transmises au secrétariat, en cours de contrôle avant soumission à la direction."
+                            },
+                            "rejetee": {
+                                "type": "boolean",
+                                "example": false
+                            },
+                            "motif_rejet": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "correction_enseignant_requise": {
+                                "description": "Un refus du secrétariat permet une correction puis une nouvelle transmission. Ce champ ne remplace pas les conditions de saisie de l API de notes.",
+                                "type": "boolean"
+                            },
+                            "validee_et_verrouillee": {
+                                "type": "boolean",
+                                "example": false
+                            },
+                            "etapes": {
+                                "type": "array",
+                                "items": {
+                                    "properties": {
+                                        "numero": {
+                                            "type": "integer"
+                                        },
+                                        "libelle": {
+                                            "type": "string"
+                                        },
+                                        "statut": {
+                                            "type": "string",
+                                            "enum": [
+                                                "terminee",
+                                                "en_cours",
+                                                "en_attente",
+                                                "rejetee"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "derniere_decision": {
+                        "description": "Dernier événement de l historique (décision ou transmission), avec son acteur.",
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "historique": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "id_feuille_notes": {
+                                    "type": "integer"
+                                },
+                                "id_acteur": {
+                                    "type": "integer",
+                                    "nullable": true
+                                },
+                                "action": {
+                                    "type": "string"
+                                },
+                                "statut_avant": {
+                                    "type": "string"
+                                },
+                                "statut_apres": {
+                                    "type": "string"
+                                },
+                                "motif": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "created_at": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "acteur": {
+                                    "type": "object",
+                                    "nullable": true
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -13936,7 +14538,7 @@
         },
         {
             "name": "Corrections des notes",
-            "description": "Correction des notes transmises : demande, autorisation puis application. Accès ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION avec un compte actif. Autoriser et rejeter : ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE ou DIRECTION. Les enseignants peuvent demander puis appliquer leur correction via /enseignant/corrections-notes apres autorisation. Appliquer : ADMIN ou secrétariat. Les brouillons restent modifiables via la saisie enseignant. La feuille reste transmise et les moyennes consultées reflètent la note corrigée. Chaque étape conserve son acteur et sa date dans l’historique."
+            "description": "Correction des notes transmises : demande, autorisation puis application. Accès ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION avec un compte actif. Autoriser et rejeter : ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE ou DIRECTION. Les enseignants peuvent demander puis appliquer leur correction via /enseignant/corrections-notes apres autorisation. Appliquer : ADMIN ou secrétariat. Les brouillons et refus du secrétariat sont modifiables via la saisie enseignant. Une correction appliquée après validation ou transmission à la direction renvoie la feuille au statut transmise pour un nouveau contrôle du secrétariat. Les moyennes consultées reflètent la note corrigée. Chaque étape conserve son acteur et sa date dans l’historique."
         },
         {
             "name": "Dossier étudiant",
@@ -13952,7 +14554,7 @@
         },
         {
             "name": "Saisie des notes",
-            "description": "## Parcours enseignant\r\nLa saisie directe par matière ne nécessite aucun cours : consulter `GET /enseignant/notes/feuille`, enregistrer `PUT /enseignant/notes`, puis transmettre `POST /enseignant/notes/transmettre`. Fournir `id_matiere`, `id_promotion` et `id_annee_academique` en query pour GET et dans le JSON pour PUT/POST, avec `notes` pour la saisie. Les options avec `cours = null` correspondent à ce parcours. Une affectation active de portée matière et un créneau correspondant sont requis. Les présences de toutes les séances réalisées de la matière, de la promotion et de l’année sont contrôlées, y compris les séances sans cours. La feuille est distincte par année + promotion + matière ; `cours` et `module` sont null. La note directe est retournée comme `moyenne_matiere` provisoire, sans être mélangée aux moyennes pondérées des feuilles par cours. Les routes par cours ci-dessous restent disponibles.\r\n\r\nCes routes nécessitent un Bearer Token appartenant à un compte actif de rôle ENSEIGNANT. Dans Swagger, utiliser **Authorize**. Le préfixe des routes est `/api/v1`.\r\n\r\n1. **Choisir un enseignement** avec `GET /enseignant/notes?id_annee_academique=1`. La réponse fournit les combinaisons matière, module, cours et promotion accessibles à cet enseignant.\r\n2. **Consulter la feuille** avec `GET /enseignant/notes/41?id_promotion=3&id_annee_academique=1`.\r\n3. **Enregistrer les notes** avec `PUT` sur la même URL. Les enregistrements partiels sont autorisés.\r\n4. **Transmettre la feuille complète** avec `POST /enseignant/notes/41/transmettre?id_promotion=3&id_annee_academique=1`.\r\n\r\nLes identifiants ci-dessus sont des exemples à remplacer par ceux de la base. `id_promotion` est la clé technique de la promotion, pas son numéro affiché (`num_promotion`). `{cours}` est un identifiant de cours, pas un identifiant de séance ou de matière. La feuille est distincte pour chaque combinaison **année académique + promotion + cours**.\r\n\r\n## Conditions de saisie\r\n- L’enseignant doit avoir une affectation active couvrant le cours ou sa matière, et un créneau correspondant à cette promotion, cette matière et cette année. Un créneau sans cours couvre les cours de la matière autorisés par son affectation.\r\n- Il faut au moins une séance réalisée pour ce cours et cette promotion dans cette année.\r\n- Toutes les séances réalisées doivent avoir une feuille de présence validée couvrant tous les étudiants de la promotion.\r\n- Un étudiant doit être présent à **toutes** ces séances ou disposer d'une autorisation administrative pour chacune de ses absences. Utiliser `POST /administration/autorisations-evaluations/{id}/autoriser`, avec l'identifiant de la ligne `presences`.\r\n- Tous les étudiants inscrits dans la promotion sont affichés, quelle que soit leur année d’inscription.\r\n\r\n## Notes et moyenne\r\nLes notes sont comprises entre 0 et 20, décimales acceptées (exemple JSON : `15.5`). `0` est une note valide ; `null` efface une note et la rend manquante. La moyenne matière est provisoire : somme(note × coefficient du cours) / somme(coefficients des cours notés), pour le même étudiant, la même promotion et la même année. Les cours sans note ne comptent pas dans ce calcul. Exemple : 18 coefficient 1 et 10 coefficient 3 donnent 12/20.\r\n\r\n## Transmission\r\nAu moins un étudiant doit être évaluable, et chacun doit avoir une note. Après transmission, `statut = transmise` et `saisie_ouverte = false` : l’enseignant ne peut plus modifier la feuille. Cette opération enregistre une transmission ; elle ne valide pas officiellement les moyennes. Les étapes de contrôle du secrétariat et de validation de la direction ne sont pas encore implémentées dans ces routes."
+            "description": "## Parcours enseignant\nLa saisie directe par matière ne nécessite aucun cours : consulter `GET /enseignant/notes/feuille`, enregistrer `PUT /enseignant/notes`, puis transmettre `POST /enseignant/notes/transmettre`. Fournir `id_matiere`, `id_promotion` et `id_annee_academique` en query pour GET et dans le JSON pour PUT/POST, avec `notes` pour la saisie. Les options avec `cours = null` correspondent à ce parcours. Une affectation active de portée matière et un créneau correspondant sont requis. Les présences de toutes les séances réalisées de la matière, de la promotion et de l’année sont contrôlées, y compris les séances sans cours. La feuille est distincte par année + promotion + matière ; `cours` et `module` sont null. La note directe est retournée comme `moyenne_matiere` provisoire, sans être mélangée aux moyennes pondérées des feuilles par cours. Les routes par cours ci-dessous restent disponibles.\n\nCes routes nécessitent un Bearer Token appartenant à un compte actif de rôle ENSEIGNANT. Dans Swagger, utiliser **Authorize**. Le préfixe des routes est `/api/v1`.\n\n1. **Choisir un enseignement** avec `GET /enseignant/notes?id_annee_academique=1`. La réponse fournit les combinaisons matière, module, cours et promotion accessibles à cet enseignant.\n2. **Consulter la feuille** avec `GET /enseignant/notes/41?id_promotion=3&id_annee_academique=1`.\n3. **Enregistrer les notes** avec `PUT` sur la même URL. Les enregistrements partiels sont autorisés.\n4. **Transmettre la feuille complète** avec `POST /enseignant/notes/41/transmettre?id_promotion=3&id_annee_academique=1`.\n\nLes identifiants ci-dessus sont des exemples à remplacer par ceux de la base. `id_promotion` est la clé technique de la promotion, pas son numéro affiché (`num_promotion`). `{cours}` est un identifiant de cours, pas un identifiant de séance ou de matière. La feuille est distincte pour chaque combinaison **année académique + promotion + cours**.\n\n## Conditions de saisie\n- L’enseignant doit avoir une affectation active couvrant le cours ou sa matière, et un créneau correspondant à cette promotion, cette matière et cette année. Un créneau sans cours couvre les cours de la matière autorisés par son affectation.\n- Il faut au moins une séance réalisée pour ce cours et cette promotion dans cette année.\n- Toutes les séances réalisées doivent avoir une feuille de présence validée couvrant tous les étudiants de la promotion.\n- Un étudiant doit être présent à **toutes** ces séances ou disposer d'une autorisation administrative pour chacune de ses absences. Utiliser `POST /administration/autorisations-evaluations/{id}/autoriser`, avec l'identifiant de la ligne `presences`.\n- Tous les étudiants inscrits dans la promotion sont affichés, quelle que soit leur année d’inscription.\n\n## Notes et moyenne\nLes notes sont comprises entre 0 et 20, décimales acceptées (exemple JSON : `15.5`). `0` est une note valide ; `null` efface une note et la rend manquante. La moyenne matière est provisoire : somme(note × coefficient du cours) / somme(coefficients des cours notés), pour le même étudiant, la même promotion et la même année. Les cours sans note ne comptent pas dans ce calcul. Exemple : 18 coefficient 1 et 10 coefficient 3 donnent 12/20.\n\n## Transmission\nAu moins un étudiant doit être évaluable, et chacun doit avoir une note. Après transmission au secrétariat académique, `statut = transmise` et `saisie_ouverte = false`. Les contrôles suivants utilisent `/administration/notes-transmises/{id}` : `valider-secretariat`, `rejeter-secretariat`, `transmettre-direction`, `valider-direction`, `rejeter-direction`. Un refus du secrétariat rouvre la saisie enseignant et permet une nouvelle transmission. L’historique de la feuille expose les motifs et les acteurs. Ces étapes ne publient pas les notes aux étudiants."
         },
         {
             "name": "Permissions",
@@ -14081,6 +14683,10 @@
         {
             "name": "Salles",
             "description": "Salles"
+        },
+        {
+            "name": "Notes enseignant",
+            "description": "Notes enseignant"
         }
     ]
 }

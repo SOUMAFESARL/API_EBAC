@@ -8,9 +8,26 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FeuilleNotes extends Model
 {
+    public const STATUTS_TRANSMIS = ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'];
+
     protected $table = 'feuilles_notes';
 
-    protected $fillable = ['id_annee_academique', 'id_promotion', 'id_cours', 'id_matiere', 'statut', 'date_transmission', 'updated_by'];
+    protected $attributes = ['statut' => 'brouillon'];
+
+    protected $fillable = ['id_annee_academique', 'id_promotion', 'id_cours', 'id_matiere', 'statut', 'date_transmission', 'transmise_par', 'updated_by'];
+
+    public function historique(): HasMany
+    {
+        return $this->hasMany(HistoriqueFeuilleNotes::class, 'id_feuille_notes')->orderBy('id');
+    }
+
+    public function changerStatut(string $statut, int $acteur, string $action, ?string $motif = null): void
+    {
+        $avant = $this->statut;
+        $this->update(['statut' => $statut, 'updated_by' => $acteur]);
+        $this->historique()->create(['id_acteur' => $acteur, 'action' => $action,
+            'statut_avant' => $avant, 'statut_apres' => $statut, 'motif' => $motif, 'created_at' => now()]);
+    }
 
     public function notes(): HasMany
     {

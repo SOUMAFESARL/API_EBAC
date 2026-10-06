@@ -39,7 +39,8 @@ class CorrectionNoteController extends Controller
         return response()->json(['correction' => $this->corrections($request)->findOrFail($id),
             'historique' => DB::table('traces_corrections_notes')->where('id_correction', $id)->orderBy('id')->get()]);
     }
-//do
+
+    // do
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -103,6 +104,9 @@ class CorrectionNoteController extends Controller
                     throw ValidationException::withMessages(['id_note' => 'La note a changé depuis la demande de correction.']);
                 }
                 $note->update(['note' => $correction->note_proposee]);
+                if ($feuille->statut !== 'transmise') {
+                    $feuille->changerStatut('transmise', $request->user()->id, 'correction_note', 'Une note corrigée doit être vérifiée à nouveau par le secrétariat académique.');
+                }
                 $feuille->update(['updated_by' => $request->user()->id]);
                 $correction->fill(['note_finale' => $note->note, 'appliquee_par' => $request->user()->id, 'appliquee_le' => now()]);
             } elseif ($statut === 'autorisee') {
@@ -121,7 +125,7 @@ class CorrectionNoteController extends Controller
     private function verifierFeuille(NoteCours $note): FeuilleNotes
     {
         $feuille = FeuilleNotes::whereKey($note->id_feuille_notes)->lockForUpdate()->firstOrFail();
-        if ($feuille->statut !== 'transmise') {
+        if (! in_array($feuille->statut, ['transmise', 'validee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'], true)) {
             throw ValidationException::withMessages(['id_note' => 'Seules les notes transmises peuvent faire l’objet d’une correction.']);
         }
 

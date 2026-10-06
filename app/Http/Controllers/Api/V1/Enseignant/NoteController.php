@@ -142,7 +142,8 @@ class NoteController extends Controller
             'module' => $parMatiere ? null : $cours->module->only(['id', 'libelle']), 'matiere' => $matiere->only(['id', 'libelle']),
             'promotion' => $promotion->only(['id', 'code', 'num_promotion']), 'id_annee_academique' => $cle['id_annee_academique'],
             'statut' => $feuille?->statut ?? 'brouillon', 'date_transmission' => $feuille?->date_transmission,
-            'saisie_ouverte' => $ouverte && (! $feuille || $feuille->statut === 'brouillon'),
+            'historique' => $feuille?->historique()->with('acteur:id,nom,prenoms')->get() ?? collect(),
+            'saisie_ouverte' => $ouverte && (! $feuille || in_array($feuille->statut, ['brouillon', 'rejetee_secretariat'], true)),
             'seances_realisees' => $seances->count(), 'presences_validees' => $validees->count(),
             'seances_a_relever' => $seances->diff($validees)->pluck('id')->values(),
             'notes_manquantes' => $lignes->where('evaluable', true)->whereNull('note')->count(), 'etudiants' => $lignes];
@@ -174,6 +175,7 @@ class NoteController extends Controller
         DB::transaction(function () use ($request, $item, $promotion, $cle, $data, $transmettre) {
             // Serialise la creation de la feuille et les enregistrements concurrents.
             Promotion::whereKey($promotion->id)->lockForUpdate()->firstOrFail();
+            FeuilleNotes::where($cle)->lockForUpdate()->first();
             $etat = $this->presenter($item, $promotion, $cle);
             if (! $etat['saisie_ouverte']) {
                 throw ValidationException::withMessages(['notes' => ['Saisie fermée : présences non validées, aucune séance réalisée ou feuille déjà transmise.']]);
@@ -194,10 +196,14 @@ class NoteController extends Controller
             if ($transmettre && ($eligibles->isEmpty() || $feuille->notes()->count() !== $eligibles->count())) {
                 throw ValidationException::withMessages(['notes' => ['Tous les étudiants évaluables doivent avoir une note avant transmission.']]);
             }
-            $feuille->update(['updated_by' => $request->user()->id, ...($transmettre ? ['statut' => 'transmise', 'date_transmission' => now()] : [])]);
+            $feuille->update(['updated_by' => $request->user()->id]);
+            if ($transmettre) {
+                $feuille->changerStatut('transmise', $request->user()->id, 'transmission_secretariat');
+                $feuille->update(['date_transmission' => now(), 'transmise_par' => $request->user()->id]);
+            }
         });
 
-        return response()->json(['message' => $transmettre ? 'Notes transmises à l’administration.' : 'Notes enregistrées. Transmettez-les à l’administration après la saisie.',
+        return response()->json(['message' => $transmettre ? 'Notes transmises au secrétariat académique.' : 'Notes enregistrées. Transmettez-les au secrétariat académique après la saisie.',
             'feuille_notes' => $this->presenter($item, $promotion, $cle)]);
     }
 }

@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\Api\V1\Administration\ActionController;
 use App\Http\Controllers\Api\V1\Administration\AffectationEnseignantController;
+use App\Http\Controllers\Api\V1\Administration\AutorisationEvaluationController;
+use App\Http\Controllers\Api\V1\Administration\BulletinController;
 use App\Http\Controllers\Api\V1\Administration\CompteController;
 use App\Http\Controllers\Api\V1\Administration\CorrectionNoteController;
 use App\Http\Controllers\Api\V1\Administration\MenuController;
+use App\Http\Controllers\Api\V1\Administration\NotesTransmisesController;
 use App\Http\Controllers\Api\V1\Administration\PermissionController;
 use App\Http\Controllers\Api\V1\Administration\ProfilController;
 use App\Http\Controllers\Api\V1\Administration\PublicationProgrammeController;
@@ -16,13 +19,17 @@ use App\Http\Controllers\Api\V1\Enseignant\ListePresenceController;
 use App\Http\Controllers\Api\V1\Enseignant\MesCoursController;
 use App\Http\Controllers\Api\V1\Enseignant\MonEmploiDuTempsController;
 use App\Http\Controllers\Api\V1\Enseignant\NoteController;
+use App\Http\Controllers\Api\V1\Enseignant\TransmissionNotesController;
 use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantCompletController;
 use App\Http\Controllers\Api\V1\Etudiant\DossierEtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\EtudiantController;
 use App\Http\Controllers\Api\V1\Etudiant\GestionPreInscriptionController;
+use App\Http\Controllers\Api\V1\Etudiant\MesBulletinsController;
+use App\Http\Controllers\Api\V1\Etudiant\MesCoursAFaireController;
 use App\Http\Controllers\Api\V1\Etudiant\MesMatieresController;
 use App\Http\Controllers\Api\V1\Etudiant\NouvelleAdmissionController;
 use App\Http\Controllers\Api\V1\Etudiant\PreInscriptionController;
+use App\Http\Controllers\Api\V1\Etudiant\ReclamationNoteController;
 use App\Http\Controllers\Api\V1\Etudiant\RegistreEtudiantController;
 use App\Http\Controllers\Api\V1\FichierPreinscriptionController;
 use App\Http\Controllers\Api\V1\Navigation\SidebarController;
@@ -43,7 +50,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/administration/autorisations-evaluations')->name('api.v1.administration.autorisations-evaluations.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,DIRECTION,SECRETARIAT,SECRETAIRE_ACADEMIQUE'])
-    ->controller(\App\Http\Controllers\Api\V1\Administration\AutorisationEvaluationController::class)
+    ->controller(AutorisationEvaluationController::class)
     ->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('{id}', 'show')->whereNumber('id')->name('show');
@@ -52,7 +59,7 @@ Route::prefix('v1/administration/autorisations-evaluations')->name('api.v1.admin
 
 Route::prefix('v1/administration/bulletins')->name('api.v1.administration.bulletins.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,DIRECTION,SECRETARIAT,SECRETAIRE_ACADEMIQUE'])
-    ->controller(\App\Http\Controllers\Api\V1\Administration\BulletinController::class)
+    ->controller(BulletinController::class)
     ->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('{id}', 'show')->whereNumber('id')->name('show');
@@ -61,7 +68,7 @@ Route::prefix('v1/administration/bulletins')->name('api.v1.administration.bullet
 
 Route::prefix('v1/etudiant/reclamations-notes')->name('api.v1.etudiant.reclamations-notes.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ETUDIANT'])
-    ->controller(\App\Http\Controllers\Api\V1\Etudiant\ReclamationNoteController::class)
+    ->controller(ReclamationNoteController::class)
     ->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
@@ -70,7 +77,7 @@ Route::prefix('v1/etudiant/reclamations-notes')->name('api.v1.etudiant.reclamati
 
 Route::prefix('v1/administration/reclamations-notes')->name('api.v1.administration.reclamations-notes.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
-    ->controller(\App\Http\Controllers\Api\V1\Administration\ReclamationNoteController::class)
+    ->controller(App\Http\Controllers\Api\V1\Administration\ReclamationNoteController::class)
     ->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('{id}', 'show')->whereNumber('id')->name('show');
@@ -81,8 +88,18 @@ Route::prefix('v1/administration/notes-transmises')
     ->name('api.v1.administration.notes-transmises.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
     ->group(function () {
-        Route::get('/', [\App\Http\Controllers\Api\V1\Administration\NotesTransmisesController::class, 'index'])->name('index');
-        Route::get('{id}', [\App\Http\Controllers\Api\V1\Administration\NotesTransmisesController::class, 'show'])->whereNumber('id')->name('show');
+        Route::get('/', [NotesTransmisesController::class, 'index'])->name('index');
+        Route::get('{id}', [NotesTransmisesController::class, 'show'])->whereNumber('id')->name('show');
+        Route::post('{id}/valider-secretariat', [NotesTransmisesController::class, 'validerSecretariat'])
+            ->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE')->name('valider-secretariat');
+        Route::post('{id}/rejeter-secretariat', [NotesTransmisesController::class, 'rejeterSecretariat'])
+            ->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE')->name('rejeter-secretariat');
+        Route::post('{id}/transmettre-direction', [NotesTransmisesController::class, 'transmettreDirection'])
+            ->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE')->name('transmettre-direction');
+        Route::post('{id}/valider-direction', [NotesTransmisesController::class, 'validerDirection'])
+            ->whereNumber('id')->middleware('roles.autorises:ADMIN,DIRECTION')->name('valider-direction');
+        Route::post('{id}/rejeter-direction', [NotesTransmisesController::class, 'rejeterDirection'])
+            ->whereNumber('id')->middleware('roles.autorises:ADMIN,DIRECTION')->name('rejeter-direction');
     });
 
 Route::prefix('v1/administration/corrections-notes')
@@ -101,7 +118,7 @@ Route::prefix('v1/administration/corrections-notes')
 Route::prefix('v1/enseignant/corrections-notes')
     ->name('api.v1.enseignant.corrections-notes.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ENSEIGNANT'])
-    ->controller(\App\Http\Controllers\Api\V1\Enseignant\CorrectionNoteController::class)
+    ->controller(App\Http\Controllers\Api\V1\Enseignant\CorrectionNoteController::class)
     ->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
@@ -156,7 +173,7 @@ Route::get('v1/etudiant/dossier', [DossierEtudiantCompletController::class, 'mon
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->name('api.v1.etudiant.dossier');
 
-Route::get('v1/etudiant/emploi-du-temps', \App\Http\Controllers\Api\V1\Etudiant\MonEmploiDuTempsController::class)
+Route::get('v1/etudiant/emploi-du-temps', App\Http\Controllers\Api\V1\Etudiant\MonEmploiDuTempsController::class)
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ETUDIANT'])
     ->name('api.v1.etudiant.emploi-du-temps');
 
@@ -170,12 +187,12 @@ Route::prefix('v1/etudiant/mes-matieres')
 Route::prefix('v1/etudiant/bulletins')
     ->name('api.v1.etudiant.bulletins.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ETUDIANT'])
-    ->controller(\App\Http\Controllers\Api\V1\Etudiant\MesBulletinsController::class)
+    ->controller(MesBulletinsController::class)
     ->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('{id}', 'show')->whereNumber('id')->name('show');
     });
-Route::get('v1/etudiant/cours-a-faire', \App\Http\Controllers\Api\V1\Etudiant\MesCoursAFaireController::class)
+Route::get('v1/etudiant/cours-a-faire', MesCoursAFaireController::class)
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ETUDIANT'])
     ->name('api.v1.etudiant.cours-a-faire');
 Route::match(['patch', 'post'], 'v1/etudiant/dossier', [DossierEtudiantCompletController::class, 'modifierMonDossier'])
@@ -247,6 +264,14 @@ Route::prefix('v1/enseignant/cahier-de-texte')
         Route::get('{seance}', [CahierTexteController::class, 'show'])->whereNumber('seance')->name('show');
         Route::match(['put', 'patch'], '{seance}', [CahierTexteController::class, 'update'])->whereNumber('seance')->name('update');
         Route::delete('{seance}', [CahierTexteController::class, 'destroy'])->whereNumber('seance')->name('destroy');
+    });
+
+Route::prefix('v1/enseignant/transmissions-notes')
+    ->name('api.v1.enseignant.transmissions-notes.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ENSEIGNANT'])
+    ->group(function () {
+        Route::get('/', [TransmissionNotesController::class, 'index'])->name('index');
+        Route::get('{id}', [TransmissionNotesController::class, 'show'])->whereNumber('id')->name('show');
     });
 
 Route::prefix('v1/enseignant/notes')

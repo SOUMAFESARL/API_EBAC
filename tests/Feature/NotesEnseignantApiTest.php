@@ -13,6 +13,7 @@ use App\Models\Matiere;
 use App\Models\Module;
 use App\Models\Niveau;
 use App\Models\NoteCours;
+use App\Models\Presence;
 use App\Models\Promotion;
 use App\Models\Role;
 use App\Models\Salle;
@@ -163,7 +164,7 @@ class NotesEnseignantApiTest extends TestCase
         $autre->date_prevue = '2026-09-21';
         $autre->save();
         $this->presences([...$data, 'seance' => $autre]);
-        $absences = \App\Models\Presence::where('id_etudiant', $data['etudiants'][1]->id)->get();
+        $absences = Presence::where('id_etudiant', $data['etudiants'][1]->id)->get();
         $base = '/api/v1/administration/autorisations-evaluations';
         $payload = ['notes' => [['id_etudiant' => $data['etudiants'][1]->id, 'note' => 13]]];
         $this->putJson($this->url($data), $payload)->assertUnprocessable();
@@ -181,7 +182,7 @@ class NotesEnseignantApiTest extends TestCase
         $this->postJson($base.'/'.$absences[1]->id.'/autoriser', ['motif' => 'Autre motif'])->assertOk()
             ->assertJsonPath('absence.evaluation_autorisee_le', $date)
             ->assertJsonPath('absence.motif_autorisation_evaluation', 'Justificatif accepté');
-        $present = \App\Models\Presence::where('statut', 'present')->firstOrFail();
+        $present = Presence::where('statut', 'present')->firstOrFail();
         $this->postJson($base.'/'.$present->id.'/autoriser', ['motif' => 'Test'])->assertUnprocessable();
         $this->getJson($base.'/'.$absences[0]->id)->assertOk();
         $this->postJson($base.'/999999/autoriser', ['motif' => 'Test'])->assertNotFound();
@@ -395,6 +396,30 @@ class NotesEnseignantApiTest extends TestCase
         $id = FeuilleNotes::whereNull('id_cours')->firstOrFail()->id;
         $this->getJson($base.'/'.$id)->assertOk()->assertJsonPath('feuille_notes.cours', null)
             ->assertJsonPath('feuille_notes.matiere.id', $contexte['id_matiere']);
+    }
+
+    public function test_refus_secretariat_rouvre_saisie_et_permet_retransmission(): void
+    {
+        $data = $this->contexte();
+        $this->presences($data);
+        $url = $this->url($data);
+        $transmission = str_replace('?', '/transmettre?', $url);
+        $this->postJson($transmission, ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 14]]])->assertOk();
+        $id = FeuilleNotes::firstOrFail()->id;
+        $this->getJson('/api/v1/enseignant/transmissions-notes/'.$id)->assertOk()
+            ->assertJsonPath('transmission.transmise_par', $data['enseignant']->id);
+        Sanctum::actingAs($data['admin']);
+        $this->postJson('/api/v1/administration/notes-transmises/'.$id.'/rejeter-secretariat', ['motif' => 'Verifier la copie'])->assertOk();
+        Sanctum::actingAs($data['enseignant']);
+        $this->getJson($url)->assertOk()->assertJsonPath('feuille_notes.saisie_ouverte', true)
+            ->assertJsonPath('feuille_notes.historique.1.motif', 'Verifier la copie');
+        $this->putJson($url, ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 16]]])->assertOk();
+        $this->postJson($transmission)->assertOk()->assertJsonPath('feuille_notes.statut', 'transmise')
+            ->assertJsonPath('feuille_notes.saisie_ouverte', false)->assertJsonCount(3, 'feuille_notes.historique');
+        Sanctum::actingAs($data['admin']);
+        $this->postJson('/api/v1/administration/notes-transmises/'.$id.'/valider-secretariat')->assertOk();
+        Sanctum::actingAs($data['enseignant']);
+        $this->putJson($url, ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 18]]])->assertUnprocessable();
     }
 
     public function test_saisie_presence_moyenne_transmission_et_verrouillage(): void
