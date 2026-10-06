@@ -134,11 +134,13 @@ class ListePresenceController extends Controller
 
         foreach ($seances as $seance) {
             $anneeId = $seance->moduleCalendrier?->calendrier?->id_annee_academique ?? $activeAnneeId;
-            $cle = "{$anneeId}_{$seance->id_promotion}_{$seance->id_niveau}";
+            $dateSeance = ($seance->date_effective ?? $seance->date_prevue)->toDateString();
+            $cle = "{$anneeId}_{$seance->id_promotion}_{$seance->id_niveau}_{$dateSeance}";
 
             if (! isset($cache[$cle])) {
                 $cache[$cle] = Etudiant::query()
-                    ->whereHas('inscriptions', fn ($q) => $q->when(! $seance->id_promotion, fn ($i) => $i->where('id_annee_academique', $anneeId))
+                    ->whereHas('inscriptions', fn ($q) => $q->whereDate('date_inscription', '<=', $dateSeance)
+                        ->when(! $seance->id_promotion, fn ($i) => $i->where('id_annee_academique', $anneeId))
                         ->when($seance->id_promotion, fn ($i, $id) => $i->where('id_promotion', $id))
                         ->when(! $seance->id_promotion, fn ($i) => $i->whereHas('promotion', fn ($p) => $p->where('id_niveau', $seance->id_niveau))))
                     ->orderBy('nom')
@@ -186,8 +188,10 @@ class ListePresenceController extends Controller
 
         $anneeId = $seance->moduleCalendrier?->calendrier?->id_annee_academique
             ?? AnneeAcademique::where('active', true)->value('id');
+        $dateSeance = ($seance->date_effective ?? $seance->date_prevue)->toDateString();
 
-        return Etudiant::query()->whereHas('inscriptions', fn ($q) => $q->when(! $seance->id_promotion, fn ($i) => $i->where('id_annee_academique', $anneeId))
+        return Etudiant::query()->whereHas('inscriptions', fn ($q) => $q->whereDate('date_inscription', '<=', $dateSeance)
+            ->when(! $seance->id_promotion, fn ($i) => $i->where('id_annee_academique', $anneeId))
             ->when($seance->id_promotion, fn ($i, $id) => $i->where('id_promotion', $id))
             ->when(! $seance->id_promotion, fn ($i) => $i->whereHas('promotion', fn ($p) => $p->where('id_niveau', $seance->id_niveau))))
             ->orderBy('nom')

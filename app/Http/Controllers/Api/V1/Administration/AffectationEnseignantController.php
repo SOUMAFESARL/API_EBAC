@@ -43,6 +43,9 @@ class AffectationEnseignantController extends Controller
             'meta' => ['current_page' => $items->currentPage(), 'last_page' => $items->lastPage(), 'per_page' => $items->perPage(), 'total' => $items->total(), 'from' => $items->firstItem(), 'to' => $items->lastItem()]]);
     }
 
+
+
+
     public function tableauDeBord(Request $request): JsonResponse
     {
         $today = now()->toDateString();

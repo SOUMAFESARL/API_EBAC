@@ -92,7 +92,6 @@ class ListePresenceEnseignantApiTest extends TestCase
             ->assertJsonMissing(['matricule' => $data['horsPromotion']->matricule]);
     }
 
-
     public function test_enregistre_et_valide_definitivement_la_presence_et_cree_le_cours_a_faire(): void
     {
         $data = $this->contexte();
@@ -128,5 +127,54 @@ class ListePresenceEnseignantApiTest extends TestCase
         $this->getJson('/api/v1/enseignant/liste-presence')->assertForbidden();
         Sanctum::actingAs($data['autreEnseignant']);
         $this->getJson('/api/v1/enseignant/liste-presence/'.$data['seance']->id)->assertNotFound();
+    }
+
+    public function test_inscription_apres_seance_est_exclue_et_ne_genere_pas_absence(): void
+    {
+        $data = $this->contexte();
+        $data['etudiants'][1]->inscriptions()->update(['date_inscription' => '2026-09-15']);
+        $data['etudiants'][0]->inscriptions()->update(['date_inscription' => '2026-09-14']);
+        $url = '/api/v1/enseignant/liste-presence/'.$data['seance']->id;
+
+        $this->getJson($url)->assertOk()->assertJsonCount(1, 'feuille_presence.etudiants')
+            ->assertJsonPath('feuille_presence.etudiants.0.id', $data['etudiants'][0]->id);
+        $this->getJson('/api/v1/enseignant/liste-presence')->assertOk()->assertJsonCount(1, 'seances.0.etudiants');
+        $this->putJson($url, ['presences' => [
+            ['id_etudiant' => $data['etudiants'][0]->id, 'statut' => 'present'],
+            ['id_etudiant' => $data['etudiants'][1]->id, 'statut' => 'absent'],
+        ]])->assertUnprocessable();
+        $this->putJson($url, ['presences' => [
+            ['id_etudiant' => $data['etudiants'][0]->id, 'statut' => 'present'],
+        ]])->assertOk();
+        $this->postJson($url.'/valider')->assertOk();
+        $this->assertDatabaseMissing('presences', ['id_etudiant' => $data['etudiants'][1]->id]);
+        $this->assertDatabaseMissing('cours_a_faire', ['id_etudiant' => $data['etudiants'][1]->id]);
+    }
+
+    public function test_liste_distingue_dates_seances_et_utilise_date_effective(): void
+    {
+        $data = $this->contexte();
+        $data['etudiants'][1]->inscriptions()->update(['date_inscription' => '2026-09-15']);
+        $ulterieure = $data['seance']->replicate();
+        $ulterieure->fill(['date_prevue' => '2026-09-21', 'date_effective' => '2026-09-21'])->save();
+        $this->getJson('/api/v1/enseignant/liste-presence')->assertOk()
+            ->assertJsonCount(2, 'seances.0.etudiants')->assertJsonCount(1, 'seances.1.etudiants');
+
+        $data['seance']->update(['date_effective' => '2026-09-16']);
+        $url = '/api/v1/enseignant/liste-presence/'.$data['seance']->id;
+        $this->getJson($url)->assertOk()->assertJsonCount(2, 'feuille_presence.etudiants');
+        $data['seance']->update(['date_effective' => null, 'statut' => 'prevue']);
+        $this->getJson($url)->assertOk()->assertJsonCount(1, 'feuille_presence.etudiants');
+    }
+
+    public function test_cours_commun_exclut_inscriptions_posterieures(): void
+    {
+        $data = $this->contexte();
+        $data['seance']->update(['id_promotion' => null]);
+        $data['horsPromotion']->inscriptions()->update(['date_inscription' => '2026-09-15']);
+        $url = '/api/v1/enseignant/liste-presence/'.$data['seance']->id;
+        $this->getJson($url)->assertOk()->assertJsonCount(1, 'feuille_presence.etudiants')
+            ->assertJsonPath('feuille_presence.etudiants.0.id', $data['etudiants'][0]->id);
+        $this->getJson('/api/v1/enseignant/liste-presence')->assertOk()->assertJsonCount(1, 'seances.0.etudiants');
     }
 }

@@ -72,7 +72,7 @@ use OpenApi\Attributes as OA;
     path: '/enseignant/liste-presence',
     operationId: 'listerSeancesPresence',
     summary: 'Lister les séances accessibles pour l’appel',
-    description: 'Retourne les séances de l’enseignant connecté avec tous les étudiants de leur promotion, quelle que soit leur année d’inscription, et leur statut de présence.',
+    description: 'Retourne les séances de l’enseignant connecté avec les étudiants inscrits au plus tard à la date effective de la séance (ou à sa date prévue si elle n’a pas encore eu lieu) et leur statut de présence. Pour une séance de promotion, l’année d’inscription ne filtre pas les étudiants. Les étudiants inscrits après la séance sont exclus de sa liste de présence.',
     tags: ['Liste de présence'],
     security: [['sanctum' => []]],
     parameters: [
