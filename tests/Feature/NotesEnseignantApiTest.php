@@ -483,6 +483,30 @@ class NotesEnseignantApiTest extends TestCase
         $this->getJson($this->url($data))->assertOk()->assertJsonPath('feuille_notes.statut', 'non_transmise');
     }
 
+    public function test_tableau_notes_matiere_sans_enveloppe_et_acces_controle(): void
+    {
+        $data = $this->contexte();
+        $contexte = ['id_matiere' => $data['cours']->module->id_matiere,
+            'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
+        $url = '/api/v1/enseignant/notes/tableau?'.http_build_query($contexte);
+        $this->getJson($url)->assertOk()->assertExactJson([]);
+        $this->presences($data);
+        $this->putJson('/api/v1/enseignant/notes', [...$contexte, 'notes' => [
+            ['id_etudiant' => $data['etudiants'][0]->id, 'evaluation' => 'devoir_1', 'note' => 10],
+            ['id_etudiant' => $data['etudiants'][0]->id, 'evaluation' => 'examen', 'note' => 18],
+        ]])->assertOk();
+        $notes = NoteCours::orderBy('id')->get();
+        $this->getJson($url)->assertOk()->assertExactJson([
+            ['id' => $notes[0]->id, 'id_etudiant' => $data['etudiants'][0]->id, 'evaluation' => 'devoir_1', 'note' => 10],
+            ['id' => $notes[1]->id, 'id_etudiant' => $data['etudiants'][0]->id, 'evaluation' => 'examen', 'note' => 18],
+        ]);
+        $this->getJson('/api/v1/enseignant/notes/tableau')->assertUnprocessable();
+        Sanctum::actingAs($data['autreEnseignant']);
+        $this->getJson($url)->assertNotFound();
+        Sanctum::actingAs($data['admin']);
+        $this->getJson($url)->assertForbidden();
+    }
+
     public function test_refuse_absents_etrangers_notes_invalides_et_transmission_incomplete(): void
     {
         $data = $this->contexte();

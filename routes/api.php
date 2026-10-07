@@ -280,6 +280,7 @@ Route::prefix('v1/enseignant/notes')
     ->group(function () {
         Route::get('/', [NoteController::class, 'index'])->name('index');
         Route::get('feuille', [NoteController::class, 'show'])->name('matiere.show');
+        Route::get('tableau', [NoteController::class, 'tableau'])->name('matiere.tableau');
         Route::put('/', [NoteController::class, 'update'])->name('matiere.update');
         Route::post('transmettre', [NoteController::class, 'transmettre'])->name('matiere.transmettre');
         Route::get('{cours}', [NoteController::class, 'show'])->whereNumber('cours')->name('show');

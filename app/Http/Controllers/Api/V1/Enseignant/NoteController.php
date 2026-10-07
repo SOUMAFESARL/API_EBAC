@@ -162,6 +162,16 @@ class NoteController extends Controller
         return $this->enregistrer($request, $cours, true);
     }
 
+    public function tableau(Request $request)
+    {
+        [, , $cle] = $this->contexte($request, null);
+        $feuille = FeuilleNotes::where($cle)->first();
+        $notes = $feuille?->notes()->orderBy('id')->get() ?? collect();
+
+        return response()->json($notes->map(fn ($note) =>
+            $note->only(['id', 'id_etudiant', 'evaluation', 'note']))->values());
+    }
+
     public function transmettre(Request $request, ?int $cours = null)
     {
         return $this->enregistrer($request, $cours, true);

@@ -40,4 +40,27 @@ use OpenApi\Attributes as OA;
     tags: ['Saisie des notes'], security: [['sanctum' => []]],
     requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/NotesMatierePayload')),
     responses: [new OA\Response(response: 200, description: 'Feuille transmise.'), new OA\Response(response: 404, description: 'Matière ou contexte inaccessible.'), new OA\Response(response: 422, description: 'Feuille incomplète ou saisie fermée.')])]
+#[OA\Get(
+    path: '/enseignant/notes/tableau', operationId: 'enseignantTableauNotesMatiere',
+    summary: 'Recuperer uniquement le tableau des notes par matiere',
+    description: 'Tableau JSON directement a la racine, sans feuille_notes ni contexte. Une ligne par etudiant et evaluation. Retourne [] si aucune note n est enregistree. Meme controle d affectation active et de creneau que la consultation de la feuille.',
+    tags: ['Saisie des notes'], security: [['sanctum' => []]],
+    parameters: [
+        new OA\Parameter(name: 'id_matiere', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+        new OA\Parameter(name: 'id_promotion', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+        new OA\Parameter(name: 'id_annee_academique', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+    ],
+    responses: [
+        new OA\Response(response: 200, description: 'Tableau des notes enregistrees.', content: new OA\JsonContent(type: 'array', items: new OA\Items(type: 'object', properties: [
+            new OA\Property(property: 'id', type: 'integer', example: 1),
+            new OA\Property(property: 'id_etudiant', type: 'integer', example: 23),
+            new OA\Property(property: 'evaluation', type: 'string', example: 'examen'),
+            new OA\Property(property: 'note', type: 'number', example: 15.5),
+        ]))),
+        new OA\Response(response: 401, description: 'Authentification requise.'),
+        new OA\Response(response: 403, description: 'Compte enseignant actif requis.'),
+        new OA\Response(response: 404, description: 'Matiere ou contexte inaccessible.'),
+        new OA\Response(response: 422, description: 'Identifiants manquants ou invalides.'),
+    ]
+)]
 final class NotesMatiereEnseignantDocumentation {}
