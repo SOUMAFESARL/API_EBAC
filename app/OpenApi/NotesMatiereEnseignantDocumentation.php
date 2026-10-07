@@ -13,12 +13,13 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'note', type: 'number', minimum: 0, maximum: 20, nullable: true, example: 15.5),
     ])),
 ])]
-#[OA\Get(path: '/enseignant/notes/feuille', operationId: 'enseignantAfficherNotesMatiere', summary: 'Consulter les notes par matière sans cours',
+#[OA\Get(path: '/enseignant/notes/feuille', operationId: 'enseignantAfficherNotesMatiere', summary: 'Consulter les étudiants et notes de la matière par promotion',
+    description: 'Consultation par matière sans identifiant de cours. Fournir id_matiere, id_promotion et id_annee_academique en query. Exemple : /enseignant/notes/feuille?id_matiere=21&id_promotion=22&id_annee_academique=16. Retourne les étudiants, leur éligibilité, les notes directes de la matière, la moyenne provisoire, les présences et le statut de la feuille. Nécessite une affectation active à la matière et un créneau correspondant. cours et module sont null. Les notes directes par matière restent distinctes des notes par cours.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]], parameters: [
         new OA\Parameter(name: 'id_matiere', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_promotion', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_annee_academique', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
-    ], responses: [new OA\Response(response: 200, description: 'Feuille par matière ; cours et module sont null.'), new OA\Response(response: 404, description: 'Matière ou contexte inaccessible.'), new OA\Response(response: 422, description: 'Contexte invalide.')])]
+    ], responses: [new OA\Response(response: 200, description: 'feuille_notes avec étudiants et notes par matière ; cours et module sont null.', content: new OA\JsonContent(ref: '#/components/schemas/NotesCoursReponse')), new OA\Response(response: 401, description: 'Authentification requise.'), new OA\Response(response: 403, description: 'Compte enseignant actif requis.'), new OA\Response(response: 404, description: 'Matière ou contexte inaccessible.'), new OA\Response(response: 422, description: 'Contexte invalide.')])]
 #[OA\Put(path: '/enseignant/notes', operationId: 'enseignantEnregistrerNotesMatiere', summary: 'Saisir des notes par matière sans cours',
     description: 'notes est obligatoire. Les présences doivent être validées pour toutes les séances réalisées de la matière dans cette promotion et cette année. Les notes par cours restent distinctes.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]],

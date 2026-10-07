@@ -58,4 +58,9 @@ class FeuilleNotes extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
+
+    public function enseignant(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'transmise_par');
+    }
 }

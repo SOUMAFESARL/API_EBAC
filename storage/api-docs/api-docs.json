@@ -8794,7 +8794,8 @@
                 "tags": [
                     "Saisie des notes"
                 ],
-                "summary": "Consulter les notes par matière sans cours",
+                "summary": "Consulter les étudiants et notes de la matière par promotion",
+                "description": "Consultation par matière sans identifiant de cours. Fournir id_matiere, id_promotion et id_annee_academique en query. Exemple : /enseignant/notes/feuille?id_matiere=21&id_promotion=22&id_annee_academique=16. Retourne les étudiants, leur éligibilité, les notes directes de la matière, la moyenne provisoire, les présences et le statut de la feuille. Nécessite une affectation active à la matière et un créneau correspondant. cours et module sont null. Les notes directes par matière restent distinctes des notes par cours.",
                 "operationId": "enseignantAfficherNotesMatiere",
                 "parameters": [
                     {
@@ -8824,7 +8825,20 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Feuille par matière ; cours et module sont null."
+                        "description": "feuille_notes avec étudiants et notes par matière ; cours et module sont null.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotesCoursReponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Compte enseignant actif requis."
                     },
                     "404": {
                         "description": "Matière ou contexte inaccessible."
@@ -8941,7 +8955,66 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "feuilles_notes et meta de pagination."
+                        "description": "Liste paginee des feuilles transmises avec le tableau des notes et leur enseignant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "feuilles_notes": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/FeuilleNotesTransmiseAdministration"
+                                                    },
+                                                    {
+                                                        "properties": {
+                                                            "nombre_notes": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "from": {
+                                                    "type": "integer",
+                                                    "example": 1,
+                                                    "nullable": true
+                                                },
+                                                "to": {
+                                                    "type": "integer",
+                                                    "example": 1,
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Authentification requise."
@@ -8979,7 +9052,19 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "feuille_notes avec contexte, notes des etudiants et historique : action, statut_avant, statut_apres, motif, created_at et acteur."
+                        "description": "feuille_notes avec contexte, notes des etudiants et historique : action, statut_avant, statut_apres, motif, created_at et acteur.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "feuille_notes": {
+                                            "$ref": "#/components/schemas/FeuilleNotesTransmiseAdministration"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Authentification requise."
@@ -13317,6 +13402,191 @@
                             "type": "object"
                         },
                         "minItems": 1
+                    }
+                },
+                "type": "object"
+            },
+            "NoteTransmiseAdministration": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_etudiant": {
+                        "type": "integer",
+                        "example": 12
+                    },
+                    "note": {
+                        "type": "number",
+                        "example": 14,
+                        "maximum": 20,
+                        "minimum": 0
+                    },
+                    "etudiant": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 12
+                            },
+                            "matricule": {
+                                "type": "string",
+                                "example": "ETU-001"
+                            },
+                            "nom": {
+                                "type": "string",
+                                "example": "KONE"
+                            },
+                            "prenoms": {
+                                "type": "string",
+                                "example": "Jean"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "FeuilleNotesTransmiseAdministration": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_annee_academique": {
+                        "type": "integer"
+                    },
+                    "id_promotion": {
+                        "type": "integer"
+                    },
+                    "id_matiere": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "id_cours": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "statut": {
+                        "type": "string",
+                        "example": "transmise",
+                        "enum": [
+                            "transmise",
+                            "validee_secretariat",
+                            "rejetee_secretariat",
+                            "transmise_direction",
+                            "validee_direction",
+                            "rejetee_direction"
+                        ]
+                    },
+                    "date_transmission": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "annee_academique": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "libelle": {
+                                "type": "string",
+                                "example": "2026-2027"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "promotion": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "code": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "num_promotion": {
+                                "type": "integer"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "matiere": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "code": {
+                                "type": "string"
+                            },
+                            "libelle": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "cours": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "code": {
+                                "type": "string"
+                            },
+                            "libelle": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "enseignant": {
+                        "description": "Auteur de la transmission, null si inconnu.",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "nom": {
+                                "type": "string"
+                            },
+                            "prenoms": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "derniere_modification_par": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "nom": {
+                                "type": "string"
+                            },
+                            "prenoms": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "historique": {
+                        "description": "Null dans la liste ; historique avec acteurs dans le detail.",
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        },
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/NoteTransmiseAdministration"
+                        }
                     }
                 },
                 "type": "object"

@@ -15,7 +15,7 @@ class NotesTransmisesController extends Controller
     private function feuilles()
     {
         return FeuilleNotes::query()->whereIn('statut', FeuilleNotes::STATUTS_TRANSMIS)
-            ->with(['anneeAcademique', 'promotion', 'matiere', 'cours.module.matiere', 'dernierModificateur:id,nom,prenoms']);
+            ->with(['anneeAcademique', 'promotion', 'matiere', 'cours.module.matiere', 'enseignant:id,nom,prenoms', 'dernierModificateur:id,nom,prenoms']);
     }
 
     private function presenter(FeuilleNotes $feuille): array
@@ -26,6 +26,7 @@ class NotesTransmisesController extends Controller
             'promotion' => $feuille->promotion?->only(['id', 'code', 'num_promotion']),
             'matiere' => ($feuille->matiere ?? $feuille->cours?->module?->matiere)?->only(['id', 'code', 'libelle']),
             'cours' => $feuille->cours?->only(['id', 'code', 'libelle']),
+            'enseignant' => $feuille->enseignant?->only(['id', 'nom', 'prenoms']),
             'derniere_modification_par' => $feuille->dernierModificateur?->only(['id', 'nom', 'prenoms']),
             'historique' => $feuille->relationLoaded('historique') ? $feuille->historique : null,
         ];
@@ -41,7 +42,7 @@ class NotesTransmisesController extends Controller
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ]);
-        $query = $this->feuilles()->withCount('notes');
+        $query = $this->feuilles()->withCount('notes')->with(['notes' => fn ($q) => $q->orderBy('id'), 'notes.etudiant:id,matricule,nom,prenoms']);
         if (isset($data['statut'])) {
             $query->where('statut', $data['statut']);
         }
@@ -57,7 +58,11 @@ class NotesTransmisesController extends Controller
         $items = $query->orderByDesc('date_transmission')->orderByDesc('id')->paginate($data['per_page'] ?? 15);
 
         return response()->json([
-            'feuilles_notes' => $items->getCollection()->map(fn ($f) => [...$this->presenter($f), 'nombre_notes' => $f->notes_count]),
+            'feuilles_notes' => $items->getCollection()->map(fn ($f) => [
+                ...$this->presenter($f),
+                'nombre_notes' => $f->notes_count,
+                'notes' => $this->presenterNotes($f),
+            ])->values(),
             'meta' => ['current_page' => $items->currentPage(), 'last_page' => $items->lastPage(),
                 'per_page' => $items->perPage(), 'total' => $items->total(), 'from' => $items->firstItem(), 'to' => $items->lastItem()],
         ]);
@@ -69,11 +74,16 @@ class NotesTransmisesController extends Controller
 
         return response()->json(['feuille_notes' => [
             ...$this->presenter($feuille),
-            'notes' => $feuille->notes->map(fn ($note) => [
-                ...$note->only(['id', 'id_etudiant', 'note']),
-                'etudiant' => $note->etudiant?->only(['id', 'matricule', 'nom', 'prenoms']),
-            ]),
+            'notes' => $this->presenterNotes($feuille),
         ]]);
+    }
+
+    private function presenterNotes(FeuilleNotes $feuille): array
+    {
+        return $feuille->notes->map(fn ($note) => [
+            ...$note->only(['id', 'id_etudiant', 'note']),
+            'etudiant' => $note->etudiant?->only(['id', 'matricule', 'nom', 'prenoms']),
+        ])->values()->all();
     }
 
     public function validerSecretariat(Request $request, int $id): JsonResponse

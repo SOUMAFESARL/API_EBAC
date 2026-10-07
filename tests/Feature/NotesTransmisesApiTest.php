@@ -42,6 +42,30 @@ class NotesTransmisesApiTest extends TestCase
         return '/api/v1/administration/notes-transmises/'.$feuille->id;
     }
 
+    public function test_liste_transmise_contient_le_tableau_des_notes_et_son_enseignant(): void
+    {
+        [$users, $feuille, $note] = $this->contexte();
+        $feuille->update(['transmise_par' => $users['ENSEIGNANT']->id]);
+        $brouillon = $feuille->replicate();
+        $brouillon->statut = 'brouillon';
+        $brouillon->id_matiere = null;
+        $brouillon->save();
+
+        Sanctum::actingAs($users['SECRETAIRE_ACADEMIQUE']);
+        $this->postJson($this->url($feuille).'/valider-secretariat')->assertOk();
+        $this->getJson('/api/v1/administration/notes-transmises')->assertOk()
+            ->assertJsonCount(1, 'feuilles_notes')
+            ->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('feuilles_notes.0.enseignant.id', $users['ENSEIGNANT']->id)
+            ->assertJsonPath('feuilles_notes.0.nombre_notes', 1)
+            ->assertJsonCount(1, 'feuilles_notes.0.notes')
+            ->assertJsonPath('feuilles_notes.0.notes.0.id', $note->id)
+            ->assertJsonPath('feuilles_notes.0.notes.0.note', 14)
+            ->assertJsonPath('feuilles_notes.0.notes.0.etudiant.matricule', 'ETU-1');
+        $this->getJson('/api/v1/administration/notes-transmises?statut=transmise')->assertOk()
+            ->assertJsonCount(0, 'feuilles_notes');
+    }
+
     public function test_validation_secretariat_transmission_et_validation_direction(): void
     {
         [$users, $feuille] = $this->contexte();
