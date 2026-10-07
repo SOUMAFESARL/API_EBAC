@@ -93,7 +93,7 @@ class NotesEnseignantApiTest extends TestCase
         $this->presences($data);
         $this->getJson($url)->assertOk()->assertJsonPath('feuille_notes.cours', null)
             ->assertJsonPath('feuille_notes.matiere.id', $matiere)->assertJsonPath('feuille_notes.saisie_ouverte', true);
-        $this->putJson($base, $payload)->assertOk()->assertJsonPath('feuille_notes.etudiants.0.note', 15.5)
+        $this->putJson($base, $payload)->assertOk()->assertJsonPath('feuille_notes.etudiants.0.notes.0.note', 15.5)
             ->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 15.5);
         $this->putJson($base, [...$contexte, 'notes' => [['id_etudiant' => $data['etudiants'][1]->id, 'note' => 10]]])->assertUnprocessable();
         $this->putJson($base, [...$contexte, 'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => null]]])->assertUnprocessable();
@@ -130,7 +130,7 @@ class NotesEnseignantApiTest extends TestCase
             'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 17]],
         ])->assertOk()->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 17);
         $this->assertDatabaseCount('feuilles_notes', 2);
-        $this->getJson($this->url($data))->assertOk()->assertJsonPath('feuille_notes.etudiants.0.note', 12)
+        $this->getJson($this->url($data))->assertOk()->assertJsonPath('feuille_notes.etudiants.0.notes.0.note', 12)
             ->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 12);
         $autre = $data['seance']->replicate();
         $autre->date_prevue = '2026-09-21';
@@ -433,7 +433,7 @@ class NotesEnseignantApiTest extends TestCase
         $this->presences($data);
         $this->getJson($url)->assertOk()->assertJsonPath('feuille_notes.saisie_ouverte', true)
             ->assertJsonCount(2, 'feuille_notes.etudiants')->assertJsonPath('feuille_notes.etudiants.1.evaluable', false);
-        $this->putJson($url, $payload)->assertOk()->assertJsonPath('feuille_notes.etudiants.0.note', 15.5)
+        $this->putJson($url, $payload)->assertOk()->assertJsonPath('feuille_notes.etudiants.0.notes.0.note', 15.5)
             ->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 15.5);
         $this->postJson(str_replace('?', '/transmettre?', $url))->assertOk()
             ->assertJsonPath('feuille_notes.statut', 'transmise')->assertJsonPath('feuille_notes.saisie_ouverte', false);
@@ -455,6 +455,7 @@ class NotesEnseignantApiTest extends TestCase
             ['id_etudiant' => $data['etudiants'][0]->id, 'evaluation' => 'examen', 'note' => 18],
         ]])->assertOk()
             ->assertJsonCount(2, 'feuille_notes.etudiants.0.notes')
+            ->assertJsonMissingPath('feuille_notes.etudiants.0.note')
             ->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 14)
             ->assertJsonPath('feuille_notes.statut', 'transmise')
             ->assertJsonPath('feuille_notes.saisie_ouverte', false);
@@ -609,7 +610,7 @@ class NotesEnseignantApiTest extends TestCase
         Sanctum::actingAs($data['enseignant']);
         $this->getJson('/api/v1/enseignant/notes/feuille?'.http_build_query($contexte))->assertOk()
             ->assertJsonPath('feuille_notes.cours', null)->assertJsonPath('feuille_notes.saisie_ouverte', false)
-            ->assertJsonPath('feuille_notes.etudiants.0.note', 16.5)
+            ->assertJsonPath('feuille_notes.etudiants.0.notes.0.note', 16.5)
             ->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 16.5);
     }
 

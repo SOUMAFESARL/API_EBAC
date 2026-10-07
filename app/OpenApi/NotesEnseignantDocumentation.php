@@ -34,7 +34,7 @@ PUT enregistre et transmet immediatement la feuille au secretariat. Aucun brouil
 Au moins un étudiant doit être évaluable, et chacun doit avoir une note. Après transmission au secrétariat académique, `statut = transmise` et `saisie_ouverte = false`. Les contrôles suivants utilisent `/administration/notes-transmises/{id}` : `valider-secretariat`, `rejeter-secretariat`, `transmettre-direction`, `valider-direction`, `rejeter-direction`. Un refus du secrétariat rouvre la saisie enseignant et permet une nouvelle transmission. L’historique de la feuille expose les motifs et les acteurs. Ces étapes ne publient pas les notes aux étudiants.
 DOC)]
 #[OA\Schema(schema: 'EtudiantNoteCours', type: 'object', properties: [
-    new OA\Property(property: 'notes', type: 'array', description: 'Toutes les evaluations de cet etudiant. Utiliser notes[].id pour demander une correction. Les champs historiques id_note et note correspondent a la premiere note.', items: new OA\Items(type: 'object', properties: [
+    new OA\Property(property: 'notes', type: 'array', description: 'Toutes les evaluations de cet etudiant. Utiliser notes[].id pour demander une correction. Le champ historique id_note correspond a la premiere note.', items: new OA\Items(type: 'object', properties: [
         new OA\Property(property: 'id', type: 'integer'),
         new OA\Property(property: 'evaluation', type: 'string', example: 'devoir_1'),
         new OA\Property(property: 'note', type: 'number', example: 15.5),
@@ -48,7 +48,6 @@ DOC)]
     new OA\Property(property: 'statut_presence', type: 'string', enum: ['present', 'absent', 'en_attente'], description: 'en_attente tant que les conditions de présence ne permettent pas la saisie.', example: 'present'),
     new OA\Property(property: 'evaluation_autorisee', type: 'boolean', description: 'Toutes les absences concernées sont autorisées et les présences sont validées et complètes.'),
     new OA\Property(property: 'absences_non_autorisees', type: 'array', description: 'Identifiants des lignes presences encore bloquantes.', items: new OA\Items(type: 'integer')),
-    new OA\Property(property: 'note', type: 'number', nullable: true, example: 15.5),
     new OA\Property(property: 'moyenne_matiere', type: 'number', nullable: true, description: 'Moyenne pondérée des cours notés de la matière, arrondie à deux décimales.', example: 14.25),
     new OA\Property(property: 'statut_moyenne', type: 'string', enum: ['provisoire']),
 ])]

@@ -134,7 +134,6 @@ class NoteController extends Controller
                 'absences_non_autorisees' => $nonAutorisees->pluck('id')->values(),
                 'statut_presence' => $ouverte ? ($present ? 'present' : 'absent') : 'en_attente',
                 'id_note' => $notes->get($etudiant->id)?->id,
-                'note' => $notes->get($etudiant->id)?->note,
                 'notes' => ($notesParEtudiant->get($etudiant->id) ?? collect())->map(fn ($note) =>
                     $note->only(['id', 'evaluation', 'note']))->values(),
                 'moyenne_matiere' => isset($moyennes[$etudiant->id]) ? round((float) $moyennes[$etudiant->id], 2) : null,
@@ -150,7 +149,7 @@ class NoteController extends Controller
             'saisie_ouverte' => $ouverte && (! $feuille || in_array($feuille->statut, ['brouillon', 'rejetee_secretariat'], true)),
             'seances_realisees' => $seances->count(), 'presences_validees' => $validees->count(),
             'seances_a_relever' => $seances->diff($validees)->pluck('id')->values(),
-            'notes_manquantes' => $lignes->where('evaluable', true)->whereNull('note')->count(), 'etudiants' => $lignes];
+            'notes_manquantes' => $lignes->where('evaluable', true)->filter(fn ($ligne) => $ligne['notes']->isEmpty())->count(), 'etudiants' => $lignes];
     }
 
     public function show(Request $request, ?int $cours = null)
