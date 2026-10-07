@@ -14,6 +14,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'id_annee_academique', type: 'integer'),
         new OA\Property(property: 'id_promotion', type: 'integer'),
         new OA\Property(property: 'id_matiere', type: 'integer', nullable: true),
+        new OA\Property(property: 'id_seance', type: 'integer', nullable: true, description: 'Seance de la feuille ; null pour les anciennes feuilles.'),
         new OA\Property(property: 'id_cours', type: 'integer', nullable: true),
         new OA\Property(property: 'annee_academique', type: 'object', nullable: true),
         new OA\Property(property: 'promotion', type: 'object', nullable: true),
@@ -55,6 +56,7 @@ use OpenApi\Attributes as OA;
     tags: ['Notes enseignant'], security: [['sanctum' => []]],
     parameters: [
         new OA\Parameter(name: 'id_annee_academique', in: 'query', schema: new OA\Schema(type: 'integer')),
+        new OA\Parameter(name: 'id_seance', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_promotion', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_matiere', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_cours', in: 'query', schema: new OA\Schema(type: 'integer')),

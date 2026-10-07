@@ -4,7 +4,8 @@ namespace App\OpenApi;
 
 use OpenApi\Attributes as OA;
 
-#[OA\Schema(schema: 'NotesMatierePayload', type: 'object', required: ['id_matiere', 'id_promotion', 'id_annee_academique'], properties: [
+#[OA\Schema(schema: 'NotesMatierePayload', type: 'object', required: ['id_matiere', 'id_promotion', 'id_annee_academique', 'id_seance'], properties: [
+    new OA\Property(property: 'id_seance', type: 'integer', example: 157, description: 'Seance de cet enseignant, de cette matiere, promotion et annee. Seules ses presences sont controlees.'),
     new OA\Property(property: 'id_matiere', type: 'integer', example: 19),
     new OA\Property(property: 'id_promotion', type: 'integer', example: 18),
     new OA\Property(property: 'id_annee_academique', type: 'integer', example: 14),
@@ -16,17 +17,18 @@ use OpenApi\Attributes as OA;
     ])),
 ])]
 #[OA\Get(path: '/enseignant/notes/feuille', operationId: 'enseignantAfficherNotesMatiere', summary: 'Consulter les étudiants et notes de la matière par promotion',
-    description: 'Consultation par matière sans identifiant de cours. Fournir id_matiere, id_promotion et id_annee_academique en query. Exemple : /enseignant/notes/feuille?id_matiere=21&id_promotion=22&id_annee_academique=16. Retourne les étudiants, leur éligibilité, les notes directes de la matière, la moyenne provisoire, les présences et le statut de la feuille. Nécessite une affectation active à la matière et un créneau correspondant. cours et module sont null. Les notes directes par matière restent distinctes des notes par cours.',
+    description: 'Fournir id_matiere, id_promotion, id_annee_academique et id_seance en query pour consulter la feuille de cette seance. Retourne etudiants, notes, moyenne matiere et eligibilite selon uniquement les presences de cette seance. Sans id_seance, consulte les anciennes feuilles sans seance. cours et module sont null.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]], parameters: [
+        new OA\Parameter(name: 'id_seance', in: 'query', required: false, description: 'Seance a consulter. Sans ce parametre, consulte uniquement les anciennes feuilles sans seance.', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_matiere', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_promotion', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_annee_academique', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
     ], responses: [new OA\Response(response: 200, description: 'feuille_notes avec étudiants et notes par matière ; cours et module sont null.', content: new OA\JsonContent(ref: '#/components/schemas/NotesCoursReponse')), new OA\Response(response: 401, description: 'Authentification requise.'), new OA\Response(response: 403, description: 'Compte enseignant actif requis.'), new OA\Response(response: 404, description: 'Matière ou contexte inaccessible.'), new OA\Response(response: 422, description: 'Contexte invalide.')])]
 #[OA\Put(path: '/enseignant/notes', operationId: 'enseignantEnregistrerNotesMatiere', summary: 'Saisir des notes par matière sans cours',
-    description: 'Enregistrement et transmission immediats, sans brouillon. notes est obligatoire et doit couvrir tous les etudiants evaluables. Envoyer toutes les evaluations ensemble dans notes[].evaluation. La feuille est ensuite verrouillee. Les présences doivent être validées pour toutes les séances réalisées de la matière dans cette promotion et cette année. Les notes par cours restent distinctes.',
+    description: 'id_seance est obligatoire. Enregistrement et transmission immediats pour cette seance, sans brouillon. Ses presences doivent etre validees et couvrir tous les etudiants de la promotion. Tous les etudiants evaluables sur cette seance doivent avoir une note. Envoyer toutes ses evaluations ensemble dans notes[].evaluation. La feuille de cette seance est ensuite verrouillee ; les autres seances restent independantes.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]],
     requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/NotesMatierePayload'), new OA\Schema(required: ['notes'])], example: [
-        'id_matiere' => 21, 'id_promotion' => 22, 'id_annee_academique' => 16,
+        'id_seance' => 157, 'id_matiere' => 21, 'id_promotion' => 22, 'id_annee_academique' => 16,
         'notes' => [
             ['id_etudiant' => 23, 'evaluation' => 'devoir_1', 'note' => 15.5],
             ['id_etudiant' => 23, 'evaluation' => 'examen', 'note' => 17],
@@ -36,7 +38,7 @@ use OpenApi\Attributes as OA;
     ])),
     responses: [new OA\Response(response: 200, description: 'Notes enregistrees et directement transmises. statut=transmise, saisie_ouverte=false.', content: new OA\JsonContent(ref: '#/components/schemas/NotesCoursReponse')), new OA\Response(response: 404, description: 'Matière ou contexte inaccessible.'), new OA\Response(response: 422, description: 'Notes invalides, feuille incomplete ou saisie fermee. Aucun changement conserve.')])]
 #[OA\Post(path: '/enseignant/notes/transmettre', operationId: 'enseignantTransmettreNotesMatiere', summary: 'Transmettre les notes par matière',
-    description: 'Alternative a PUT : enregistrer et transmettre toutes les evaluations ensemble. notes est facultatif pour transmettre une ancienne feuille. Une feuille deja transmise sans nouvelles notes est retournee sans nouvel historique. Toute saisie exige des presences validees et au moins une note par etudiant evaluable. Apres succes la feuille est verrouillee.',
+    description: 'id_seance est obligatoire. Alternative a PUT : enregistrer et transmettre toutes les evaluations de la seance ensemble. notes est facultatif si la feuille existe deja. Sans nouvelles notes, une feuille deja transmise est retournee sans nouvel historique. Toute saisie exige les presences validees de cette seance et au moins une note par etudiant evaluable. Apres succes sa feuille est verrouillee.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]],
     requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/NotesMatierePayload')),
     responses: [new OA\Response(response: 200, description: 'Feuille transmise.'), new OA\Response(response: 404, description: 'Matière ou contexte inaccessible.'), new OA\Response(response: 422, description: 'Feuille incomplète ou saisie fermée.')])]
@@ -46,6 +48,7 @@ use OpenApi\Attributes as OA;
     description: 'Tableau JSON directement a la racine, sans feuille_notes ni contexte. Une ligne par etudiant et evaluation. Retourne [] si aucune note n est enregistree. Meme controle d affectation active et de creneau que la consultation de la feuille.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]],
     parameters: [
+        new OA\Parameter(name: 'id_seance', in: 'query', required: false, description: 'Seance a consulter. Sans ce parametre, consulte uniquement les anciennes feuilles sans seance.', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_matiere', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_promotion', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_annee_academique', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),

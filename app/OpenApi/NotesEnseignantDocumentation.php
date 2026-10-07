@@ -5,33 +5,11 @@ namespace App\OpenApi;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'Saisie des notes', description: <<<'DOC'
-## Parcours enseignant
-Par matiere : consulter GET /enseignant/notes/feuille, puis envoyer toutes les notes a PUT /enseignant/notes. Fournir id_matiere, id_promotion et id_annee_academique. PUT enregistre et transmet immediatement, puis verrouille la feuille. Pour plusieurs notes par etudiant, utiliser notes[].evaluation avec des evaluations distinctes. moyenne_matiere est la moyenne simple des notes directes, separee des notes par cours. Une affectation active et un creneau correspondant sont requis. cours et module sont null.
-
-Ces routes nécessitent un Bearer Token appartenant à un compte actif de rôle ENSEIGNANT. Dans Swagger, utiliser **Authorize**. Le préfixe des routes est `/api/v1`.
-
-1. **Choisir un enseignement** avec `GET /enseignant/notes?id_annee_academique=1`. La réponse fournit les combinaisons matière, module, cours et promotion accessibles à cet enseignant.
-2. **Consulter la feuille** avec `GET /enseignant/notes/41?id_promotion=3&id_annee_academique=1`.
-3. **Enregistrer et transmettre** avec PUT sur la meme URL. Tous les etudiants evaluables doivent avoir une note ; la feuille est verrouillee apres succes.
-4. **Consulter le suivi** via GET /enseignant/transmissions-notes. POST /transmettre reste disponible pour compatibilite ; sans notes, une feuille deja transmise est retournee sans ajouter de transmission.
-
-Les identifiants ci-dessus sont des exemples à remplacer par ceux de la base. `id_promotion` est la clé technique de la promotion, pas son numéro affiché (`num_promotion`). `{cours}` est un identifiant de cours, pas un identifiant de séance ou de matière. La feuille est distincte pour chaque combinaison **année académique + promotion + cours**.
-
-## Conditions de saisie
-- L’enseignant doit avoir une affectation active couvrant le cours ou sa matière, et un créneau correspondant à cette promotion, cette matière et cette année. Un créneau sans cours couvre les cours de la matière autorisés par son affectation.
-- Il faut au moins une séance réalisée pour ce cours et cette promotion dans cette année.
-- Toutes les séances réalisées doivent avoir une feuille de présence validée couvrant tous les étudiants de la promotion.
-- Un étudiant doit être présent à **toutes** ces séances ou disposer d'une autorisation administrative pour chacune de ses absences. Utiliser `POST /administration/autorisations-evaluations/{id}/autoriser`, avec l'identifiant de la ligne `presences`.
-- Tous les étudiants inscrits dans la promotion sont affichés, quelle que soit leur année d’inscription.
-
-## Notes et moyenne
-Les notes sont comprises entre 0 et 20, décimales acceptées (exemple JSON : `15.5`). `0` est une note valide ; `null` efface une note et la rend manquante. La moyenne matière est provisoire : somme(note × coefficient du cours) / somme(coefficients des cours notés), pour le même étudiant, la même promotion et la même année. Les cours sans note ne comptent pas dans ce calcul. Exemple : 18 coefficient 1 et 10 coefficient 3 donnent 12/20.
-
-## Transmission automatique
-PUT enregistre et transmet immediatement la feuille au secretariat. Aucun brouillon de notes n est conserve apres une saisie reussie. Avant toute saisie, statut = non_transmise. Une feuille incomplete est refusee sans enregistrer les notes. Pour plusieurs evaluations par matiere, envoyer toutes les notes dans la meme requete avec notes[].evaluation. POST /transmettre reste disponible ; sans notes, une feuille deja transmise est retournee sans nouvel historique.
-
-## Transmission
-Au moins un étudiant doit être évaluable, et chacun doit avoir une note. Après transmission au secrétariat académique, `statut = transmise` et `saisie_ouverte = false`. Les contrôles suivants utilisent `/administration/notes-transmises/{id}` : `valider-secretariat`, `rejeter-secretariat`, `transmettre-direction`, `valider-direction`, `rejeter-direction`. Un refus du secrétariat rouvre la saisie enseignant et permet une nouvelle transmission. L’historique de la feuille expose les motifs et les acteurs. Ces étapes ne publient pas les notes aux étudiants.
+La saisie est liee a une seance precise. Fournir id_seance, id_matiere (ou cours dans le chemin), id_promotion et id_annee_academique. La seance doit appartenir a l enseignant connecte et correspondre au contexte. Une affectation active et un creneau correspondant sont requis.
+GET /enseignant/notes/feuille retourne les etudiants et leur eligibilite sur cette seance. GET /enseignant/notes/tableau retourne directement les notes de cette seance. Sans id_seance, GET consulte uniquement les anciennes feuilles sans seance ; aucune attribution automatique n est faite.
+PUT enregistre et transmet immediatement la feuille de la seance. id_seance est obligatoire pour PUT et POST /transmettre. Seule la presence de la seance choisie est controlee : seance realisee, presences validees et completes, etudiant present ou absence autorisee. Les autres seances ne bloquent pas la saisie.
+Chaque seance a sa propre feuille et son verrouillage. Envoyer toutes les evaluations ensemble dans notes[].evaluation pour une matiere. Tous les etudiants evaluables doivent avoir au moins une note ; sinon la requete entiere est annulee. La moyenne matiere directe est la moyenne simple des notes de toutes ses seances dans la meme promotion et annee. Les notes par cours restent separees.
+Apres succes, statut=transmise et saisie_ouverte=false. Une correction autorisee ou un refus du secretariat permet de corriger les notes. Les transmissions et leurs decisions restent suivies via /enseignant/transmissions-notes et /administration/notes-transmises. Aucune publication aux etudiants.
 DOC)]
 #[OA\Schema(schema: 'EtudiantNoteCours', type: 'object', properties: [
     new OA\Property(property: 'notes', type: 'array', description: 'Toutes les evaluations de cet etudiant. Utiliser notes[].id pour demander une correction. Le champ historique id_note correspond a la premiere note.', items: new OA\Items(type: 'object', properties: [
@@ -57,6 +35,7 @@ DOC)]
     new OA\Property(property: 'matiere', type: 'object', example: ['id' => 13, 'libelle' => 'Théologie systématique']),
     new OA\Property(property: 'promotion', type: 'object', example: ['id' => 3, 'code' => 'PROMO-2026', 'num_promotion' => 17]),
     new OA\Property(property: 'id_annee_academique', type: 'integer', example: 1),
+    new OA\Property(property: 'id_seance', type: 'integer', nullable: true, example: 157),
     new OA\Property(property: 'statut', type: 'string', enum: ['non_transmise', 'transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'], example: 'transmise'),
     new OA\Property(property: 'date_transmission', type: 'string', nullable: true, example: null),
     new OA\Property(property: 'saisie_ouverte', type: 'boolean', description: 'Ouverte avant transmission ou apres un refus du secretariat, avec des presences validees et completes. Fermee immediatement apres enregistrement.', example: false),
@@ -86,9 +65,10 @@ DOC)]
     ], responses: [new OA\Response(response: 200, description: 'enseignements : combinaisons de matière, module, cours et promotion accessibles via affectations actives et créneaux de cet enseignant.'),
         new OA\Response(response: 401, description: 'Authentification requise.'), new OA\Response(response: 403, description: 'Rôle enseignant requis.')])]
 #[OA\Get(path: '/enseignant/notes/{cours}', operationId: 'enseignantAfficherNotes', summary: 'Consulter les étudiants et notes du cours par promotion',
-    description: 'Retourne feuille_notes : matière, module, cours, promotion, statut, saisie_ouverte, seances_realisees, presences_validees, seances_a_relever, notes_manquantes et etudiants. Chaque étudiant expose evaluable, statut_presence (present, absent ou en_attente), note et moyenne_matiere provisoire pondérée par les coefficients des cours notés. Tous les étudiants de la promotion sont listés, indépendamment de leur année d’inscription. Une absence sans autorisation administrative exclut de la notation du cours. Toutes les présences doivent être validées.',
+    description: 'Retourne la feuille et les notes du cours pour la seance choisie, avec eligibilite selon ses presences. Sans id_seance, retourne uniquement les anciennes feuilles sans seance.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]], parameters: [
         new OA\Parameter(name: 'cours', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        new OA\Parameter(name: 'id_seance', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_annee_academique', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_promotion', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
     ], responses: [new OA\Response(response: 200, description: 'Feuille de notes et conditions de saisie.', content: new OA\JsonContent(properties: [new OA\Property(property: 'feuille_notes', ref: '#/components/schemas/FeuilleNotesDetail')])), new OA\Response(response: 404, description: 'Cours, promotion ou année inaccessible.')])]
@@ -96,6 +76,7 @@ DOC)]
     description: 'Fournir cours, id_promotion et id_annee_academique et un corps JSON contenant notes. Tous les etudiants evaluables doivent avoir une note. La requete est atomique : une feuille incomplete ou une ligne invalide annule tout. Apres succes, statut=transmise et saisie_ouverte=false. Toute modification ulterieure necessite une correction autorisee ou un refus du secretariat.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]], parameters: [
         new OA\Parameter(name: 'cours', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        new OA\Parameter(name: 'id_seance', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_annee_academique', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_promotion', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
     ], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/NotesCoursPayload')),
@@ -104,6 +85,7 @@ DOC)]
     description: 'Alternative a PUT : enregistrer et transmettre dans une seule transaction. Tous les etudiants evaluables doivent avoir une note. Sans corps, transmet une ancienne feuille non transmise ; si deja transmise, retourne la feuille sans changer son statut ni ajouter un historique. Apres succes, statut=transmise et saisie_ouverte=false.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]], parameters: [
         new OA\Parameter(name: 'cours', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        new OA\Parameter(name: 'id_seance', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_annee_academique', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_promotion', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
     ], requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/NotesCoursPayload')),

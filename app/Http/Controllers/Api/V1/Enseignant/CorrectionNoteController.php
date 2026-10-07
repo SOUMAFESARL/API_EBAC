@@ -50,6 +50,9 @@ class CorrectionNoteController extends \App\Http\Controllers\Api\V1\Administrati
     protected function verifierAccesNote(Request $request, NoteCours $note): void
     {
         $feuille = FeuilleNotes::findOrFail($note->id_feuille_notes);
+        if ($feuille->id_seance !== null) {
+            abort_unless($feuille->seance?->enseignant_id === $request->user()->id, 404);
+        }
         $matiere = $feuille->id_matiere;
         if ($feuille->id_cours !== null) {
             $cours = Cours::with('module.matiere')->findOrFail($feuille->id_cours);

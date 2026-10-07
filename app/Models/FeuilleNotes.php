@@ -14,7 +14,12 @@ class FeuilleNotes extends Model
 
     protected $attributes = ['statut' => 'brouillon'];
 
-    protected $fillable = ['id_annee_academique', 'id_promotion', 'id_cours', 'id_matiere', 'statut', 'date_transmission', 'transmise_par', 'updated_by'];
+    protected $fillable = ['id_annee_academique', 'id_promotion', 'id_cours', 'id_matiere', 'id_seance', 'statut', 'date_transmission', 'transmise_par', 'updated_by'];
+
+    public function seance(): BelongsTo
+    {
+        return $this->belongsTo(SeanceCahierTexte::class, 'id_seance');
+    }
 
     public function historique(): HasMany
     {

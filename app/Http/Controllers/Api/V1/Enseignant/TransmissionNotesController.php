@@ -21,6 +21,7 @@ class TransmissionNotesController extends Controller
     public function index(Request $request): JsonResponse
     {
         $data = $request->validate([
+            'id_seance' => ['sometimes', 'integer', 'exists:seances_cahier_texte,id'],
             'id_annee_academique' => ['sometimes', 'integer', 'exists:annees_academiques,id'],
             'id_promotion' => ['sometimes', 'integer', 'exists:promotions,id'],
             'id_matiere' => ['sometimes', 'integer', 'exists:matieres,id'],
@@ -30,7 +31,7 @@ class TransmissionNotesController extends Controller
             'per_page' => ['sometimes', 'integer', 'between:1,100'],
         ]);
         $query = $this->feuilles($request);
-        foreach (['id_annee_academique', 'id_promotion', 'id_cours', 'statut'] as $champ) {
+        foreach (['id_seance', 'id_annee_academique', 'id_promotion', 'id_cours', 'statut'] as $champ) {
             if (isset($data[$champ])) {
                 $query->where($champ, $data[$champ]);
             }
@@ -70,7 +71,7 @@ class TransmissionNotesController extends Controller
         $libelles = [1 => 'Saisie enseignant', 2 => 'Contrôle secrétariat', 3 => 'Transmission direction', 4 => 'Validé et verrouillé'];
 
         return [
-            ...$feuille->only(['id', 'statut', 'date_transmission', 'transmise_par', 'id_annee_academique', 'id_promotion', 'id_matiere', 'id_cours']),
+            ...$feuille->only(['id', 'statut', 'date_transmission', 'transmise_par', 'id_annee_academique', 'id_promotion', 'id_matiere', 'id_cours', 'id_seance']),
             'annee_academique' => $feuille->anneeAcademique?->only(['id', 'libelle']),
             'promotion' => $feuille->promotion?->only(['id', 'code', 'num_promotion']),
             'matiere' => ($feuille->matiere ?? $feuille->cours?->module?->matiere)?->only(['id', 'code', 'libelle']),

@@ -84,7 +84,7 @@ class NotesEnseignantApiTest extends TestCase
         $matiere = $data['cours']->module->id_matiere;
         $data['seance']->update(['id_cours' => null]);
         $data['seance']->creneau->update(['id_cours' => null]);
-        $contexte = ['id_matiere' => $matiere, 'id_promotion' => $data['promotion']->id,
+        $contexte = ['id_seance' => $data['seance']->id, 'id_matiere' => $matiere, 'id_promotion' => $data['promotion']->id,
             'id_annee_academique' => $data['annee']->id];
         $base = '/api/v1/enseignant/notes';
         $url = $base.'/feuille?'.http_build_query($contexte);
@@ -109,7 +109,7 @@ class NotesEnseignantApiTest extends TestCase
     public function test_matiere_requise_et_affectation_cours_insuffisante(): void
     {
         $data = $this->contexte();
-        $contexte = ['id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
+        $contexte = ['id_seance' => $data['seance']->id, 'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
         $this->getJson('/api/v1/enseignant/notes/feuille?'.http_build_query($contexte))
             ->assertUnprocessable()->assertJsonValidationErrors('id_matiere');
         AffectationEnseignant::where('enseignant_id', $data['enseignant']->id)
@@ -124,7 +124,7 @@ class NotesEnseignantApiTest extends TestCase
         $this->presences($data);
         $notes = ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12]]];
         $this->putJson($this->url($data), $notes)->assertOk();
-        $contexte = ['id_matiere' => $data['cours']->module->id_matiere,
+        $contexte = ['id_seance' => $data['seance']->id, 'id_matiere' => $data['cours']->module->id_matiere,
             'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
         $this->putJson('/api/v1/enseignant/notes', [...$contexte,
             'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 17]],
@@ -137,14 +137,14 @@ class NotesEnseignantApiTest extends TestCase
         $autre->id_cours = null;
         $autre->save();
         $this->getJson('/api/v1/enseignant/notes/feuille?'.http_build_query($contexte))->assertOk()
-            ->assertJsonPath('feuille_notes.saisie_ouverte', false)->assertJsonPath('feuille_notes.seances_realisees', 2);
+            ->assertJsonPath('feuille_notes.saisie_ouverte', false)->assertJsonPath('feuille_notes.seances_realisees', 1);
         $this->postJson('/api/v1/enseignant/notes/transmettre', $contexte)->assertOk()
             ->assertJsonCount(1, 'feuille_notes.historique');
     }
 
     private function url(array $data): string
     {
-        return '/api/v1/enseignant/notes/'.$data['cours']->id.'?id_promotion='.$data['promotion']->id.'&id_annee_academique='.$data['annee']->id;
+        return '/api/v1/enseignant/notes/'.$data['cours']->id.'?id_seance='.$data['seance']->id.'&id_promotion='.$data['promotion']->id.'&id_annee_academique='.$data['annee']->id;
     }
 
     private function presences(array $data): void
@@ -193,7 +193,7 @@ class NotesEnseignantApiTest extends TestCase
             ->assertJsonPath('feuille_notes.etudiants.1.evaluable', true)
             ->assertJsonPath('feuille_notes.etudiants.1.statut_presence', 'absent')
             ->assertJsonPath('feuille_notes.etudiants.1.evaluation_autorisee', true);
-        $contexte = ['id_matiere' => $data['cours']->module->id_matiere,
+        $contexte = ['id_seance' => $data['seance']->id, 'id_matiere' => $data['cours']->module->id_matiere,
             'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
         $this->putJson('/api/v1/enseignant/notes', [...$contexte, ...$payload])->assertOk();
         $this->postJson(str_replace('?', '/transmettre?', $this->url($data)))->assertOk()->assertJsonPath('feuille_notes.statut', 'transmise');
@@ -233,6 +233,7 @@ class NotesEnseignantApiTest extends TestCase
             'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12]],
         ])->assertOk();
         $this->postJson('/api/v1/enseignant/notes/transmettre', [
+            'id_seance' => $data['seance']->id,
             'id_matiere' => $data['cours']->module->id_matiere, 'id_promotion' => $data['promotion']->id,
             'id_annee_academique' => $data['annee']->id,
             'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 10]],
@@ -351,7 +352,7 @@ class NotesEnseignantApiTest extends TestCase
     {
         $data = $this->contexte();
         $this->presences($data);
-        $contexte = ['id_matiere' => $data['cours']->module->id_matiere,
+        $contexte = ['id_seance' => $data['seance']->id, 'id_matiere' => $data['cours']->module->id_matiere,
             'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
         $this->postJson('/api/v1/enseignant/notes/transmettre', [...$contexte,
             'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 10]],
@@ -387,7 +388,7 @@ class NotesEnseignantApiTest extends TestCase
             ->assertJsonPath('feuille_notes.notes.0.etudiant.id', $data['etudiants'][0]->id);
         $this->getJson($base.'?per_page=101')->assertUnprocessable();
         Sanctum::actingAs($data['enseignant']);
-        $contexte = ['id_matiere' => $data['cours']->module->id_matiere,
+        $contexte = ['id_seance' => $data['seance']->id, 'id_matiere' => $data['cours']->module->id_matiere,
             'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
         $this->postJson('/api/v1/enseignant/notes/transmettre', [...$contexte,
             'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 15]],
@@ -445,7 +446,7 @@ class NotesEnseignantApiTest extends TestCase
     {
         $data = $this->contexte();
         $this->presences($data);
-        $contexte = ['id_matiere' => $data['cours']->module->id_matiere,
+        $contexte = ['id_seance' => $data['seance']->id, 'id_matiere' => $data['cours']->module->id_matiere,
             'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
         $payload = fn ($evaluation, $note) => [...$contexte, 'evaluation' => $evaluation,
             'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => $note]]];
@@ -486,7 +487,7 @@ class NotesEnseignantApiTest extends TestCase
     public function test_tableau_notes_matiere_sans_enveloppe_et_acces_controle(): void
     {
         $data = $this->contexte();
-        $contexte = ['id_matiere' => $data['cours']->module->id_matiere,
+        $contexte = ['id_seance' => $data['seance']->id, 'id_matiere' => $data['cours']->module->id_matiere,
             'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
         $url = '/api/v1/enseignant/notes/tableau?'.http_build_query($contexte);
         $this->getJson($url)->assertOk()->assertExactJson([]);
@@ -561,7 +562,7 @@ class NotesEnseignantApiTest extends TestCase
         $this->getJson($this->url($data))->assertNotFound();
     }
 
-    public function test_aucune_seance_ou_seance_supplementaire_sans_presence_bloquent(): void
+    public function test_seance_prevue_bloque_mais_autre_seance_sans_presence_ne_bloque_pas(): void
     {
         $data = $this->contexte();
         $data['seance']->update(['statut' => 'prevue']);
@@ -571,8 +572,46 @@ class NotesEnseignantApiTest extends TestCase
         $autre = $data['seance']->replicate();
         $autre->date_prevue = '2026-09-21';
         $autre->save();
-        $this->getJson($this->url($data))->assertOk()->assertJsonPath('feuille_notes.saisie_ouverte', false)
-            ->assertJsonPath('feuille_notes.seances_realisees', 2);
+        $this->getJson($this->url($data))->assertOk()->assertJsonPath('feuille_notes.saisie_ouverte', true)
+            ->assertJsonPath('feuille_notes.seances_realisees', 1);
+    }
+
+    public function test_notes_isolees_par_seance_et_seance_autre_enseignant_interdite(): void
+    {
+        $data = $this->contexte();
+        $this->presences($data);
+        $autre = $data['seance']->replicate();
+        $autre->date_prevue = '2026-09-21';
+        $autre->save();
+        $contexte = ['id_seance' => $data['seance']->id, 'id_matiere' => $data['cours']->module->id_matiere,
+            'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
+        $payload = ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 10]]];
+        $this->putJson('/api/v1/enseignant/notes', [...$contexte, ...$payload])->assertOk()
+            ->assertJsonPath('feuille_notes.id_seance', $data['seance']->id);
+        $contexte['id_seance'] = $autre->id;
+        $this->putJson('/api/v1/enseignant/notes', [...$contexte, ...$payload])->assertUnprocessable();
+        $this->presences([...$data, 'seance' => $autre]);
+        $payload['notes'][0]['note'] = 18;
+        $this->putJson('/api/v1/enseignant/notes', [...$contexte, ...$payload])->assertOk()
+            ->assertJsonPath('feuille_notes.id_seance', $autre->id);
+        $this->assertDatabaseCount('feuilles_notes', 2);
+        $this->getJson('/api/v1/enseignant/notes/tableau?'.http_build_query($contexte))->assertOk()
+            ->assertJsonCount(1)->assertJsonPath('0.note', 18);
+        $this->getJson('/api/v1/enseignant/notes/feuille?'.http_build_query($contexte))->assertOk()
+            ->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 14);
+        unset($contexte['id_seance']);
+        $this->putJson('/api/v1/enseignant/notes', [...$contexte, ...$payload])->assertUnprocessable()
+            ->assertJsonValidationErrors('id_seance');
+        $contexte['id_seance'] = 999999;
+        $this->getJson('/api/v1/enseignant/notes/tableau?'.http_build_query($contexte))->assertNotFound();
+        $contexte['id_seance'] = $autre->id;
+        $autre->update(['id_promotion' => $data['horsPromotion']->inscriptions()->firstOrFail()->id_promotion]);
+        $this->putJson('/api/v1/enseignant/notes', [...$contexte, ...$payload])->assertNotFound();
+        $autre->update(['id_promotion' => $data['promotion']->id]);
+        $contexte['id_seance'] = $autre->id;
+        $autre->update(['enseignant_id' => $data['autreEnseignant']->id]);
+        $this->getJson('/api/v1/enseignant/notes/tableau?'.http_build_query($contexte))->assertNotFound();
+        $this->putJson('/api/v1/enseignant/notes', [...$contexte, ...$payload])->assertNotFound();
     }
 
     public function test_correction_autorisee_appliquee_et_tracee_sans_deverrouillage(): void
@@ -608,7 +647,7 @@ class NotesEnseignantApiTest extends TestCase
         $data['seance']->update(['id_cours' => null]);
         $data['seance']->creneau->update(['id_cours' => null]);
         $this->presences($data);
-        $contexte = ['id_matiere' => $data['cours']->module->id_matiere,
+        $contexte = ['id_seance' => $data['seance']->id, 'id_matiere' => $data['cours']->module->id_matiere,
             'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
         $reponse = $this->putJson('/api/v1/enseignant/notes', [...$contexte,
             'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12]],

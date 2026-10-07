@@ -26,6 +26,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'id_annee_academique', type: 'integer'),
         new OA\Property(property: 'id_promotion', type: 'integer'),
         new OA\Property(property: 'id_matiere', type: 'integer', nullable: true),
+        new OA\Property(property: 'id_seance', type: 'integer', nullable: true, description: 'Seance de la feuille ; null pour les anciennes feuilles.'),
         new OA\Property(property: 'id_cours', type: 'integer', nullable: true),
         new OA\Property(property: 'statut', type: 'string', enum: ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'], example: 'transmise'),
         new OA\Property(property: 'date_transmission', type: 'string', format: 'date-time', nullable: true),
@@ -69,6 +70,7 @@ use OpenApi\Attributes as OA;
     tags: ['Administration des notes'], security: [['sanctum' => []]],
     parameters: [
         new OA\Parameter(name: 'id_annee_academique', in: 'query', schema: new OA\Schema(type: 'integer')),
+        new OA\Parameter(name: 'id_seance', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_promotion', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_matiere', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'statut', in: 'query', schema: new OA\Schema(type: 'string', enum: ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'])),

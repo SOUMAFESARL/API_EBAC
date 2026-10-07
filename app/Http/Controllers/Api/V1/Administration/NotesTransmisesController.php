@@ -21,7 +21,7 @@ class NotesTransmisesController extends Controller
     private function presenter(FeuilleNotes $feuille): array
     {
         return [
-            ...$feuille->only(['id', 'id_annee_academique', 'id_promotion', 'id_matiere', 'id_cours', 'statut', 'date_transmission']),
+            ...$feuille->only(['id', 'id_annee_academique', 'id_promotion', 'id_matiere', 'id_cours', 'id_seance', 'statut', 'date_transmission']),
             'annee_academique' => $feuille->anneeAcademique?->only(['id', 'libelle']),
             'promotion' => $feuille->promotion?->only(['id', 'code', 'num_promotion']),
             'matiere' => ($feuille->matiere ?? $feuille->cours?->module?->matiere)?->only(['id', 'code', 'libelle']),
@@ -35,6 +35,7 @@ class NotesTransmisesController extends Controller
     public function index(Request $request): JsonResponse
     {
         $data = $request->validate([
+            'id_seance' => ['sometimes', 'integer', 'exists:seances_cahier_texte,id'],
             'id_annee_academique' => ['sometimes', 'integer', 'exists:annees_academiques,id'],
             'id_promotion' => ['sometimes', 'integer', 'exists:promotions,id'],
             'id_matiere' => ['sometimes', 'integer', 'exists:matieres,id'],
@@ -46,7 +47,7 @@ class NotesTransmisesController extends Controller
         if (isset($data['statut'])) {
             $query->where('statut', $data['statut']);
         }
-        foreach (['id_annee_academique', 'id_promotion'] as $champ) {
+        foreach (['id_seance', 'id_annee_academique', 'id_promotion'] as $champ) {
             if (isset($data[$champ])) {
                 $query->where($champ, $data[$champ]);
             }
