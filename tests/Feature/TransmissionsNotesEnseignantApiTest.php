@@ -40,8 +40,9 @@ class TransmissionsNotesEnseignantApiTest extends TestCase
         $brouillon->save();
         $brouillon->notes()->create(['id_etudiant' => $etudiant->id, 'note' => 19]);
         $this->getJson(self::URL.'/tableau')->assertOk()->assertJsonCount(2)
-            ->assertJsonPath('0.id_feuille_notes', $cours->id)->assertJsonPath('0.note', 18)
-            ->assertJsonPath('1.etudiant.matricule', 'ETU-T');
+            ->assertJsonPath('0.id_feuille_notes', $cours->id)->assertJsonPath('0.notes.0.note', 18)
+            ->assertJsonPath('1.notes.0.etudiant.matricule', 'ETU-T')
+            ->assertJsonMissingPath('0.notes.0.matiere');
         $this->getJson(self::URL.'/feuilles')->assertOk()->assertJsonCount(2, 'feuilles_notes')
             ->assertJsonPath('feuilles_notes.0.notes.0.note', 18);
         foreach (['tableau', 'feuilles'] as $format) {

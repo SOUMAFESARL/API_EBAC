@@ -7,7 +7,7 @@ use OpenApi\Attributes as OA;
 #[OA\Get(
     path: '/enseignant/transmissions-notes/tableau', operationId: 'tableauToutesMesNotesTransmises',
     summary: 'Toutes mes notes transmises dans un tableau',
-    description: 'Tableau directement a la racine. Une ligne par note avec etudiant, evaluation, valeur, id_feuille_notes, id_seance, id_cours, id_matiere, id_promotion, id_annee_academique, statut, date_transmission, cours, matiere et promotion. Sans filtre : toutes les notes transmises par l enseignant connecte. Filtres combinables. Pas de pagination. Les brouillons et les feuilles des autres enseignants sont exclus. [] si aucune note.',
+    description: 'Tableau directement a la racine. Un groupe par feuille de seance avec notes[] (id, id_etudiant, evaluation, note, etudiant). Le contexte est present une seule fois : id_feuille_notes, id_seance, id_cours, id_matiere, id_promotion, id_annee_academique, statut, date_transmission, cours, matiere et promotion. Sans filtre : toutes les notes transmises par l enseignant connecte. Filtres combinables. Pas de pagination. Les brouillons et les feuilles des autres enseignants sont exclus. [] si aucune feuille transmise.',
     tags: ['Notes enseignant'], security: [['sanctum' => []]],
     parameters: [
         new OA\Parameter(name: 'id_seance', in: 'query', schema: new OA\Schema(type: 'integer')),
@@ -19,8 +19,8 @@ use OpenApi\Attributes as OA;
     ],
     responses: [
         new OA\Response(response: 200, description: 'Tableau des notes transmises.', content: new OA\JsonContent(type: 'array', items: new OA\Items(allOf: [
-            new OA\Schema(ref: '#/components/schemas/NoteTransmiseAdministration'),
             new OA\Schema(type: 'object', properties: [
+                new OA\Property(property: 'notes', type: 'array', items: new OA\Items(ref: '#/components/schemas/NoteTransmiseAdministration')),
                 new OA\Property(property: 'id_feuille_notes', type: 'integer'),
                 new OA\Property(property: 'id_seance', type: 'integer', nullable: true),
                 new OA\Property(property: 'id_cours', type: 'integer', nullable: true),

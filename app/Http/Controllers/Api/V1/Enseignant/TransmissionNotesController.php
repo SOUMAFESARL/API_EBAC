@@ -78,15 +78,16 @@ class TransmissionNotesController extends Controller
         [$query] = $this->filtrer($request);
         $items = $query->with(['notes' => fn ($q) => $q->orderBy('id'), 'notes.etudiant:id,matricule,nom,prenoms'])->get();
 
-        return response()->json($items->flatMap(function ($feuille) {
+        return response()->json($items->map(function ($feuille) {
             $contexte = $this->presenter($feuille);
 
-            return collect($this->notes($feuille))->map(fn ($note) => [
-                ...$note, 'id_feuille_notes' => $feuille->id,
+            return [
+                'id_feuille_notes' => $feuille->id,
                 ...$feuille->only(['id_seance', 'id_cours', 'id_matiere', 'id_promotion', 'id_annee_academique', 'statut', 'date_transmission']),
                 'cours' => $contexte['cours'], 'matiere' => $contexte['matiere'],
                 'promotion' => $contexte['promotion'],
-            ]);
+                'notes' => $this->notes($feuille),
+            ];
         })->values());
     }
 

@@ -616,9 +616,16 @@ class NotesEnseignantApiTest extends TestCase
         $this->getJson('/api/v1/enseignant/notes/feuille?'.http_build_query($contexte))->assertOk()
             ->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 14);
         $this->getJson('/api/v1/enseignant/transmissions-notes/tableau?id_seance='.$autre->id)->assertOk()
-            ->assertJsonCount(1)->assertJsonPath('0.note', 18)->assertJsonPath('0.id_seance', $autre->id);
+            ->assertJsonCount(1)->assertJsonPath('0.notes.0.note', 18)->assertJsonPath('0.id_seance', $autre->id);
         $this->getJson('/api/v1/enseignant/transmissions-notes/feuilles?id_seance='.$data['seance']->id)->assertOk()
             ->assertJsonCount(1, 'feuilles_notes')->assertJsonPath('feuilles_notes.0.notes.0.note', 10);
+        foreach (['tableau', 'feuilles'] as $format) {
+            $racine = $format === 'tableau' ? '0' : 'feuilles_notes.0';
+            $this->getJson('/api/v1/enseignant/transmissions-notes/'.$format.'?'.http_build_query($contexte))
+                ->assertOk()->assertJsonPath($racine.'.id_seance', $autre->id)
+                ->assertJsonPath($racine.'.matiere.id', $contexte['id_matiere'])
+                ->assertJsonPath($racine.'.notes.0.note', 18);
+        }
         unset($contexte['id_seance']);
         $this->putJson('/api/v1/enseignant/notes', [...$contexte, ...$payload])->assertUnprocessable()
             ->assertJsonValidationErrors('id_seance');
