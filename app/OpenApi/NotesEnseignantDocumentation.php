@@ -6,14 +6,14 @@ use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'Saisie des notes', description: <<<'DOC'
 ## Parcours enseignant
-La saisie directe par matière ne nécessite aucun cours : consulter `GET /enseignant/notes/feuille`, enregistrer `PUT /enseignant/notes`, puis transmettre `POST /enseignant/notes/transmettre`. Fournir `id_matiere`, `id_promotion` et `id_annee_academique` en query pour GET et dans le JSON pour PUT/POST, avec `notes` pour la saisie. Les options avec `cours = null` correspondent à ce parcours. Une affectation active de portée matière et un créneau correspondant sont requis. Les présences de toutes les séances réalisées de la matière, de la promotion et de l’année sont contrôlées, y compris les séances sans cours. La feuille est distincte par année + promotion + matière ; `cours` et `module` sont null. La note directe est retournée comme `moyenne_matiere` provisoire, sans être mélangée aux moyennes pondérées des feuilles par cours. Les routes par cours ci-dessous restent disponibles.
+Par matiere : consulter GET /enseignant/notes/feuille, puis envoyer toutes les notes a PUT /enseignant/notes. Fournir id_matiere, id_promotion et id_annee_academique. PUT enregistre et transmet immediatement, puis verrouille la feuille. Pour plusieurs notes par etudiant, utiliser notes[].evaluation avec des evaluations distinctes. moyenne_matiere est la moyenne simple des notes directes, separee des notes par cours. Une affectation active et un creneau correspondant sont requis. cours et module sont null.
 
 Ces routes nécessitent un Bearer Token appartenant à un compte actif de rôle ENSEIGNANT. Dans Swagger, utiliser **Authorize**. Le préfixe des routes est `/api/v1`.
 
 1. **Choisir un enseignement** avec `GET /enseignant/notes?id_annee_academique=1`. La réponse fournit les combinaisons matière, module, cours et promotion accessibles à cet enseignant.
 2. **Consulter la feuille** avec `GET /enseignant/notes/41?id_promotion=3&id_annee_academique=1`.
-3. **Enregistrer les notes** avec `PUT` sur la même URL. Les enregistrements partiels sont autorisés.
-4. **Transmettre la feuille complète** avec `POST /enseignant/notes/41/transmettre?id_promotion=3&id_annee_academique=1`.
+3. **Enregistrer et transmettre** avec PUT sur la meme URL. Tous les etudiants evaluables doivent avoir une note ; la feuille est verrouillee apres succes.
+4. **Consulter le suivi** via GET /enseignant/transmissions-notes. POST /transmettre reste disponible pour compatibilite ; sans notes, une feuille deja transmise est retournee sans ajouter de transmission.
 
 Les identifiants ci-dessus sont des exemples à remplacer par ceux de la base. `id_promotion` est la clé technique de la promotion, pas son numéro affiché (`num_promotion`). `{cours}` est un identifiant de cours, pas un identifiant de séance ou de matière. La feuille est distincte pour chaque combinaison **année académique + promotion + cours**.
 
@@ -27,10 +27,18 @@ Les identifiants ci-dessus sont des exemples à remplacer par ceux de la base. `
 ## Notes et moyenne
 Les notes sont comprises entre 0 et 20, décimales acceptées (exemple JSON : `15.5`). `0` est une note valide ; `null` efface une note et la rend manquante. La moyenne matière est provisoire : somme(note × coefficient du cours) / somme(coefficients des cours notés), pour le même étudiant, la même promotion et la même année. Les cours sans note ne comptent pas dans ce calcul. Exemple : 18 coefficient 1 et 10 coefficient 3 donnent 12/20.
 
+## Transmission automatique
+PUT enregistre et transmet immediatement la feuille au secretariat. Aucun brouillon de notes n est conserve apres une saisie reussie. Avant toute saisie, statut = non_transmise. Une feuille incomplete est refusee sans enregistrer les notes. Pour plusieurs evaluations par matiere, envoyer toutes les notes dans la meme requete avec notes[].evaluation. POST /transmettre reste disponible ; sans notes, une feuille deja transmise est retournee sans nouvel historique.
+
 ## Transmission
 Au moins un étudiant doit être évaluable, et chacun doit avoir une note. Après transmission au secrétariat académique, `statut = transmise` et `saisie_ouverte = false`. Les contrôles suivants utilisent `/administration/notes-transmises/{id}` : `valider-secretariat`, `rejeter-secretariat`, `transmettre-direction`, `valider-direction`, `rejeter-direction`. Un refus du secrétariat rouvre la saisie enseignant et permet une nouvelle transmission. L’historique de la feuille expose les motifs et les acteurs. Ces étapes ne publient pas les notes aux étudiants.
 DOC)]
 #[OA\Schema(schema: 'EtudiantNoteCours', type: 'object', properties: [
+    new OA\Property(property: 'notes', type: 'array', description: 'Toutes les evaluations de cet etudiant. Utiliser notes[].id pour demander une correction. Les champs historiques id_note et note correspondent a la premiere note.', items: new OA\Items(type: 'object', properties: [
+        new OA\Property(property: 'id', type: 'integer'),
+        new OA\Property(property: 'evaluation', type: 'string', example: 'devoir_1'),
+        new OA\Property(property: 'note', type: 'number', example: 15.5),
+    ])),
     new OA\Property(property: 'id_note', type: 'integer', nullable: true, description: 'Identifiant de la note pour le circuit administratif de correction.', example: 1),
     new OA\Property(property: 'id', type: 'integer', example: 4),
     new OA\Property(property: 'matricule', type: 'string', example: 'EBAC-0004-2026'),
@@ -50,9 +58,9 @@ DOC)]
     new OA\Property(property: 'matiere', type: 'object', example: ['id' => 13, 'libelle' => 'Théologie systématique']),
     new OA\Property(property: 'promotion', type: 'object', example: ['id' => 3, 'code' => 'PROMO-2026', 'num_promotion' => 17]),
     new OA\Property(property: 'id_annee_academique', type: 'integer', example: 1),
-    new OA\Property(property: 'statut', type: 'string', enum: ['brouillon', 'transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'], example: 'brouillon'),
+    new OA\Property(property: 'statut', type: 'string', enum: ['non_transmise', 'transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'], example: 'transmise'),
     new OA\Property(property: 'date_transmission', type: 'string', nullable: true, example: null),
-    new OA\Property(property: 'saisie_ouverte', type: 'boolean', description: 'Ouverte seulement pour un brouillon ou un refus du secrétariat, avec des séances réalisées et des présences validées et complètes.', example: true),
+    new OA\Property(property: 'saisie_ouverte', type: 'boolean', description: 'Ouverte avant transmission ou apres un refus du secretariat, avec des presences validees et completes. Fermee immediatement apres enregistrement.', example: false),
     new OA\Property(property: 'historique', type: 'array', description: 'Décisions et transmissions avec acteur, date et motif.', items: new OA\Items(type: 'object')),
     new OA\Property(property: 'seances_realisees', type: 'integer', example: 3),
     new OA\Property(property: 'presences_validees', type: 'integer', example: 3),
@@ -61,7 +69,7 @@ DOC)]
     new OA\Property(property: 'etudiants', type: 'array', items: new OA\Items(ref: '#/components/schemas/EtudiantNoteCours')),
 ])]
 #[OA\Schema(schema: 'NotesCoursReponse', type: 'object', properties: [
-    new OA\Property(property: 'message', type: 'string', example: 'Notes enregistrées.'),
+    new OA\Property(property: 'message', type: 'string', example: 'Notes transmises au secretariat academique.'),
     new OA\Property(property: 'feuille_notes', ref: '#/components/schemas/FeuilleNotesDetail'),
 ])]
 #[OA\Schema(schema: 'NotesCoursPayload', type: 'object', required: ['notes'], properties: [
@@ -85,8 +93,8 @@ DOC)]
         new OA\Parameter(name: 'id_annee_academique', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_promotion', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
     ], responses: [new OA\Response(response: 200, description: 'Feuille de notes et conditions de saisie.', content: new OA\JsonContent(properties: [new OA\Property(property: 'feuille_notes', ref: '#/components/schemas/FeuilleNotesDetail')])), new OA\Response(response: 404, description: 'Cours, promotion ou année inaccessible.')])]
-#[OA\Put(path: '/enseignant/notes/{cours}', operationId: 'enseignantEnregistrerNotes', summary: 'Enregistrer un brouillon de notes sur 20',
-    description: 'Dans Swagger, renseigner cours, id_promotion et id_annee_academique, puis envoyer un corps JSON contenant notes. Exemple : {"notes":[{"id_etudiant":4,"note":15.5}]}. Seuls les étudiants évaluables doivent être envoyés. Un enregistrement partiel conserve les notes des autres étudiants toujours évaluables ; une note null efface la note de cet étudiant. Les notes d’étudiants devenus non évaluables sont retirées à l’enregistrement. La requête entière est annulée si une ligne est invalide. Refuse les doublons, absents sans autorisation, étudiants hors promotion et valeurs hors de 0 à 20. La réponse contient la feuille et les moyennes provisoires recalculées. Répéter cet appel pour compléter ou corriger le brouillon avant transmission.',
+#[OA\Put(path: '/enseignant/notes/{cours}', operationId: 'enseignantEnregistrerNotes', summary: 'Enregistrer et transmettre directement les notes sur 20',
+    description: 'Fournir cours, id_promotion et id_annee_academique et un corps JSON contenant notes. Tous les etudiants evaluables doivent avoir une note. La requete est atomique : une feuille incomplete ou une ligne invalide annule tout. Apres succes, statut=transmise et saisie_ouverte=false. Toute modification ulterieure necessite une correction autorisee ou un refus du secretariat.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]], parameters: [
         new OA\Parameter(name: 'cours', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_annee_academique', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
@@ -94,7 +102,7 @@ DOC)]
     ], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/NotesCoursPayload')),
     responses: [new OA\Response(response: 200, description: 'message et feuille_notes actualisée.', content: new OA\JsonContent(ref: '#/components/schemas/NotesCoursReponse')), new OA\Response(response: 404, description: 'Enseignement inaccessible.'), new OA\Response(response: 422, description: 'Notes invalides ou saisie fermée.', content: new OA\JsonContent(example: ['message' => 'Un étudiant absent sans autorisation administrative ou hors promotion ne peut pas être noté.', 'errors' => ['notes' => ['Un étudiant absent sans autorisation administrative ou hors promotion ne peut pas être noté.']]]))])]
 #[OA\Post(path: '/enseignant/notes/{cours}/transmettre', operationId: 'enseignantTransmettreNotes', summary: 'Transmettre une feuille complète au secrétariat',
-    description: 'Transmission au secrétariat académique. Utiliser les mêmes identifiants que pour la consultation et l’enregistrement. Le corps est facultatif : sans corps, transmet les notes déjà enregistrées ; avec notes, enregistre ces notes puis transmet dans une seule transaction. Il faut une saisie ouverte, au moins un étudiant évaluable et une note pour chacun. Si la feuille reste incomplète, la requête échoue avec 422 et les changements sont annulés. En cas de succès, statut devient transmise, date_transmission est renseignée et saisie_ouverte devient false. Une nouvelle saisie ou transmission exige un refus du secrétariat. Le secrétariat valide puis transmet à la direction via /administration/notes-transmises/{id}.',
+    description: 'Alternative a PUT : enregistrer et transmettre dans une seule transaction. Tous les etudiants evaluables doivent avoir une note. Sans corps, transmet une ancienne feuille non transmise ; si deja transmise, retourne la feuille sans changer son statut ni ajouter un historique. Apres succes, statut=transmise et saisie_ouverte=false.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]], parameters: [
         new OA\Parameter(name: 'cours', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_annee_academique', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),

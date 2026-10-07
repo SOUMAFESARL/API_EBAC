@@ -96,9 +96,9 @@ class NotesEnseignantApiTest extends TestCase
         $this->putJson($base, $payload)->assertOk()->assertJsonPath('feuille_notes.etudiants.0.note', 15.5)
             ->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 15.5);
         $this->putJson($base, [...$contexte, 'notes' => [['id_etudiant' => $data['etudiants'][1]->id, 'note' => 10]]])->assertUnprocessable();
-        $this->putJson($base, [...$contexte, 'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => null]]])->assertOk();
-        $this->postJson($base.'/transmettre', $contexte)->assertUnprocessable();
-        $this->postJson($base.'/transmettre', $payload)->assertOk()->assertJsonPath('feuille_notes.statut', 'transmise');
+        $this->putJson($base, [...$contexte, 'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => null]]])->assertUnprocessable();
+        $this->postJson($base.'/transmettre', $contexte)->assertOk()->assertJsonPath('feuille_notes.statut', 'transmise');
+        $this->postJson($base.'/transmettre', $payload)->assertUnprocessable();
         $this->putJson($base, $payload)->assertUnprocessable();
         $this->assertDatabaseHas('feuilles_notes', [...$contexte, 'id_cours' => null, 'statut' => 'transmise']);
         $this->assertDatabaseCount('feuilles_notes', 1);
@@ -138,7 +138,8 @@ class NotesEnseignantApiTest extends TestCase
         $autre->save();
         $this->getJson('/api/v1/enseignant/notes/feuille?'.http_build_query($contexte))->assertOk()
             ->assertJsonPath('feuille_notes.saisie_ouverte', false)->assertJsonPath('feuille_notes.seances_realisees', 2);
-        $this->postJson('/api/v1/enseignant/notes/transmettre', $contexte)->assertUnprocessable();
+        $this->postJson('/api/v1/enseignant/notes/transmettre', $contexte)->assertOk()
+            ->assertJsonCount(1, 'feuille_notes.historique');
     }
 
     private function url(array $data): string
@@ -187,6 +188,7 @@ class NotesEnseignantApiTest extends TestCase
         $this->getJson($base.'/'.$absences[0]->id)->assertOk();
         $this->postJson($base.'/999999/autoriser', ['motif' => 'Test'])->assertNotFound();
         Sanctum::actingAs($data['enseignant']);
+        $payload['notes'][] = ['id_etudiant' => $data['etudiants'][0]->id, 'note' => 15];
         $this->putJson($this->url($data), $payload)->assertOk()
             ->assertJsonPath('feuille_notes.etudiants.1.evaluable', true)
             ->assertJsonPath('feuille_notes.etudiants.1.statut_presence', 'absent')
@@ -194,9 +196,7 @@ class NotesEnseignantApiTest extends TestCase
         $contexte = ['id_matiere' => $data['cours']->module->id_matiere,
             'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
         $this->putJson('/api/v1/enseignant/notes', [...$contexte, ...$payload])->assertOk();
-        $this->postJson(str_replace('?', '/transmettre?', $this->url($data)), [
-            'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 15]],
-        ])->assertOk()->assertJsonPath('feuille_notes.statut', 'transmise');
+        $this->postJson(str_replace('?', '/transmettre?', $this->url($data)))->assertOk()->assertJsonPath('feuille_notes.statut', 'transmise');
         $this->assertDatabaseHas('presences', ['id' => $absences[0]->id, 'statut' => 'absent']);
     }
 
@@ -314,6 +314,7 @@ class NotesEnseignantApiTest extends TestCase
         $note = NoteCours::firstOrFail();
         $base = '/api/v1/enseignant/corrections-notes';
         $payload = ['id_note' => $note->id, 'note_proposee' => 16, 'motif' => 'Erreur sur la copie'];
+        FeuilleNotes::firstOrFail()->update(['statut' => 'brouillon']);
         $this->postJson($base, $payload)->assertUnprocessable();
         $this->postJson(str_replace('?', '/transmettre?', $url))->assertOk();
         $this->postJson($base, [...$payload, 'motif' => ' '])->assertUnprocessable();
@@ -375,8 +376,8 @@ class NotesEnseignantApiTest extends TestCase
         $id = FeuilleNotes::firstOrFail()->id;
         $this->getJson($base)->assertForbidden();
         Sanctum::actingAs($data['admin']);
-        $this->getJson($base)->assertOk()->assertJsonPath('meta.total', 0);
-        $this->getJson($base.'/'.$id)->assertNotFound();
+        $this->getJson($base)->assertOk()->assertJsonPath('meta.total', 1);
+        $this->getJson($base.'/'.$id)->assertOk();
         Sanctum::actingAs($data['enseignant']);
         $this->postJson(str_replace('?', '/transmettre?', $url))->assertOk();
         Sanctum::actingAs($data['admin']);
@@ -440,6 +441,47 @@ class NotesEnseignantApiTest extends TestCase
         $this->assertDatabaseCount('notes_cours', 1);
     }
 
+    public function test_plusieurs_evaluations_matiere_transmises_ensemble_et_verrouillees(): void
+    {
+        $data = $this->contexte();
+        $this->presences($data);
+        $contexte = ['id_matiere' => $data['cours']->module->id_matiere,
+            'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id];
+        $payload = fn ($evaluation, $note) => [...$contexte, 'evaluation' => $evaluation,
+            'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => $note]]];
+        $url = '/api/v1/enseignant/notes';
+        $this->putJson($url, [...$contexte, 'notes' => [
+            ['id_etudiant' => $data['etudiants'][0]->id, 'evaluation' => 'devoir_1', 'note' => 10],
+            ['id_etudiant' => $data['etudiants'][0]->id, 'evaluation' => 'examen', 'note' => 18],
+        ]])->assertOk()
+            ->assertJsonCount(2, 'feuille_notes.etudiants.0.notes')
+            ->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 14)
+            ->assertJsonPath('feuille_notes.statut', 'transmise')
+            ->assertJsonPath('feuille_notes.saisie_ouverte', false);
+        $this->postJson($url.'/transmettre', $contexte)->assertOk()
+            ->assertJsonPath('feuille_notes.statut', 'transmise');
+        $this->putJson($url, $payload('devoir_2', 20))->assertUnprocessable();
+        $this->assertDatabaseCount('notes_cours', 2);
+        Sanctum::actingAs($data['admin']);
+        $this->getJson('/api/v1/administration/notes-transmises')->assertOk()
+            ->assertJsonCount(2, 'feuilles_notes.0.notes')
+            ->assertJsonPath('feuilles_notes.0.notes.0.evaluation', 'devoir_1');
+    }
+
+    public function test_transmission_directe_incomplete_annule_toutes_les_notes(): void
+    {
+        $data = $this->contexte();
+        $this->presences($data);
+        Presence::where('id_etudiant', $data['etudiants'][1]->id)->update(['statut' => 'present']);
+        $this->putJson($this->url($data), ['notes' => [
+            ['id_etudiant' => $data['etudiants'][0]->id, 'note' => 15],
+        ]])->assertUnprocessable()->assertJsonValidationErrors('notes');
+        $this->assertDatabaseCount('notes_cours', 0);
+        $this->assertDatabaseCount('feuilles_notes', 0);
+        $this->assertDatabaseCount('historique_feuilles_notes', 0);
+        $this->getJson($this->url($data))->assertOk()->assertJsonPath('feuille_notes.statut', 'non_transmise');
+    }
+
     public function test_refuse_absents_etrangers_notes_invalides_et_transmission_incomplete(): void
     {
         $data = $this->contexte();
@@ -458,8 +500,7 @@ class NotesEnseignantApiTest extends TestCase
         $this->assertDatabaseCount('notes_cours', 0);
         $this->putJson($url, ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 0]]])->assertOk()
             ->assertJsonPath('feuille_notes.notes_manquantes', 0);
-        $this->putJson($url, ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => null]]])->assertOk()
-            ->assertJsonPath('feuille_notes.notes_manquantes', 1);
+        $this->putJson($url, ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => null]]])->assertUnprocessable();
     }
 
     public function test_acces_limite_a_affectation_et_promotion(): void
@@ -552,6 +593,7 @@ class NotesEnseignantApiTest extends TestCase
         $payload = ['id_note' => $idNote, 'note_proposee' => 16.5, 'motif' => 'Erreur de saisie par matière'];
         $this->postJson($base, $payload)->assertForbidden();
         Sanctum::actingAs($data['admin']);
+        FeuilleNotes::firstOrFail()->update(['statut' => 'brouillon']);
         $this->postJson($base, $payload)->assertUnprocessable();
         Sanctum::actingAs($data['enseignant']);
         $this->postJson('/api/v1/enseignant/notes/transmettre', $contexte)->assertOk();
@@ -580,6 +622,7 @@ class NotesEnseignantApiTest extends TestCase
         $base = '/api/v1/administration/corrections-notes';
         $payload = ['id_note' => $note->id, 'note_proposee' => 16, 'motif' => 'Erreur'];
         Sanctum::actingAs($data['admin']);
+        FeuilleNotes::firstOrFail()->update(['statut' => 'brouillon']);
         $this->postJson($base, $payload)->assertUnprocessable();
         FeuilleNotes::firstOrFail()->update(['statut' => 'transmise']);
         foreach ([null, -1, 21, 12, 12.123] as $valeur) {

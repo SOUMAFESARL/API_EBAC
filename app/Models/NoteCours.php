@@ -10,7 +10,7 @@ class NoteCours extends Model
 {
     protected $table = 'notes_cours';
 
-    protected $fillable = ['id_etudiant', 'note'];
+    protected $fillable = ['id_etudiant', 'note', 'evaluation'];
 
     public function corrections(): HasMany
     {

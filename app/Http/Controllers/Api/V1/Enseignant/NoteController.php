@@ -112,14 +112,15 @@ class NoteController extends Controller
         $ouverte = $seances->isNotEmpty() && $validees->count() === $seances->count()
             && $validees->every(fn ($s) => $etudiants->pluck('id')->diff($s->feuillePresence->presences->pluck('id_etudiant'))->isEmpty());
         $feuille = FeuilleNotes::with('notes')->where($cle)->first();
-        $notes = $feuille?->notes->keyBy('id_etudiant') ?? collect();
-        $moyennes = $parMatiere ? $notes->pluck('note', 'id_etudiant') : DB::table('notes_cours as n')->join('feuilles_notes as f', 'f.id', '=', 'n.id_feuille_notes')
+        $notesParEtudiant = $feuille?->notes->sortBy('id')->groupBy('id_etudiant') ?? collect();
+        $notes = $notesParEtudiant->map(fn ($groupe) => $groupe->first());
+        $moyennes = $parMatiere ? $notesParEtudiant->map(fn ($groupe) => $groupe->avg('note')) : DB::table('notes_cours as n')->join('feuilles_notes as f', 'f.id', '=', 'n.id_feuille_notes')
             ->join('cours as c', 'c.id', '=', 'f.id_cours')->join('modules as m', 'm.id', '=', 'c.id_module')
             ->where('f.id_promotion', $promotion->id)->where('f.id_annee_academique', $cle['id_annee_academique'])
             ->where('m.id_matiere', $cours->module->id_matiere)->whereNull('c.deleted_at')->whereNull('m.deleted_at')
             ->selectRaw('n.id_etudiant, SUM(n.note * c.coefficient) / NULLIF(SUM(c.coefficient), 0) as moyenne')
             ->groupBy('n.id_etudiant')->pluck('moyenne', 'id_etudiant');
-        $lignes = $etudiants->map(function ($etudiant) use ($validees, $ouverte, $notes, $moyennes) {
+        $lignes = $etudiants->map(function ($etudiant) use ($validees, $ouverte, $notes, $notesParEtudiant, $moyennes) {
             $present = $ouverte && $validees->every(fn ($s) => $s->feuillePresence->presences
                 ->contains(fn ($p) => $p->id_etudiant == $etudiant->id && $p->statut === 'present'));
 
@@ -134,6 +135,8 @@ class NoteController extends Controller
                 'statut_presence' => $ouverte ? ($present ? 'present' : 'absent') : 'en_attente',
                 'id_note' => $notes->get($etudiant->id)?->id,
                 'note' => $notes->get($etudiant->id)?->note,
+                'notes' => ($notesParEtudiant->get($etudiant->id) ?? collect())->map(fn ($note) =>
+                    $note->only(['id', 'evaluation', 'note']))->values(),
                 'moyenne_matiere' => isset($moyennes[$etudiant->id]) ? round((float) $moyennes[$etudiant->id], 2) : null,
                 'statut_moyenne' => 'provisoire'];
         });
@@ -141,7 +144,8 @@ class NoteController extends Controller
         return ['cours' => $parMatiere ? null : $cours->only(['id', 'libelle', 'coefficient']),
             'module' => $parMatiere ? null : $cours->module->only(['id', 'libelle']), 'matiere' => $matiere->only(['id', 'libelle']),
             'promotion' => $promotion->only(['id', 'code', 'num_promotion']), 'id_annee_academique' => $cle['id_annee_academique'],
-            'statut' => $feuille?->statut ?? 'brouillon', 'date_transmission' => $feuille?->date_transmission,
+            'statut' => ! $feuille || $feuille->statut === 'brouillon' ? 'non_transmise' : $feuille->statut,
+            'date_transmission' => $feuille?->date_transmission,
             'historique' => $feuille?->historique()->with('acteur:id,nom,prenoms')->get() ?? collect(),
             'saisie_ouverte' => $ouverte && (! $feuille || in_array($feuille->statut, ['brouillon', 'rejetee_secretariat'], true)),
             'seances_realisees' => $seances->count(), 'presences_validees' => $validees->count(),
@@ -156,7 +160,7 @@ class NoteController extends Controller
 
     public function update(Request $request, ?int $cours = null)
     {
-        return $this->enregistrer($request, $cours, false);
+        return $this->enregistrer($request, $cours, true);
     }
 
     public function transmettre(Request $request, ?int $cours = null)
@@ -168,14 +172,25 @@ class NoteController extends Controller
     {
         [$item, $promotion, $cle] = $this->contexte($request, $cours);
         $data = $request->validate([
-            'notes' => [$transmettre ? 'sometimes' : 'required', 'array', 'min:1'],
-            'notes.*.id_etudiant' => ['required', 'integer', 'distinct'],
+            'evaluation' => [$cours === null ? 'sometimes' : 'prohibited', 'string', 'max:100'],
+            'notes' => [$request->isMethod('PUT') ? 'required' : 'sometimes', 'array', 'min:1'],
+            'notes.*.id_etudiant' => ['required', 'integer'],
+            'notes.*.evaluation' => [$cours === null ? 'sometimes' : 'prohibited', 'string', 'max:100'],
             'notes.*.note' => ['present', 'nullable', 'numeric', 'between:0,20'],
         ]);
+        $cles = collect($data['notes'] ?? [])->map(fn ($note) =>
+            (int) $note['id_etudiant'].'|'.($note['evaluation'] ?? $data['evaluation'] ?? 'principale'));
+        if ($cles->unique()->count() !== $cles->count()) {
+            throw ValidationException::withMessages(['notes' => 'Une seule note par etudiant et evaluation est autorisee dans une requete.']);
+        }
         DB::transaction(function () use ($request, $item, $promotion, $cle, $data, $transmettre) {
             // Serialise la creation de la feuille et les enregistrements concurrents.
             Promotion::whereKey($promotion->id)->lockForUpdate()->firstOrFail();
-            FeuilleNotes::where($cle)->lockForUpdate()->first();
+            $existante = FeuilleNotes::where($cle)->lockForUpdate()->first();
+            if ($existante && in_array($existante->statut, FeuilleNotes::STATUTS_TRANSMIS, true)
+                && $existante->statut !== 'rejetee_secretariat' && ! isset($data['notes'])) {
+                return;
+            }
             $etat = $this->presenter($item, $promotion, $cle);
             if (! $etat['saisie_ouverte']) {
                 throw ValidationException::withMessages(['notes' => ['Saisie fermée : présences non validées, aucune séance réalisée ou feuille déjà transmise.']]);
@@ -183,17 +198,18 @@ class NoteController extends Controller
             $eligibles = $etat['etudiants']->where('evaluable', true)->pluck('id');
             $feuille = FeuilleNotes::firstOrCreate($cle, ['updated_by' => $request->user()->id]);
             foreach ($data['notes'] ?? [] as $note) {
+                $evaluation = $note['evaluation'] ?? $data['evaluation'] ?? 'principale';
                 if (! $eligibles->contains((int) $note['id_etudiant'])) {
                     throw ValidationException::withMessages(['notes' => ['Un étudiant absent sans autorisation administrative ou hors promotion ne peut pas être noté.']]);
                 }
                 if ($note['note'] === null) {
-                    $feuille->notes()->where('id_etudiant', $note['id_etudiant'])->delete();
+                    $feuille->notes()->where('id_etudiant', $note['id_etudiant'])->where('evaluation', $evaluation)->delete();
                 } else {
-                    $feuille->notes()->updateOrCreate(['id_etudiant' => $note['id_etudiant']], ['note' => $note['note']]);
+                    $feuille->notes()->updateOrCreate(['id_etudiant' => $note['id_etudiant'], 'evaluation' => $evaluation], ['note' => $note['note']]);
                 }
             }
             $feuille->notes()->whereNotIn('id_etudiant', $eligibles)->delete();
-            if ($transmettre && ($eligibles->isEmpty() || $feuille->notes()->count() !== $eligibles->count())) {
+            if ($transmettre && ($eligibles->isEmpty() || $feuille->notes()->distinct()->count('id_etudiant') !== $eligibles->count())) {
                 throw ValidationException::withMessages(['notes' => ['Tous les étudiants évaluables doivent avoir une note avant transmission.']]);
             }
             $feuille->update(['updated_by' => $request->user()->id]);

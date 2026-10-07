@@ -8527,7 +8527,7 @@
                     "Saisie des notes"
                 ],
                 "summary": "Saisir des notes par matière sans cours",
-                "description": "notes est obligatoire. Les présences doivent être validées pour toutes les séances réalisées de la matière dans cette promotion et cette année. Les notes par cours restent distinctes.",
+                "description": "Enregistrement et transmission immediats, sans brouillon. notes est obligatoire et doit couvrir tous les etudiants evaluables. Envoyer toutes les evaluations ensemble dans notes[].evaluation. La feuille est ensuite verrouillee. Les présences doivent être validées pour toutes les séances réalisées de la matière dans cette promotion et cette année. Les notes par cours restent distinctes.",
                 "operationId": "enseignantEnregistrerNotesMatiere",
                 "requestBody": {
                     "required": true,
@@ -8544,19 +8544,53 @@
                                         ]
                                     }
                                 ]
+                            },
+                            "example": {
+                                "id_matiere": 21,
+                                "id_promotion": 22,
+                                "id_annee_academique": 16,
+                                "notes": [
+                                    {
+                                        "id_etudiant": 23,
+                                        "evaluation": "devoir_1",
+                                        "note": 15.5
+                                    },
+                                    {
+                                        "id_etudiant": 23,
+                                        "evaluation": "examen",
+                                        "note": 17
+                                    },
+                                    {
+                                        "id_etudiant": 26,
+                                        "evaluation": "devoir_1",
+                                        "note": 12
+                                    },
+                                    {
+                                        "id_etudiant": 26,
+                                        "evaluation": "examen",
+                                        "note": 14
+                                    }
+                                ]
                             }
                         }
                     }
                 },
                 "responses": {
                     "200": {
-                        "description": "Notes enregistrées et feuille actualisée."
+                        "description": "Notes enregistrees et directement transmises. statut=transmise, saisie_ouverte=false.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotesCoursReponse"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Matière ou contexte inaccessible."
                     },
                     "422": {
-                        "description": "Notes invalides ou saisie fermée."
+                        "description": "Notes invalides, feuille incomplete ou saisie fermee. Aucun changement conserve."
                     }
                 },
                 "security": [
@@ -8630,8 +8664,8 @@
                 "tags": [
                     "Saisie des notes"
                 ],
-                "summary": "Enregistrer un brouillon de notes sur 20",
-                "description": "Dans Swagger, renseigner cours, id_promotion et id_annee_academique, puis envoyer un corps JSON contenant notes. Exemple : {\"notes\":[{\"id_etudiant\":4,\"note\":15.5}]}. Seuls les étudiants évaluables doivent être envoyés. Un enregistrement partiel conserve les notes des autres étudiants toujours évaluables ; une note null efface la note de cet étudiant. Les notes d’étudiants devenus non évaluables sont retirées à l’enregistrement. La requête entière est annulée si une ligne est invalide. Refuse les doublons, absents sans autorisation, étudiants hors promotion et valeurs hors de 0 à 20. La réponse contient la feuille et les moyennes provisoires recalculées. Répéter cet appel pour compléter ou corriger le brouillon avant transmission.",
+                "summary": "Enregistrer et transmettre directement les notes sur 20",
+                "description": "Fournir cours, id_promotion et id_annee_academique et un corps JSON contenant notes. Tous les etudiants evaluables doivent avoir une note. La requete est atomique : une feuille incomplete ou une ligne invalide annule tout. Apres succes, statut=transmise et saisie_ouverte=false. Toute modification ulterieure necessite une correction autorisee ou un refus du secretariat.",
                 "operationId": "enseignantEnregistrerNotes",
                 "parameters": [
                     {
@@ -8713,7 +8747,7 @@
                     "Saisie des notes"
                 ],
                 "summary": "Transmettre une feuille complète au secrétariat",
-                "description": "Transmission au secrétariat académique. Utiliser les mêmes identifiants que pour la consultation et l’enregistrement. Le corps est facultatif : sans corps, transmet les notes déjà enregistrées ; avec notes, enregistre ces notes puis transmet dans une seule transaction. Il faut une saisie ouverte, au moins un étudiant évaluable et une note pour chacun. Si la feuille reste incomplète, la requête échoue avec 422 et les changements sont annulés. En cas de succès, statut devient transmise, date_transmission est renseignée et saisie_ouverte devient false. Une nouvelle saisie ou transmission exige un refus du secrétariat. Le secrétariat valide puis transmet à la direction via /administration/notes-transmises/{id}.",
+                "description": "Alternative a PUT : enregistrer et transmettre dans une seule transaction. Tous les etudiants evaluables doivent avoir une note. Sans corps, transmet une ancienne feuille non transmise ; si deja transmise, retourne la feuille sans changer son statut ni ajouter un historique. Apres succes, statut=transmise et saisie_ouverte=false.",
                 "operationId": "enseignantTransmettreNotes",
                 "parameters": [
                     {
@@ -8860,7 +8894,7 @@
                     "Saisie des notes"
                 ],
                 "summary": "Transmettre les notes par matière",
-                "description": "notes est facultatif : transmettre les notes enregistrées ou enregistrer et transmettre en une transaction. Tous les étudiants évaluables doivent avoir une note. La feuille est ensuite verrouillée.",
+                "description": "Alternative a PUT : enregistrer et transmettre toutes les evaluations ensemble. notes est facultatif pour transmettre une ancienne feuille. Une feuille deja transmise sans nouvelles notes est retournee sans nouvel historique. Toute saisie exige des presences validees et au moins une note par etudiant evaluable. Apres succes la feuille est verrouillee.",
                 "operationId": "enseignantTransmettreNotesMatiere",
                 "requestBody": {
                     "required": true,
@@ -13152,6 +13186,26 @@
             },
             "EtudiantNoteCours": {
                 "properties": {
+                    "notes": {
+                        "description": "Toutes les evaluations de cet etudiant. Utiliser notes[].id pour demander une correction. Les champs historiques id_note et note correspondent a la premiere note.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "evaluation": {
+                                    "type": "string",
+                                    "example": "devoir_1"
+                                },
+                                "note": {
+                                    "type": "number",
+                                    "example": 15.5
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
                     "id_note": {
                         "description": "Identifiant de la note pour le circuit administratif de correction.",
                         "type": "integer",
@@ -13258,9 +13312,9 @@
                     },
                     "statut": {
                         "type": "string",
-                        "example": "brouillon",
+                        "example": "transmise",
                         "enum": [
-                            "brouillon",
+                            "non_transmise",
                             "transmise",
                             "validee_secretariat",
                             "rejetee_secretariat",
@@ -13275,9 +13329,9 @@
                         "nullable": true
                     },
                     "saisie_ouverte": {
-                        "description": "Ouverte seulement pour un brouillon ou un refus du secrétariat, avec des séances réalisées et des présences validées et complètes.",
+                        "description": "Ouverte avant transmission ou apres un refus du secretariat, avec des presences validees et completes. Fermee immediatement apres enregistrement.",
                         "type": "boolean",
-                        "example": true
+                        "example": false
                     },
                     "historique": {
                         "description": "Décisions et transmissions avec acteur, date et motif.",
@@ -13320,7 +13374,7 @@
                 "properties": {
                     "message": {
                         "type": "string",
-                        "example": "Notes enregistrées."
+                        "example": "Notes transmises au secretariat academique."
                     },
                     "feuille_notes": {
                         "$ref": "#/components/schemas/FeuilleNotesDetail"
@@ -13379,6 +13433,13 @@
                         "type": "integer",
                         "example": 14
                     },
+                    "evaluation": {
+                        "description": "Evaluation par defaut des lignes sans evaluation. Envoyer toutes les evaluations dans une seule requete : enregistrement et transmission immediats, puis verrouillage. Une seule note par couple etudiant/evaluation. Moyenne simple des notes. Apres transmission, modification uniquement apres refus du secretariat ou via correction autorisee.",
+                        "type": "string",
+                        "example": "devoir_1",
+                        "default": "principale",
+                        "maxLength": 100
+                    },
                     "notes": {
                         "type": "array",
                         "items": {
@@ -13387,6 +13448,12 @@
                                 "note"
                             ],
                             "properties": {
+                                "evaluation": {
+                                    "description": "Prioritaire sur evaluation a la racine. Permet plusieurs notes du meme etudiant dans une requete, avec des evaluations distinctes.",
+                                    "type": "string",
+                                    "example": "examen",
+                                    "maxLength": 100
+                                },
                                 "id_etudiant": {
                                     "type": "integer",
                                     "example": 4
@@ -13408,6 +13475,10 @@
             },
             "NoteTransmiseAdministration": {
                 "properties": {
+                    "evaluation": {
+                        "type": "string",
+                        "example": "devoir_1"
+                    },
                     "id": {
                         "type": "integer",
                         "example": 1
@@ -14824,7 +14895,7 @@
         },
         {
             "name": "Saisie des notes",
-            "description": "## Parcours enseignant\nLa saisie directe par matière ne nécessite aucun cours : consulter `GET /enseignant/notes/feuille`, enregistrer `PUT /enseignant/notes`, puis transmettre `POST /enseignant/notes/transmettre`. Fournir `id_matiere`, `id_promotion` et `id_annee_academique` en query pour GET et dans le JSON pour PUT/POST, avec `notes` pour la saisie. Les options avec `cours = null` correspondent à ce parcours. Une affectation active de portée matière et un créneau correspondant sont requis. Les présences de toutes les séances réalisées de la matière, de la promotion et de l’année sont contrôlées, y compris les séances sans cours. La feuille est distincte par année + promotion + matière ; `cours` et `module` sont null. La note directe est retournée comme `moyenne_matiere` provisoire, sans être mélangée aux moyennes pondérées des feuilles par cours. Les routes par cours ci-dessous restent disponibles.\n\nCes routes nécessitent un Bearer Token appartenant à un compte actif de rôle ENSEIGNANT. Dans Swagger, utiliser **Authorize**. Le préfixe des routes est `/api/v1`.\n\n1. **Choisir un enseignement** avec `GET /enseignant/notes?id_annee_academique=1`. La réponse fournit les combinaisons matière, module, cours et promotion accessibles à cet enseignant.\n2. **Consulter la feuille** avec `GET /enseignant/notes/41?id_promotion=3&id_annee_academique=1`.\n3. **Enregistrer les notes** avec `PUT` sur la même URL. Les enregistrements partiels sont autorisés.\n4. **Transmettre la feuille complète** avec `POST /enseignant/notes/41/transmettre?id_promotion=3&id_annee_academique=1`.\n\nLes identifiants ci-dessus sont des exemples à remplacer par ceux de la base. `id_promotion` est la clé technique de la promotion, pas son numéro affiché (`num_promotion`). `{cours}` est un identifiant de cours, pas un identifiant de séance ou de matière. La feuille est distincte pour chaque combinaison **année académique + promotion + cours**.\n\n## Conditions de saisie\n- L’enseignant doit avoir une affectation active couvrant le cours ou sa matière, et un créneau correspondant à cette promotion, cette matière et cette année. Un créneau sans cours couvre les cours de la matière autorisés par son affectation.\n- Il faut au moins une séance réalisée pour ce cours et cette promotion dans cette année.\n- Toutes les séances réalisées doivent avoir une feuille de présence validée couvrant tous les étudiants de la promotion.\n- Un étudiant doit être présent à **toutes** ces séances ou disposer d'une autorisation administrative pour chacune de ses absences. Utiliser `POST /administration/autorisations-evaluations/{id}/autoriser`, avec l'identifiant de la ligne `presences`.\n- Tous les étudiants inscrits dans la promotion sont affichés, quelle que soit leur année d’inscription.\n\n## Notes et moyenne\nLes notes sont comprises entre 0 et 20, décimales acceptées (exemple JSON : `15.5`). `0` est une note valide ; `null` efface une note et la rend manquante. La moyenne matière est provisoire : somme(note × coefficient du cours) / somme(coefficients des cours notés), pour le même étudiant, la même promotion et la même année. Les cours sans note ne comptent pas dans ce calcul. Exemple : 18 coefficient 1 et 10 coefficient 3 donnent 12/20.\n\n## Transmission\nAu moins un étudiant doit être évaluable, et chacun doit avoir une note. Après transmission au secrétariat académique, `statut = transmise` et `saisie_ouverte = false`. Les contrôles suivants utilisent `/administration/notes-transmises/{id}` : `valider-secretariat`, `rejeter-secretariat`, `transmettre-direction`, `valider-direction`, `rejeter-direction`. Un refus du secrétariat rouvre la saisie enseignant et permet une nouvelle transmission. L’historique de la feuille expose les motifs et les acteurs. Ces étapes ne publient pas les notes aux étudiants."
+            "description": "## Parcours enseignant\r\nPar matiere : consulter GET /enseignant/notes/feuille, puis envoyer toutes les notes a PUT /enseignant/notes. Fournir id_matiere, id_promotion et id_annee_academique. PUT enregistre et transmet immediatement, puis verrouille la feuille. Pour plusieurs notes par etudiant, utiliser notes[].evaluation avec des evaluations distinctes. moyenne_matiere est la moyenne simple des notes directes, separee des notes par cours. Une affectation active et un creneau correspondant sont requis. cours et module sont null.\r\n\r\nCes routes nécessitent un Bearer Token appartenant à un compte actif de rôle ENSEIGNANT. Dans Swagger, utiliser **Authorize**. Le préfixe des routes est `/api/v1`.\r\n\r\n1. **Choisir un enseignement** avec `GET /enseignant/notes?id_annee_academique=1`. La réponse fournit les combinaisons matière, module, cours et promotion accessibles à cet enseignant.\r\n2. **Consulter la feuille** avec `GET /enseignant/notes/41?id_promotion=3&id_annee_academique=1`.\r\n3. **Enregistrer et transmettre** avec PUT sur la meme URL. Tous les etudiants evaluables doivent avoir une note ; la feuille est verrouillee apres succes.\r\n4. **Consulter le suivi** via GET /enseignant/transmissions-notes. POST /transmettre reste disponible pour compatibilite ; sans notes, une feuille deja transmise est retournee sans ajouter de transmission.\r\n\r\nLes identifiants ci-dessus sont des exemples à remplacer par ceux de la base. `id_promotion` est la clé technique de la promotion, pas son numéro affiché (`num_promotion`). `{cours}` est un identifiant de cours, pas un identifiant de séance ou de matière. La feuille est distincte pour chaque combinaison **année académique + promotion + cours**.\r\n\r\n## Conditions de saisie\r\n- L’enseignant doit avoir une affectation active couvrant le cours ou sa matière, et un créneau correspondant à cette promotion, cette matière et cette année. Un créneau sans cours couvre les cours de la matière autorisés par son affectation.\r\n- Il faut au moins une séance réalisée pour ce cours et cette promotion dans cette année.\r\n- Toutes les séances réalisées doivent avoir une feuille de présence validée couvrant tous les étudiants de la promotion.\r\n- Un étudiant doit être présent à **toutes** ces séances ou disposer d'une autorisation administrative pour chacune de ses absences. Utiliser `POST /administration/autorisations-evaluations/{id}/autoriser`, avec l'identifiant de la ligne `presences`.\r\n- Tous les étudiants inscrits dans la promotion sont affichés, quelle que soit leur année d’inscription.\r\n\r\n## Notes et moyenne\r\nLes notes sont comprises entre 0 et 20, décimales acceptées (exemple JSON : `15.5`). `0` est une note valide ; `null` efface une note et la rend manquante. La moyenne matière est provisoire : somme(note × coefficient du cours) / somme(coefficients des cours notés), pour le même étudiant, la même promotion et la même année. Les cours sans note ne comptent pas dans ce calcul. Exemple : 18 coefficient 1 et 10 coefficient 3 donnent 12/20.\r\n\r\n## Transmission automatique\r\nPUT enregistre et transmet immediatement la feuille au secretariat. Aucun brouillon de notes n est conserve apres une saisie reussie. Avant toute saisie, statut = non_transmise. Une feuille incomplete est refusee sans enregistrer les notes. Pour plusieurs evaluations par matiere, envoyer toutes les notes dans la meme requete avec notes[].evaluation. POST /transmettre reste disponible ; sans notes, une feuille deja transmise est retournee sans nouvel historique.\r\n\r\n## Transmission\r\nAu moins un étudiant doit être évaluable, et chacun doit avoir une note. Après transmission au secrétariat académique, `statut = transmise` et `saisie_ouverte = false`. Les contrôles suivants utilisent `/administration/notes-transmises/{id}` : `valider-secretariat`, `rejeter-secretariat`, `transmettre-direction`, `valider-direction`, `rejeter-direction`. Un refus du secrétariat rouvre la saisie enseignant et permet une nouvelle transmission. L’historique de la feuille expose les motifs et les acteurs. Ces étapes ne publient pas les notes aux étudiants."
         },
         {
             "name": "Permissions",

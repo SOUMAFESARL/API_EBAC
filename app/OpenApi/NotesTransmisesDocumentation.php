@@ -7,6 +7,7 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(
     schema: 'NoteTransmiseAdministration', type: 'object',
     properties: [
+        new OA\Property(property: 'evaluation', type: 'string', example: 'devoir_1'),
         new OA\Property(property: 'id', type: 'integer', example: 1),
         new OA\Property(property: 'id_etudiant', type: 'integer', example: 12),
         new OA\Property(property: 'note', type: 'number', minimum: 0, maximum: 20, example: 14),

@@ -81,7 +81,7 @@ class NotesTransmisesController extends Controller
     private function presenterNotes(FeuilleNotes $feuille): array
     {
         return $feuille->notes->map(fn ($note) => [
-            ...$note->only(['id', 'id_etudiant', 'note']),
+            ...$note->only(['id', 'id_etudiant', 'evaluation', 'note']),
             'etudiant' => $note->etudiant?->only(['id', 'matricule', 'nom', 'prenoms']),
         ])->values()->all();
     }
