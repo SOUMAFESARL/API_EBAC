@@ -271,6 +271,8 @@ Route::prefix('v1/enseignant/transmissions-notes')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ENSEIGNANT'])
     ->group(function () {
         Route::get('/', [TransmissionNotesController::class, 'index'])->name('index');
+        Route::get('tableau', [TransmissionNotesController::class, 'tableau'])->name('tableau');
+        Route::get('feuilles', [TransmissionNotesController::class, 'feuillesNotes'])->name('feuilles');
         Route::get('{id}', [TransmissionNotesController::class, 'show'])->whereNumber('id')->name('show');
     });
 

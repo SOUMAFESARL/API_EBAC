@@ -576,6 +576,22 @@ class NotesEnseignantApiTest extends TestCase
             ->assertJsonPath('feuille_notes.seances_realisees', 1);
     }
 
+    public function test_transmission_matiere_accepte_les_identifiants_dans_url(): void
+    {
+        $data = $this->contexte();
+        $this->presences($data);
+        $url = '/api/v1/enseignant/notes/transmettre?'.http_build_query([
+            'id_annee_academique' => $data['annee']->id,
+            'id_promotion' => $data['promotion']->id,
+            'id_seance' => $data['seance']->id,
+            'id_matiere' => $data['cours']->module->id_matiere,
+        ]);
+        $this->postJson($url, ['notes' => [
+            ['id_etudiant' => $data['etudiants'][0]->id, 'note' => 15.5],
+        ]])->assertOk()->assertJsonPath('feuille_notes.statut', 'transmise');
+        $this->postJson($url)->assertOk()->assertJsonCount(1, 'feuille_notes.historique');
+    }
+
     public function test_notes_isolees_par_seance_et_seance_autre_enseignant_interdite(): void
     {
         $data = $this->contexte();
@@ -599,6 +615,10 @@ class NotesEnseignantApiTest extends TestCase
             ->assertJsonCount(1)->assertJsonPath('0.note', 18);
         $this->getJson('/api/v1/enseignant/notes/feuille?'.http_build_query($contexte))->assertOk()
             ->assertJsonPath('feuille_notes.etudiants.0.moyenne_matiere', 14);
+        $this->getJson('/api/v1/enseignant/transmissions-notes/tableau?id_seance='.$autre->id)->assertOk()
+            ->assertJsonCount(1)->assertJsonPath('0.note', 18)->assertJsonPath('0.id_seance', $autre->id);
+        $this->getJson('/api/v1/enseignant/transmissions-notes/feuilles?id_seance='.$data['seance']->id)->assertOk()
+            ->assertJsonCount(1, 'feuilles_notes')->assertJsonPath('feuilles_notes.0.notes.0.note', 10);
         unset($contexte['id_seance']);
         $this->putJson('/api/v1/enseignant/notes', [...$contexte, ...$payload])->assertUnprocessable()
             ->assertJsonValidationErrors('id_seance');

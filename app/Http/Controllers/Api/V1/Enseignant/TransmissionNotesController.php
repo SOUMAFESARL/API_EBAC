@@ -18,7 +18,7 @@ class TransmissionNotesController extends Controller
             ->withCount('notes');
     }
 
-    public function index(Request $request): JsonResponse
+    private function filtrer(Request $request): array
     {
         $data = $request->validate([
             'id_seance' => ['sometimes', 'integer', 'exists:seances_cahier_texte,id'],
@@ -40,13 +40,54 @@ class TransmissionNotesController extends Controller
             $query->where(fn ($q) => $q->where('id_matiere', $data['id_matiere'])
                 ->orWhereHas('cours.module', fn ($m) => $m->where('id_matiere', $data['id_matiere'])));
         }
-        $items = $query->orderByDesc('date_transmission')->orderByDesc('id')->paginate($data['per_page'] ?? 15);
+        return [$query->orderByDesc('date_transmission')->orderByDesc('id'), $data];
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        [$query, $data] = $this->filtrer($request);
+        $items = $query->paginate($data['per_page'] ?? 15);
 
         return response()->json([
             'transmissions' => $items->getCollection()->map(fn ($feuille) => $this->presenter($feuille)),
             'meta' => ['current_page' => $items->currentPage(), 'last_page' => $items->lastPage(),
                 'per_page' => $items->perPage(), 'total' => $items->total(), 'from' => $items->firstItem(), 'to' => $items->lastItem()],
         ]);
+    }
+
+    private function notes(FeuilleNotes $feuille): array
+    {
+        return $feuille->notes->map(fn ($note) => [
+            ...$note->only(['id', 'id_etudiant', 'evaluation', 'note']),
+            'etudiant' => $note->etudiant?->only(['id', 'matricule', 'nom', 'prenoms']),
+        ])->values()->all();
+    }
+
+    public function feuillesNotes(Request $request): JsonResponse
+    {
+        [$query] = $this->filtrer($request);
+        $items = $query->with(['notes' => fn ($q) => $q->orderBy('id'), 'notes.etudiant:id,matricule,nom,prenoms'])->get();
+
+        return response()->json(['feuilles_notes' => $items->map(fn ($feuille) => [
+            ...$this->presenter($feuille), 'notes' => $this->notes($feuille),
+        ])->values()]);
+    }
+
+    public function tableau(Request $request): JsonResponse
+    {
+        [$query] = $this->filtrer($request);
+        $items = $query->with(['notes' => fn ($q) => $q->orderBy('id'), 'notes.etudiant:id,matricule,nom,prenoms'])->get();
+
+        return response()->json($items->flatMap(function ($feuille) {
+            $contexte = $this->presenter($feuille);
+
+            return collect($this->notes($feuille))->map(fn ($note) => [
+                ...$note, 'id_feuille_notes' => $feuille->id,
+                ...$feuille->only(['id_seance', 'id_cours', 'id_matiere', 'id_promotion', 'id_annee_academique', 'statut', 'date_transmission']),
+                'cours' => $contexte['cours'], 'matiere' => $contexte['matiere'],
+                'promotion' => $contexte['promotion'],
+            ]);
+        })->values());
     }
 
     public function show(Request $request, int $id): JsonResponse

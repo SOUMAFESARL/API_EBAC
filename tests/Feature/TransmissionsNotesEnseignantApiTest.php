@@ -21,6 +21,41 @@ class TransmissionsNotesEnseignantApiTest extends TestCase
 
     private const URL = '/api/v1/enseignant/transmissions-notes';
 
+    public function test_tableau_et_feuilles_de_mes_notes_transmises_uniquement(): void
+    {
+        $c = $this->contexte();
+        $etudiant = \App\Models\Etudiant::create(['matricule' => 'ETU-T', 'nom' => 'KONE', 'prenoms' => 'Test', 'date_inscription' => '2026-09-01']);
+        $c['feuille']->notes()->create(['id_etudiant' => $etudiant->id, 'evaluation' => 'devoir', 'note' => 12]);
+        $cours = $c['feuille']->replicate();
+        $cours->id_matiere = null;
+        $cours->id_cours = $c['cours']->id;
+        $cours->save();
+        $cours->notes()->create(['id_etudiant' => $etudiant->id, 'note' => 18]);
+        $etrangere = $c['feuille']->replicate();
+        $etrangere->transmise_par = $c['autre']->id;
+        $etrangere->save();
+        $etrangere->notes()->create(['id_etudiant' => $etudiant->id, 'note' => 20]);
+        $brouillon = $c['feuille']->replicate();
+        $brouillon->statut = 'brouillon';
+        $brouillon->save();
+        $brouillon->notes()->create(['id_etudiant' => $etudiant->id, 'note' => 19]);
+        $this->getJson(self::URL.'/tableau')->assertOk()->assertJsonCount(2)
+            ->assertJsonPath('0.id_feuille_notes', $cours->id)->assertJsonPath('0.note', 18)
+            ->assertJsonPath('1.etudiant.matricule', 'ETU-T');
+        $this->getJson(self::URL.'/feuilles')->assertOk()->assertJsonCount(2, 'feuilles_notes')
+            ->assertJsonPath('feuilles_notes.0.notes.0.note', 18);
+        foreach (['tableau', 'feuilles'] as $format) {
+            $path = $format === 'tableau' ? null : 'feuilles_notes';
+            $this->getJson(self::URL.'/'.$format.'?id_cours='.$c['cours']->id)->assertOk()->assertJsonCount(1, $path);
+            $this->getJson(self::URL.'/'.$format.'?id_matiere='.$c['matiere']->id)->assertOk()->assertJsonCount(2, $path);
+            $this->getJson(self::URL.'/'.$format.'?statut=validee_direction')->assertOk()->assertJsonCount(0, $path);
+            $this->getJson(self::URL.'/'.$format.'?id_seance=invalide')->assertUnprocessable();
+            Sanctum::actingAs($c['admin']);
+            $this->getJson(self::URL.'/'.$format)->assertForbidden();
+            Sanctum::actingAs($c['enseignant']);
+        }
+    }
+
     private function contexte(): array
     {
         $role = Role::create(['code' => 'ENSEIGNANT', 'libelle' => 'Enseignant']);

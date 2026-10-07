@@ -9503,6 +9503,258 @@
                 ]
             }
         },
+        "/enseignant/transmissions-notes/tableau": {
+            "get": {
+                "tags": [
+                    "Notes enseignant"
+                ],
+                "summary": "Toutes mes notes transmises dans un tableau",
+                "description": "Tableau directement a la racine. Une ligne par note avec etudiant, evaluation, valeur, id_feuille_notes, id_seance, id_cours, id_matiere, id_promotion, id_annee_academique, statut, date_transmission, cours, matiere et promotion. Sans filtre : toutes les notes transmises par l enseignant connecte. Filtres combinables. Pas de pagination. Les brouillons et les feuilles des autres enseignants sont exclus. [] si aucune note.",
+                "operationId": "tableauToutesMesNotesTransmises",
+                "parameters": [
+                    {
+                        "name": "id_seance",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_cours",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_matiere",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "transmise",
+                                "validee_secretariat",
+                                "rejetee_secretariat",
+                                "transmise_direction",
+                                "validee_direction",
+                                "rejetee_direction"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tableau des notes transmises.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "allOf": [
+                                            {
+                                                "$ref": "#/components/schemas/NoteTransmiseAdministration"
+                                            },
+                                            {
+                                                "properties": {
+                                                    "id_feuille_notes": {
+                                                        "type": "integer"
+                                                    },
+                                                    "id_seance": {
+                                                        "type": "integer",
+                                                        "nullable": true
+                                                    },
+                                                    "id_cours": {
+                                                        "type": "integer",
+                                                        "nullable": true
+                                                    },
+                                                    "id_matiere": {
+                                                        "type": "integer",
+                                                        "nullable": true
+                                                    },
+                                                    "id_promotion": {
+                                                        "type": "integer"
+                                                    },
+                                                    "id_annee_academique": {
+                                                        "type": "integer"
+                                                    },
+                                                    "statut": {
+                                                        "type": "string"
+                                                    },
+                                                    "date_transmission": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "nullable": true
+                                                    },
+                                                    "cours": {
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "matiere": {
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "promotion": {
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Enseignant actif requis."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/enseignant/transmissions-notes/feuilles": {
+            "get": {
+                "tags": [
+                    "Notes enseignant"
+                ],
+                "summary": "Toutes mes feuilles avec leurs notes transmises",
+                "description": "Sans pagination. feuilles_notes regroupe les notes par feuille avec contexte, circuit de validation et historique. Acces selon transmise_par : uniquement les feuilles transmises par l enseignant connecte, meme apres une decision administrative ou fin d affectation. Filtres combinables par seance, cours, matiere, promotion, annee et statut.",
+                "operationId": "toutesMesFeuillesNotesTransmises",
+                "parameters": [
+                    {
+                        "name": "id_seance",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_cours",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_matiere",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "transmise",
+                                "validee_secretariat",
+                                "rejetee_secretariat",
+                                "transmise_direction",
+                                "validee_direction",
+                                "rejetee_direction"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Feuilles et notes transmises.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "feuilles_notes": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/SuiviTransmissionNotes"
+                                                    },
+                                                    {
+                                                        "properties": {
+                                                            "notes": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "$ref": "#/components/schemas/NoteTransmiseAdministration"
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Enseignant actif requis."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/administration/permissions": {
             "get": {
                 "tags": [
@@ -15169,6 +15421,10 @@
             "description": "Administration des notes"
         },
         {
+            "name": "Notes enseignant",
+            "description": "Notes enseignant"
+        },
+        {
             "name": "Publication des bulletins",
             "description": "Publication des bulletins"
         },
@@ -15183,10 +15439,6 @@
         {
             "name": "Salles",
             "description": "Salles"
-        },
-        {
-            "name": "Notes enseignant",
-            "description": "Notes enseignant"
         }
     ]
 }
