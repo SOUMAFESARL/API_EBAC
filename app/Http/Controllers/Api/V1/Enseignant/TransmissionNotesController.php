@@ -115,7 +115,7 @@ class TransmissionNotesController extends Controller
                 foreach ($feuille->notes->groupBy('evaluation') as $evaluation => $notes) {
                     $cle = 'feuille_'.$feuille->id.'_'.md5((string) $evaluation);
                     $colonnes[] = [
-                        'cle' => $cle, 'libelle' => 'Note '.(count($colonnes) + 1).' / '.$evaluation,
+                        'cle' => $cle, 'libelle' => (string) $evaluation,
                         'id_feuille_notes' => $feuille->id, 'id_seance' => $feuille->id_seance,
                         'id_cours' => $feuille->id_cours, 'evaluation' => $evaluation,
                         'date_seance' => $feuille->seance?->date_effective?->format('Y-m-d')
