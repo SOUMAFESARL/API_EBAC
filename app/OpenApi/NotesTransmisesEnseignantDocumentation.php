@@ -7,7 +7,7 @@ use OpenApi\Attributes as OA;
 #[OA\Get(
     path: '/enseignant/transmissions-notes/tableau', operationId: 'tableauToutesMesNotesTransmises',
     summary: 'Toutes mes notes transmises dans un tableau',
-    description: 'Tableau directement a la racine. Un groupe par feuille de seance avec notes[] (id, id_etudiant, evaluation, note, etudiant). Le contexte est present une seule fois : id_feuille_notes, id_seance, id_cours, id_matiere, id_promotion, id_annee_academique, statut, date_transmission, cours, matiere et promotion. Sans filtre : toutes les notes transmises par l enseignant connecte. Filtres combinables. Pas de pagination. Les brouillons et les feuilles des autres enseignants sont exclus. [] si aucune feuille transmise.',
+    description: 'Tableau directement a la racine. Un groupe par feuille de seance avec notes[] (id, id_etudiant, evaluation, note, etudiant). Le contexte est present une seule fois : id_feuille_notes, id_seance, id_cours, id_matiere, id_promotion, id_annee_academique, statut (toujours transmise), statut_workflow, date_transmission, cours, matiere et promotion. Sans filtre : toutes les notes transmises par l enseignant connecte. Filtres combinables. Pas de pagination. Les brouillons et les feuilles des autres enseignants sont exclus. [] si aucune feuille transmise.',
     tags: ['Notes enseignant'], security: [['sanctum' => []]],
     parameters: [
         new OA\Parameter(name: 'id_seance', in: 'query', schema: new OA\Schema(type: 'integer')),
@@ -15,7 +15,7 @@ use OpenApi\Attributes as OA;
         new OA\Parameter(name: 'id_matiere', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_promotion', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_annee_academique', in: 'query', schema: new OA\Schema(type: 'integer')),
-        new OA\Parameter(name: 'statut', in: 'query', schema: new OA\Schema(type: 'string', enum: ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'])),
+        new OA\Parameter(name: 'statut', in: 'query', description: 'transmise inclut toutes les etapes du circuit. Les autres valeurs filtrent le statut interne.', schema: new OA\Schema(type: 'string', enum: ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'])),
     ],
     responses: [
         new OA\Response(response: 200, description: 'Tableau des notes transmises.', content: new OA\JsonContent(type: 'array', items: new OA\Items(allOf: [
@@ -27,7 +27,8 @@ use OpenApi\Attributes as OA;
                 new OA\Property(property: 'id_matiere', type: 'integer', nullable: true),
                 new OA\Property(property: 'id_promotion', type: 'integer'),
                 new OA\Property(property: 'id_annee_academique', type: 'integer'),
-                new OA\Property(property: 'statut', type: 'string'),
+                new OA\Property(property: 'statut', type: 'string', enum: ['transmise']),
+                new OA\Property(property: 'statut_workflow', type: 'string'),
                 new OA\Property(property: 'date_transmission', type: 'string', format: 'date-time', nullable: true),
                 new OA\Property(property: 'cours', type: 'object', nullable: true),
                 new OA\Property(property: 'matiere', type: 'object', nullable: true),
@@ -50,7 +51,7 @@ use OpenApi\Attributes as OA;
         new OA\Parameter(name: 'id_matiere', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_promotion', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_annee_academique', in: 'query', schema: new OA\Schema(type: 'integer')),
-        new OA\Parameter(name: 'statut', in: 'query', schema: new OA\Schema(type: 'string', enum: ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'])),
+        new OA\Parameter(name: 'statut', in: 'query', description: 'transmise inclut toutes les etapes du circuit. Les autres valeurs filtrent le statut interne.', schema: new OA\Schema(type: 'string', enum: ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'])),
     ],
     responses: [
         new OA\Response(response: 200, description: 'Feuilles et notes transmises.', content: new OA\JsonContent(properties: [

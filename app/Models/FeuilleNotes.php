@@ -10,6 +10,29 @@ class FeuilleNotes extends Model
 {
     public const STATUTS_TRANSMIS = ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'];
 
+    public static function statutsPourRole(string $role): array
+    {
+        return collect(self::STATUTS_TRANSMIS)->mapWithKeys(fn ($statut) => [$statut => match ($role) {
+            'ENSEIGNANT' => 'transmise',
+            'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE' => match ($statut) {
+                'transmise', 'rejetee_direction' => 'a_verifier',
+                default => $statut,
+            },
+            'DIRECTION' => match ($statut) {
+                'transmise_direction' => 'en_attente',
+                'validee_direction' => 'validee',
+                'rejetee_direction' => 'rejetee',
+                default => $statut,
+            },
+            default => $statut,
+        }])->all();
+    }
+
+    public function statutPourRole(string $role): string
+    {
+        return self::statutsPourRole($role)[$this->statut] ?? $this->statut;
+    }
+
     protected $table = 'feuilles_notes';
 
     protected $attributes = ['statut' => 'brouillon'];

@@ -33,7 +33,11 @@ class TransmissionNotesController extends Controller
         $query = $this->feuilles($request);
         foreach (['id_seance', 'id_annee_academique', 'id_promotion', 'id_cours', 'statut'] as $champ) {
             if (isset($data[$champ])) {
-                $query->where($champ, $data[$champ]);
+                if ($champ === 'statut' && $data[$champ] === 'transmise') {
+                    $query->whereIn('statut', FeuilleNotes::STATUTS_TRANSMIS);
+                } else {
+                    $query->where($champ, $data[$champ]);
+                }
             }
         }
         if (isset($data['id_matiere'])) {
@@ -84,6 +88,7 @@ class TransmissionNotesController extends Controller
             return [
                 'id_feuille_notes' => $feuille->id,
                 ...$feuille->only(['id_seance', 'id_cours', 'id_matiere', 'id_promotion', 'id_annee_academique', 'statut', 'date_transmission']),
+                'statut' => $contexte['statut'], 'statut_workflow' => $contexte['statut_workflow'],
                 'cours' => $contexte['cours'], 'matiere' => $contexte['matiere'],
                 'promotion' => $contexte['promotion'],
                 'notes' => $this->notes($feuille),
@@ -173,6 +178,8 @@ class TransmissionNotesController extends Controller
 
         return [
             ...$feuille->only(['id', 'statut', 'date_transmission', 'transmise_par', 'id_annee_academique', 'id_promotion', 'id_matiere', 'id_cours', 'id_seance']),
+            'statut' => $feuille->statutPourRole('ENSEIGNANT'),
+            'statut_workflow' => $feuille->statut,
             'annee_academique' => $feuille->anneeAcademique?->only(['id', 'libelle']),
             'promotion' => $feuille->promotion?->only(['id', 'code', 'num_promotion']),
             'matiere' => ($feuille->matiere ?? $feuille->cours?->module?->matiere)?->only(['id', 'code', 'libelle']),

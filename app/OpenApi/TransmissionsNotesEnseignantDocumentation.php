@@ -8,7 +8,8 @@ use OpenApi\Attributes as OA;
     schema: 'SuiviTransmissionNotes', type: 'object',
     properties: [
         new OA\Property(property: 'id', type: 'integer', description: 'Identifiant de la feuille de notes.'),
-        new OA\Property(property: 'statut', type: 'string', enum: ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction']),
+        new OA\Property(property: 'statut', type: 'string', description: 'Reste transmise chez l enseignant ; statut_workflow indique les decisions administratives.', enum: ['transmise']),
+        new OA\Property(property: 'statut_workflow', type: 'string', enum: ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction']),
         new OA\Property(property: 'date_transmission', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'transmise_par', type: 'integer', description: 'Enseignant ayant transmis la feuille.'),
         new OA\Property(property: 'id_annee_academique', type: 'integer'),
@@ -60,7 +61,7 @@ use OpenApi\Attributes as OA;
         new OA\Parameter(name: 'id_promotion', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_matiere', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_cours', in: 'query', schema: new OA\Schema(type: 'integer')),
-        new OA\Parameter(name: 'statut', in: 'query', schema: new OA\Schema(type: 'string', enum: ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'])),
+        new OA\Parameter(name: 'statut', in: 'query', description: 'transmise inclut toutes les feuilles transmises, quelle que soit leur etape ; les statuts internes filtrent une etape precise.', schema: new OA\Schema(type: 'string', enum: ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'])),
         new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1)),
         new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 15)),
     ],

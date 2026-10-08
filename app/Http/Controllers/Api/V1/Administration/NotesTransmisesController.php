@@ -18,10 +18,12 @@ class NotesTransmisesController extends Controller
             ->with(['anneeAcademique', 'promotion', 'matiere', 'cours.module.matiere', 'enseignant:id,nom,prenoms', 'dernierModificateur:id,nom,prenoms']);
     }
 
-    private function presenter(FeuilleNotes $feuille): array
+    private function presenter(FeuilleNotes $feuille, Request $request): array
     {
         return [
             ...$feuille->only(['id', 'id_annee_academique', 'id_promotion', 'id_matiere', 'id_cours', 'id_seance', 'statut', 'date_transmission']),
+            'statut' => $feuille->statutPourRole($request->user()->role->code),
+            'statut_workflow' => $feuille->statut,
             'annee_academique' => $feuille->anneeAcademique?->only(['id', 'libelle']),
             'promotion' => $feuille->promotion?->only(['id', 'code', 'num_promotion']),
             'matiere' => ($feuille->matiere ?? $feuille->cours?->module?->matiere)?->only(['id', 'code', 'libelle']),
@@ -34,18 +36,20 @@ class NotesTransmisesController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $statuts = FeuilleNotes::statutsPourRole($request->user()->role->code);
         $data = $request->validate([
             'id_seance' => ['sometimes', 'integer', 'exists:seances_cahier_texte,id'],
             'id_annee_academique' => ['sometimes', 'integer', 'exists:annees_academiques,id'],
             'id_promotion' => ['sometimes', 'integer', 'exists:promotions,id'],
             'id_matiere' => ['sometimes', 'integer', 'exists:matieres,id'],
-            'statut' => ['sometimes', Rule::in(FeuilleNotes::STATUTS_TRANSMIS)],
+            'statut' => ['sometimes', Rule::in(array_unique([...FeuilleNotes::STATUTS_TRANSMIS, ...array_values($statuts)]))],
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ]);
         $query = $this->feuilles()->withCount('notes')->with(['notes' => fn ($q) => $q->orderBy('id'), 'notes.etudiant:id,matricule,nom,prenoms']);
         if (isset($data['statut'])) {
-            $query->where('statut', $data['statut']);
+            $correspondances = array_keys($statuts, $data['statut'], true);
+            $query->whereIn('statut', $correspondances ?: [$data['statut']]);
         }
         foreach (['id_seance', 'id_annee_academique', 'id_promotion'] as $champ) {
             if (isset($data[$champ])) {
@@ -60,7 +64,7 @@ class NotesTransmisesController extends Controller
 
         return response()->json([
             'feuilles_notes' => $items->getCollection()->map(fn ($f) => [
-                ...$this->presenter($f),
+                ...$this->presenter($f, $request),
                 'nombre_notes' => $f->notes_count,
                 'notes' => $this->presenterNotes($f),
             ])->values(),
@@ -69,12 +73,12 @@ class NotesTransmisesController extends Controller
         ]);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
         $feuille = $this->feuilles()->with(['notes.etudiant:id,matricule,nom,prenoms', 'historique.acteur:id,nom,prenoms'])->findOrFail($id);
 
         return response()->json(['feuille_notes' => [
-            ...$this->presenter($feuille),
+            ...$this->presenter($feuille, $request),
             'notes' => $this->presenterNotes($feuille),
         ]]);
     }
@@ -129,6 +133,6 @@ class NotesTransmisesController extends Controller
         });
         $feuille->load(['anneeAcademique', 'promotion', 'matiere', 'cours.module.matiere', 'dernierModificateur:id,nom,prenoms', 'historique.acteur:id,nom,prenoms']);
 
-        return response()->json(['message' => 'Statut de la feuille mis à jour.', 'feuille_notes' => $this->presenter($feuille)]);
+        return response()->json(['message' => 'Statut de la feuille mis à jour.', 'feuille_notes' => $this->presenter($feuille, $request)]);
     }
 }

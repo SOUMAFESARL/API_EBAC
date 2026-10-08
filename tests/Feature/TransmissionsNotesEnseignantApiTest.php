@@ -144,7 +144,8 @@ class TransmissionsNotesEnseignantApiTest extends TestCase
         Sanctum::actingAs($c['enseignant']);
         $this->getJson(self::URL)->assertOk()->assertJsonPath('meta.total', 1);
         $response = $this->getJson(self::URL.'/'.$id)->assertOk()
-            ->assertJsonPath('transmission.statut', 'validee_direction')
+            ->assertJsonPath('transmission.statut', 'transmise')
+            ->assertJsonPath('transmission.statut_workflow', 'validee_direction')
             ->assertJsonPath('transmission.transmise_par', $c['enseignant']->id)
             ->assertJsonPath('transmission.circuit_validation.validee_et_verrouillee', true)
             ->assertJsonPath('transmission.derniere_decision.id_acteur', $c['admin']->id)
@@ -161,10 +162,21 @@ class TransmissionsNotesEnseignantApiTest extends TestCase
             $rejet = str_starts_with($statut, 'rejetee');
             $c['feuille']->changerStatut($statut, $c['admin']->id, $statut, $rejet ? 'Verifier les notes' : null);
             $this->getJson(self::URL.'/'.$c['feuille']->id)->assertOk()
+                ->assertJsonPath('transmission.statut', 'transmise')
+                ->assertJsonPath('transmission.statut_workflow', $statut)
                 ->assertJsonPath('transmission.circuit_validation.etape_actuelle', $etape)
                 ->assertJsonPath('transmission.circuit_validation.rejetee', $rejet)
                 ->assertJsonPath('transmission.circuit_validation.motif_rejet', $rejet ? 'Verifier les notes' : null)
                 ->assertJsonPath('transmission.circuit_validation.correction_enseignant_requise', $statut === 'rejetee_secretariat');
+            $this->getJson(self::URL.'?statut=transmise')->assertOk()
+                ->assertJsonPath('meta.total', 1)
+                ->assertJsonPath('transmissions.0.statut', 'transmise');
+            $this->getJson(self::URL.'/tableau')->assertOk()
+                ->assertJsonPath('0.statut', 'transmise')
+                ->assertJsonPath('0.statut_workflow', $statut);
+            $this->getJson(self::URL.'/feuilles')->assertOk()
+                ->assertJsonPath('feuilles_notes.0.statut', 'transmise')
+                ->assertJsonPath('feuilles_notes.0.statut_workflow', $statut);
         }
     }
 
@@ -194,7 +206,7 @@ class TransmissionsNotesEnseignantApiTest extends TestCase
         $this->getJson(self::URL.'?id_cours='.$c['cours']->id)->assertOk()->assertJsonPath('meta.total', 1)
             ->assertJsonPath('transmissions.0.matiere.id', $c['matiere']->id);
         $this->getJson(self::URL.'?statut=transmise&id_annee_academique='.$c['annee']->id.'&id_promotion='.$c['promotion']->id)
-            ->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('transmissions.0.cours', null);
+            ->assertOk()->assertJsonPath('meta.total', 2)->assertJsonPath('transmissions.0.statut', 'transmise');
         foreach (['statut=inconnu', 'per_page=101', 'page=0', 'id_matiere=999999'] as $filtre) {
             $this->getJson(self::URL.'?'.$filtre)->assertUnprocessable();
         }

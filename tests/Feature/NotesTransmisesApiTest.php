@@ -42,6 +42,36 @@ class NotesTransmisesApiTest extends TestCase
         return '/api/v1/administration/notes-transmises/'.$feuille->id;
     }
 
+    public function test_statut_affiche_et_filtres_selon_le_destinataire(): void
+    {
+        [$users, $feuille] = $this->contexte();
+        foreach (['SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'] as $role) {
+            Sanctum::actingAs($users[$role]);
+            $this->getJson($this->url($feuille))->assertOk()
+                ->assertJsonPath('feuille_notes.statut', 'a_verifier')
+                ->assertJsonPath('feuille_notes.statut_workflow', 'transmise');
+            $this->getJson('/api/v1/administration/notes-transmises?statut=a_verifier')
+                ->assertOk()->assertJsonPath('meta.total', 1)
+                ->assertJsonPath('feuilles_notes.0.statut', 'a_verifier');
+        }
+        $this->postJson($this->url($feuille).'/valider-secretariat')->assertOk();
+        $this->postJson($this->url($feuille).'/transmettre-direction')->assertOk();
+        Sanctum::actingAs($users['DIRECTION']);
+        foreach (['transmise_direction' => 'en_attente', 'validee_direction' => 'validee', 'rejetee_direction' => 'rejetee'] as $interne => $affiche) {
+            $feuille->update(['statut' => $interne]);
+            $this->getJson($this->url($feuille))->assertOk()
+                ->assertJsonPath('feuille_notes.statut', $affiche)
+                ->assertJsonPath('feuille_notes.statut_workflow', $interne);
+            $this->getJson('/api/v1/administration/notes-transmises?statut='.$affiche)
+                ->assertOk()->assertJsonPath('meta.total', 1)
+                ->assertJsonPath('feuilles_notes.0.statut', $affiche);
+        }
+        Sanctum::actingAs($users['SECRETAIRE_ACADEMIQUE']);
+        $this->getJson($this->url($feuille))->assertOk()
+            ->assertJsonPath('feuille_notes.statut', 'a_verifier');
+        $this->assertSame('rejetee_direction', $feuille->fresh()->statut);
+    }
+
     public function test_liste_transmise_contient_le_tableau_des_notes_et_son_enseignant(): void
     {
         [$users, $feuille, $note] = $this->contexte();
@@ -76,7 +106,7 @@ class NotesTransmisesApiTest extends TestCase
         $this->postJson($url.'/valider-secretariat')->assertUnprocessable();
         $this->postJson($url.'/transmettre-direction')->assertOk()->assertJsonPath('feuille_notes.statut', 'transmise_direction');
         Sanctum::actingAs($users['DIRECTION']);
-        $this->postJson($url.'/valider-direction')->assertOk()->assertJsonPath('feuille_notes.statut', 'validee_direction');
+        $this->postJson($url.'/valider-direction')->assertOk()->assertJsonPath('feuille_notes.statut', 'validee');
         $this->postJson($url.'/rejeter-direction', ['motif' => 'Trop tard'])->assertUnprocessable();
         $this->getJson($url)->assertOk()->assertJsonCount(3, 'feuille_notes.historique')
             ->assertJsonPath('feuille_notes.historique.0.id_acteur', $users['SECRETAIRE_ACADEMIQUE']->id)
@@ -100,7 +130,7 @@ class NotesTransmisesApiTest extends TestCase
             $this->postJson($url.'/rejeter-direction', $payload)->assertUnprocessable()->assertJsonValidationErrors('motif');
         }
         $this->postJson($url.'/rejeter-direction', ['motif' => 'Verifier les notes'])->assertOk()
-            ->assertJsonPath('feuille_notes.statut', 'rejetee_direction')
+            ->assertJsonPath('feuille_notes.statut', 'rejetee')
             ->assertJsonPath('feuille_notes.historique.2.motif', 'Verifier les notes');
         Sanctum::actingAs($users['SECRETAIRE_ACADEMIQUE']);
         $this->postJson($url.'/transmettre-direction')->assertUnprocessable();
