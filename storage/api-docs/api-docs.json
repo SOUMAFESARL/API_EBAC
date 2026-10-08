@@ -11610,6 +11610,184 @@
                 ]
             }
         },
+        "/enseignant/transmissions-notes/tableau-general": {
+            "get": {
+                "tags": [
+                    "Notes enseignant"
+                ],
+                "summary": "Tableau general des notes transmises par matiere",
+                "description": "Tableaux par matiere, promotion et annee academique. Une ligne par etudiant ayant une note transmise, une colonne par feuille et evaluation. Les nouvelles transmissions apparaissent automatiquement au prochain appel. Notes manquantes : null. Moyenne arithmetique provisoire des notes presentes, arrondie a deux decimales ; zero est inclus. Seules les feuilles transmises par l enseignant connecte sont incluses, y compris apres validation ou rejet. Les brouillons sont exclus. Les cles de colonnes sont stables et correspondent aux cles de lignes[].notes. Sans resultat : tableaux=[]. Sans pagination.",
+                "operationId": "tableauGeneralNotesTransmisesEnseignant",
+                "parameters": [
+                    {
+                        "name": "id_matiere",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 21
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_seance",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_cours",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "transmise",
+                                "validee_secretariat",
+                                "rejetee_secretariat",
+                                "transmise_direction",
+                                "validee_direction",
+                                "rejetee_direction"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tableaux des notes transmises.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "tableaux": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id_matiere": {
+                                                        "type": "integer",
+                                                        "nullable": true
+                                                    },
+                                                    "matiere": {
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "id_promotion": {
+                                                        "type": "integer"
+                                                    },
+                                                    "promotion": {
+                                                        "type": "object"
+                                                    },
+                                                    "id_annee_academique": {
+                                                        "type": "integer"
+                                                    },
+                                                    "annee_academique": {
+                                                        "type": "object"
+                                                    },
+                                                    "colonnes": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "cle": {
+                                                                    "type": "string"
+                                                                },
+                                                                "libelle": {
+                                                                    "type": "string"
+                                                                },
+                                                                "evaluation": {
+                                                                    "type": "string"
+                                                                },
+                                                                "id_feuille_notes": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "id_seance": {
+                                                                    "type": "integer",
+                                                                    "nullable": true
+                                                                },
+                                                                "id_cours": {
+                                                                    "type": "integer",
+                                                                    "nullable": true
+                                                                },
+                                                                "date_seance": {
+                                                                    "type": "string",
+                                                                    "format": "date",
+                                                                    "nullable": true
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "lignes": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id_etudiant": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "etudiant": {
+                                                                    "type": "object",
+                                                                    "nullable": true
+                                                                },
+                                                                "notes": {
+                                                                    "type": "object",
+                                                                    "additionalProperties": {
+                                                                        "type": "number",
+                                                                        "nullable": true
+                                                                    }
+                                                                },
+                                                                "moyenne": {
+                                                                    "type": "number",
+                                                                    "nullable": true
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Enseignant actif requis."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/enseignant/transmissions-notes": {
             "get": {
                 "tags": [

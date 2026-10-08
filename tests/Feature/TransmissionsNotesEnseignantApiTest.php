@@ -21,6 +21,56 @@ class TransmissionsNotesEnseignantApiTest extends TestCase
 
     private const URL = '/api/v1/enseignant/transmissions-notes';
 
+    public function test_tableau_general_cumule_transmissions_sans_melanger_promotions(): void
+    {
+        $c = $this->contexte();
+        $seance = \App\Models\SeanceCahierTexte::create(['enseignant_id' => $c['enseignant']->id,
+            'id_niveau' => $c['promotion']->id_niveau, 'id_matiere' => $c['matiere']->id,
+            'date_prevue' => '2026-09-14', 'heure_debut_prevue' => '08:00:00', 'statut' => 'realisee']);
+        $c['feuille']->update(['id_seance' => $seance->id]);
+        $etudiant = \App\Models\Etudiant::create(['matricule' => 'GENERAL', 'nom' => 'KONE', 'prenoms' => 'Test', 'date_inscription' => '2026-09-01']);
+        $autreEtudiant = \App\Models\Etudiant::create(['matricule' => 'GENERAL2', 'nom' => 'YAO', 'prenoms' => 'Test', 'date_inscription' => '2026-09-01']);
+        $c['feuille']->notes()->create(['id_etudiant' => $etudiant->id, 'evaluation' => 'dev1', 'note' => 12]);
+        $c['feuille']->notes()->create(['id_etudiant' => $autreEtudiant->id, 'evaluation' => 'dev1', 'note' => 0]);
+        $url = self::URL.'/tableau-general?id_matiere='.$c['matiere']->id;
+        $premier = $this->getJson($url)->assertOk()->assertJsonCount(1, 'tableaux')
+            ->assertJsonCount(1, 'tableaux.0.colonnes')->assertJsonPath('tableaux.0.lignes.0.moyenne', 12);
+        $cle = $premier->json('tableaux.0.colonnes.0.cle');
+        $nouvelle = $c['feuille']->replicate();
+        $seance2 = $seance->replicate();
+        $seance2->date_prevue = '2026-09-15';
+        $seance2->save();
+        $nouvelle->fill(['statut' => 'brouillon', 'id_seance' => $seance2->id,
+            'id_matiere' => null, 'id_cours' => $c['cours']->id])->save();
+        $nouvelle->notes()->create(['id_etudiant' => $etudiant->id, 'evaluation' => 'dev2', 'note' => 18]);
+        $this->getJson($url)->assertJsonCount(1, 'tableaux.0.colonnes');
+        $nouvelle->update(['statut' => 'transmise', 'date_transmission' => now()]);
+        $response = $this->getJson($url)->assertOk()->assertJsonCount(2, 'tableaux.0.colonnes')
+            ->assertJsonPath('tableaux.0.colonnes.0.cle', $cle)
+            ->assertJsonPath('tableaux.0.colonnes.1.id_seance', $seance2->id)
+            ->assertJsonPath('tableaux.0.colonnes.1.date_seance', '2026-09-15')
+            ->assertJsonPath('tableaux.0.lignes.0.moyenne', 15)
+            ->assertJsonPath('tableaux.0.lignes.1.moyenne', 0);
+        $this->assertSame([0, null], array_values($response->json('tableaux.0.lignes.1.notes')));
+        $etrangere = $c['feuille']->replicate();
+        $etrangere->transmise_par = $c['autre']->id;
+        $etrangere->id_seance = null;
+        $etrangere->save();
+        $etrangere->notes()->create(['id_etudiant' => $etudiant->id, 'note' => 20]);
+        $this->getJson($url)->assertJsonCount(2, 'tableaux.0.colonnes');
+        $promotion = Promotion::create(['num_promotion' => 2, 'annee_entree' => 2026, 'id_niveau' => $c['promotion']->id_niveau]);
+        $separee = $c['feuille']->replicate();
+        $separee->id_promotion = $promotion->id;
+        $separee->save();
+        $separee->notes()->create(['id_etudiant' => $etudiant->id, 'note' => 6]);
+        $this->getJson($url)->assertJsonCount(2, 'tableaux');
+        $this->getJson($url.'&id_promotion='.$promotion->id)->assertJsonCount(1, 'tableaux')
+            ->assertJsonPath('tableaux.0.lignes.0.moyenne', 6);
+        $this->getJson(self::URL.'/tableau-general?id_matiere=invalide')->assertUnprocessable();
+        Sanctum::actingAs($c['admin']);
+        $this->getJson($url)->assertForbidden();
+    }
+
     public function test_tableau_et_feuilles_de_mes_notes_transmises_uniquement(): void
     {
         $c = $this->contexte();

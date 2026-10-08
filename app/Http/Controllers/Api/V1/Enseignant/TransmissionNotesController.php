@@ -91,6 +91,65 @@ class TransmissionNotesController extends Controller
         })->values());
     }
 
+    public function tableauGeneral(Request $request): JsonResponse
+    {
+        [$query] = $this->filtrer($request);
+        $feuilles = $query->with(['notes' => fn ($q) => $q->orderBy('id'),
+            'notes.etudiant:id,matricule,nom,prenoms', 'seance'])->get();
+
+        // Une promotion et une annee distinctes ne partagent jamais le meme tableau.
+        $groupes = $feuilles->groupBy(fn ($f) => implode(':', [
+            $f->id_matiere ?? $f->cours?->module?->id_matiere,
+            $f->id_promotion, $f->id_annee_academique,
+        ]));
+
+        return response()->json(['tableaux' => $groupes->map(function ($groupe) {
+            $premiere = $groupe->first();
+            $colonnes = [];
+            $lignes = [];
+            $ordonnees = $groupe->sortBy(fn ($f) => [
+                $f->seance?->date_effective?->format('Y-m-d')
+                    ?? $f->seance?->date_prevue?->format('Y-m-d') ?? '', $f->id,
+            ]);
+            foreach ($ordonnees as $feuille) {
+                foreach ($feuille->notes->groupBy('evaluation') as $evaluation => $notes) {
+                    $cle = 'feuille_'.$feuille->id.'_'.md5((string) $evaluation);
+                    $colonnes[] = [
+                        'cle' => $cle, 'libelle' => 'Note '.(count($colonnes) + 1).' / '.$evaluation,
+                        'id_feuille_notes' => $feuille->id, 'id_seance' => $feuille->id_seance,
+                        'id_cours' => $feuille->id_cours, 'evaluation' => $evaluation,
+                        'date_seance' => $feuille->seance?->date_effective?->format('Y-m-d')
+                            ?? $feuille->seance?->date_prevue?->format('Y-m-d'),
+                    ];
+                    foreach ($notes as $note) {
+                        $id = $note->id_etudiant;
+                        $lignes[$id] ??= ['id_etudiant' => $id,
+                            'etudiant' => $note->etudiant?->only(['id', 'matricule', 'nom', 'prenoms']), 'notes' => []];
+                        $lignes[$id]['notes'][$cle] = $note->note === null ? null : (float) $note->note;
+                    }
+                }
+            }
+            $vides = array_fill_keys(array_column($colonnes, 'cle'), null);
+            $lignes = collect($lignes)->map(function ($ligne) use ($vides) {
+                $ligne['notes'] = array_replace($vides, $ligne['notes']);
+                $valeurs = array_filter($ligne['notes'], fn ($note) => $note !== null);
+                $ligne['moyenne'] = count($valeurs) ? round(array_sum($valeurs) / count($valeurs), 2) : null;
+
+                return $ligne;
+            })->sortBy(fn ($ligne) => [$ligne['etudiant']['nom'] ?? '',
+                $ligne['etudiant']['prenoms'] ?? '', $ligne['id_etudiant']])->values();
+
+            return [
+                'id_matiere' => $premiere->id_matiere ?? $premiere->cours?->module?->id_matiere,
+                'matiere' => ($premiere->matiere ?? $premiere->cours?->module?->matiere)?->only(['id', 'code', 'libelle']),
+                'id_promotion' => $premiere->id_promotion, 'promotion' => $premiere->promotion,
+                'id_annee_academique' => $premiere->id_annee_academique,
+                'annee_academique' => $premiere->anneeAcademique?->only(['id', 'libelle']),
+                'colonnes' => $colonnes, 'lignes' => $lignes,
+            ];
+        })->values()]);
+    }
+
     public function show(Request $request, int $id): JsonResponse
     {
         $feuille = $this->feuilles($request)->findOrFail($id);

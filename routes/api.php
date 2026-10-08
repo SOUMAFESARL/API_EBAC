@@ -272,6 +272,7 @@ Route::prefix('v1/enseignant/transmissions-notes')
     ->group(function () {
         Route::get('/', [TransmissionNotesController::class, 'index'])->name('index');
         Route::get('tableau', [TransmissionNotesController::class, 'tableau'])->name('tableau');
+        Route::get('tableau-general', [TransmissionNotesController::class, 'tableauGeneral'])->name('tableau-general');
         Route::get('feuilles', [TransmissionNotesController::class, 'feuillesNotes'])->name('feuilles');
         Route::get('{id}', [TransmissionNotesController::class, 'show'])->whereNumber('id')->name('show');
     });
