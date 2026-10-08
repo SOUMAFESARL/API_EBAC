@@ -15,7 +15,7 @@ class CorrectionNoteController extends Controller
 {
     protected function corrections(Request $request)
     {
-        return CorrectionNote::query();
+        return CorrectionNote::query()->with('note.feuilleNotes');
     }
 
     protected function verifierAccesNote(Request $request, NoteCours $note): void {}
@@ -45,6 +45,7 @@ class CorrectionNoteController extends Controller
     {
         $data = $request->validate([
             'id_note' => ['required', 'integer'],
+            'id_seance' => ['sometimes', 'integer', 'exists:seances_cahier_texte,id'],
             'note_proposee' => ['required', 'numeric', 'between:0,20', 'decimal:0,2'],
             'motif' => ['required', 'string', 'max:5000'],
         ]);
@@ -57,7 +58,11 @@ class CorrectionNoteController extends Controller
     {
         $note = NoteCours::whereKey($data['id_note'])->lockForUpdate()->firstOrFail();
         $this->verifierAccesNote($request, $note);
-        $this->verifierFeuille($note);
+        $feuille = $this->verifierFeuille($note);
+        if (isset($data['id_seance']) && (int) $data['id_seance'] !== $feuille->id_seance) {
+            throw ValidationException::withMessages(['id_seance' => 'La note ne correspond pas a la seance indiquee.']);
+        }
+        unset($data['id_seance']);
         if (CorrectionNote::where('id_note', $note->id)->whereIn('statut', ['en_attente', 'autorisee'])->exists()) {
             throw ValidationException::withMessages(['id_note' => 'Une correction est déjà en cours pour cette note.']);
         }

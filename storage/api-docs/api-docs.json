@@ -6192,7 +6192,7 @@
                     "Corrections des notes"
                 ],
                 "summary": "Demander la modification d une ou plusieurs notes transmises",
-                "description": "Format unitaire : id_note, note_proposee, motif. Format groupe : motif commun et notes contenant jusqu a 100 couples id_note/note_proposee distincts. Les formats ne peuvent pas etre melanges. id_note est fourni par la feuille de notes. Chaque note doit etre accessible a l enseignant et transmise. Si une ligne echoue, aucune demande ni trace n est creee. Les notes restent inchangees. Chaque correction retournee doit etre autorisee par l administration puis appliquee par l enseignant.",
+                "description": "Format unitaire : id_note, id_seance facultatif, note_proposee, motif. Format groupe : id_seance facultatif commun a toutes les notes. Chaque correction retournee contient id_seance, null pour une ancienne feuille sans seance. Format groupe : motif commun et notes contenant jusqu a 100 couples id_note/note_proposee distincts. Les formats ne peuvent pas etre melanges. id_note est fourni par la feuille de notes. Chaque note doit etre accessible a l enseignant et transmise. Si une ligne echoue, aucune demande ni trace n est creee. Les notes restent inchangees. Chaque correction retournee doit etre autorisee par l administration puis appliquee par l enseignant.",
                 "operationId": "4ae295e38a64eefb142c9ef2ffb37e6a",
                 "requestBody": {
                     "required": true,
@@ -9096,6 +9096,10 @@
                         "schema": {
                             "type": "string",
                             "enum": [
+                                "a_verifier",
+                                "en_attente",
+                                "validee",
+                                "rejetee",
                                 "transmise",
                                 "validee_secretariat",
                                 "rejetee_secretariat",
@@ -9509,7 +9513,7 @@
                     "Notes enseignant"
                 ],
                 "summary": "Toutes mes notes transmises dans un tableau",
-                "description": "Tableau directement a la racine. Un groupe par feuille de seance avec notes[] (id, id_etudiant, evaluation, note, etudiant). Le contexte est present une seule fois : id_feuille_notes, id_seance, id_cours, id_matiere, id_promotion, id_annee_academique, statut, date_transmission, cours, matiere et promotion. Sans filtre : toutes les notes transmises par l enseignant connecte. Filtres combinables. Pas de pagination. Les brouillons et les feuilles des autres enseignants sont exclus. [] si aucune feuille transmise.",
+                "description": "Tableau directement a la racine. Un groupe par feuille de seance avec notes[] (id, id_etudiant, evaluation, note, etudiant). Le contexte est present une seule fois : id_feuille_notes, id_seance, id_cours, id_matiere, id_promotion, id_annee_academique, statut (toujours transmise), statut_workflow, date_transmission, cours, matiere et promotion. Sans filtre : toutes les notes transmises par l enseignant connecte. Filtres combinables. Pas de pagination. Les brouillons et les feuilles des autres enseignants sont exclus. [] si aucune feuille transmise.",
                 "operationId": "tableauToutesMesNotesTransmises",
                 "parameters": [
                     {
@@ -9550,6 +9554,7 @@
                     {
                         "name": "statut",
                         "in": "query",
+                        "description": "transmise inclut toutes les etapes du circuit. Les autres valeurs filtrent le statut interne.",
                         "schema": {
                             "type": "string",
                             "enum": [
@@ -9602,6 +9607,12 @@
                                                         "type": "integer"
                                                     },
                                                     "statut": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "transmise"
+                                                        ]
+                                                    },
+                                                    "statut_workflow": {
                                                         "type": "string"
                                                     },
                                                     "date_transmission": {
@@ -9694,6 +9705,7 @@
                     {
                         "name": "statut",
                         "in": "query",
+                        "description": "transmise inclut toutes les etapes du circuit. Les autres valeurs filtrent le statut interne.",
                         "schema": {
                             "type": "string",
                             "enum": [
@@ -11835,6 +11847,7 @@
                     {
                         "name": "statut",
                         "in": "query",
+                        "description": "transmise inclut toutes les feuilles transmises, quelle que soit leur etape ; les statuts internes filtrent une etape precise.",
                         "schema": {
                             "type": "string",
                             "enum": [
@@ -12381,6 +12394,11 @@
                     "motif"
                 ],
                 "properties": {
+                    "id_seance": {
+                        "description": "Facultatif. Doit correspondre a la seance de toutes les notes demandees.",
+                        "type": "integer",
+                        "example": 1
+                    },
                     "id_note": {
                         "description": "Identifiant de la note, exposé dans feuille_notes.etudiants[].id_note, pour une feuille par matière comme par cours. Pour une matière : GET /enseignant/notes/feuille avec id_matiere, id_promotion et id_annee_academique. Aucun id_cours ni id_matiere à fournir dans la demande de correction : id_note identifie déjà le contexte. La feuille doit être transmise.",
                         "type": "integer",
@@ -12407,6 +12425,11 @@
                     "notes"
                 ],
                 "properties": {
+                    "id_seance": {
+                        "description": "Facultatif. Doit correspondre a la seance de toutes les notes demandees.",
+                        "type": "integer",
+                        "example": 1
+                    },
                     "motif": {
                         "type": "string",
                         "example": "Erreur de report des notes",
@@ -13891,13 +13914,12 @@
                         "example": "transmise",
                         "enum": [
                             "non_transmise",
-                            "transmise",
-                            "validee_secretariat",
-                            "rejetee_secretariat",
-                            "transmise_direction",
-                            "validee_direction",
-                            "rejetee_direction"
+                            "transmise"
                         ]
+                    },
+                    "statut_workflow": {
+                        "description": "Statut interne du circuit de validation ; utiliser saisie_ouverte pour savoir si les notes peuvent etre modifiees.",
+                        "type": "string"
                     },
                     "date_transmission": {
                         "type": "string",
@@ -14126,6 +14148,22 @@
                         "nullable": true
                     },
                     "statut": {
+                        "description": "Statut selon le role : a_verifier au secretariat ; en_attente, validee ou rejetee a la direction. ADMIN conserve le statut interne.",
+                        "type": "string",
+                        "enum": [
+                            "a_verifier",
+                            "en_attente",
+                            "validee",
+                            "rejetee",
+                            "transmise",
+                            "validee_secretariat",
+                            "rejetee_secretariat",
+                            "transmise_direction",
+                            "validee_direction",
+                            "rejetee_direction"
+                        ]
+                    },
+                    "statut_workflow": {
                         "type": "string",
                         "example": "transmise",
                         "enum": [
@@ -15280,6 +15318,13 @@
                         "type": "integer"
                     },
                     "statut": {
+                        "description": "Reste transmise chez l enseignant ; statut_workflow indique les decisions administratives.",
+                        "type": "string",
+                        "enum": [
+                            "transmise"
+                        ]
+                    },
+                    "statut_workflow": {
                         "type": "string",
                         "enum": [
                             "transmise",

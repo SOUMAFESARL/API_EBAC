@@ -12,6 +12,11 @@ class NoteCours extends Model
 
     protected $fillable = ['id_etudiant', 'note', 'evaluation'];
 
+    public function feuilleNotes(): BelongsTo
+    {
+        return $this->belongsTo(FeuilleNotes::class, 'id_feuille_notes');
+    }
+
     public function corrections(): HasMany
     {
         return $this->hasMany(CorrectionNote::class, 'id_note');

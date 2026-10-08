@@ -225,6 +225,32 @@ class NotesEnseignantApiTest extends TestCase
         $this->postJson($base.'/'.$absence->id.'/autoriser', ['motif' => 'Test'])->assertForbidden();
     }
 
+    public function test_demande_correction_verifie_et_retourne_la_seance(): void
+    {
+        $data = $this->contexte();
+        $this->presences($data);
+        $this->postJson(str_replace('?', '/transmettre?', $this->url($data)), [
+            'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12]],
+        ])->assertOk();
+        $note = NoteCours::firstOrFail();
+        $autre = $data['seance']->replicate();
+        $autre->date_prevue = '2026-09-15';
+        $autre->save();
+        $base = '/api/v1/enseignant/corrections-notes';
+        $payload = ['id_note' => $note->id, 'note_proposee' => 16,
+            'motif' => 'Erreur de saisie', 'id_seance' => $data['seance']->id];
+        $this->postJson($base, [...$payload, 'id_seance' => 999999])->assertUnprocessable()
+            ->assertJsonValidationErrors('id_seance');
+        $this->postJson($base, [...$payload, 'id_seance' => $autre->id])->assertUnprocessable()
+            ->assertJsonValidationErrors('id_seance');
+        $this->assertDatabaseCount('corrections_notes', 0);
+        $id = $this->postJson($base, $payload)->assertCreated()
+            ->assertJsonPath('correction.id_seance', $data['seance']->id)->json('correction.id');
+        $this->getJson($base.'/'.$id)->assertOk()
+            ->assertJsonPath('correction.id_seance', $data['seance']->id);
+        $this->getJson($base)->assertOk()->assertJsonPath('data.0.id_seance', $data['seance']->id);
+    }
+
     public function test_demande_groupee_atomique_et_validation_des_notes(): void
     {
         $data = $this->contexte();
@@ -240,7 +266,7 @@ class NotesEnseignantApiTest extends TestCase
         ])->assertOk();
         $notes = NoteCours::orderBy('id')->get();
         $base = '/api/v1/enseignant/corrections-notes';
-        $payload = ['motif' => 'Erreur de report des notes', 'notes' => [
+        $payload = ['id_seance' => $data['seance']->id, 'motif' => 'Erreur de report des notes', 'notes' => [
             ['id_note' => $notes[0]->id, 'note_proposee' => 15],
             ['id_note' => $notes[1]->id, 'note_proposee' => 16],
         ]];
@@ -263,8 +289,19 @@ class NotesEnseignantApiTest extends TestCase
             ['id_note' => 999999, 'note_proposee' => 14],
         ]])->assertNotFound();
         $this->assertDatabaseCount('corrections_notes', 0);
+        $autre = $data['seance']->replicate();
+        $autre->date_prevue = '2026-09-15';
+        $autre->save();
+        $feuille = $notes[1]->feuilleNotes;
+        $feuille->update(['id_seance' => $autre->id]);
+        $this->postJson($base, $payload)->assertUnprocessable()->assertJsonValidationErrors('id_seance');
+        $this->assertDatabaseCount('corrections_notes', 0);
+        $this->assertDatabaseCount('traces_corrections_notes', 0);
+        $feuille->update(['id_seance' => $data['seance']->id]);
         $response = $this->postJson($base, $payload)->assertCreated()->assertJsonPath('nombre_demandes', 2)
-            ->assertJsonCount(2, 'corrections')->assertJsonPath('corrections.0.statut', 'en_attente');
+            ->assertJsonCount(2, 'corrections')->assertJsonPath('corrections.0.statut', 'en_attente')
+            ->assertJsonPath('corrections.0.id_seance', $data['seance']->id)
+            ->assertJsonPath('corrections.1.id_seance', $data['seance']->id);
         $this->assertEquals(12, $notes[0]->fresh()->note);
         $this->assertEquals(10, $notes[1]->fresh()->note);
         $this->postJson($base, $payload)->assertUnprocessable();
