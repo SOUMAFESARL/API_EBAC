@@ -19,7 +19,7 @@ class CorrectionNoteController extends \App\Http\Controllers\Api\V1\Administrati
         }
         $data = $request->validate([
             'id_note' => ['prohibited'],
-            'id_seance' => ['sometimes', 'integer', 'exists:seances_cahier_texte,id'],
+            'id_seance' => ['required', 'integer', 'exists:seances_cahier_texte,id'],
             'note_proposee' => ['prohibited'],
             'motif' => ['required', 'string', 'max:5000'],
             'notes' => ['required', 'array', 'min:1', 'max:100'],
@@ -33,7 +33,7 @@ class CorrectionNoteController extends \App\Http\Controllers\Api\V1\Administrati
 
             return $notes->map(fn ($note) => $this->creerDemande($request, [
                 ...$note, 'motif' => $data['motif'],
-                ...(isset($data['id_seance']) ? ['id_seance' => $data['id_seance']] : []),
+                'id_seance' => $data['id_seance'],
             ]))->values();
         });
 

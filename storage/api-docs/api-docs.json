@@ -6192,7 +6192,7 @@
                     "Corrections des notes"
                 ],
                 "summary": "Demander la modification d une ou plusieurs notes transmises",
-                "description": "Format unitaire : id_note, id_seance facultatif, note_proposee, motif. Format groupe : id_seance facultatif commun a toutes les notes. Chaque correction retournee contient id_seance, null pour une ancienne feuille sans seance. Format groupe : motif commun et notes contenant jusqu a 100 couples id_note/note_proposee distincts. Les formats ne peuvent pas etre melanges. id_note est fourni par la feuille de notes. Chaque note doit etre accessible a l enseignant et transmise. Si une ligne echoue, aucune demande ni trace n est creee. Les notes restent inchangees. Chaque correction retournee doit etre autorisee par l administration puis appliquee par l enseignant.",
+                "description": "Format unitaire : id_note, id_seance obligatoire, note_proposee, motif. Format groupe : id_seance obligatoire commun a toutes les notes. Chaque correction retournee contient id_seance, null pour une ancienne feuille sans seance. Format groupe : motif commun et notes contenant jusqu a 100 couples id_note/note_proposee distincts. Les formats ne peuvent pas etre melanges. id_note est fourni par la feuille de notes. Chaque note doit etre accessible a l enseignant et transmise. Si une ligne echoue, aucune demande ni trace n est creee. Les notes restent inchangees. Chaque correction retournee doit etre autorisee par l administration puis appliquee par l enseignant.",
                 "operationId": "4ae295e38a64eefb142c9ef2ffb37e6a",
                 "requestBody": {
                     "required": true,
@@ -9059,7 +9059,7 @@
                     "Administration des notes"
                 ],
                 "summary": "Consulter les feuilles de notes transmises par les enseignants",
-                "description": "Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Circuit : transmise → validee_secretariat → transmise_direction → validee_direction. Un refus du secretariat (rejetee_secretariat) rouvre la saisie enseignant et exige une nouvelle transmission. Un rejet de la direction (rejetee_direction) exige un reexamen du secretariat, qui peut valider a nouveau ou renvoyer a l enseignant. Les brouillons sont exclus. Ces validations ne publient pas les notes aux etudiants.",
+                "description": "Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Circuit : transmise → validee_secretariat → transmise_direction → validee_direction. Un refus du secretariat (rejetee_secretariat) rouvre la saisie enseignant et exige une nouvelle transmission. Un rejet de la direction (rejetee_direction) exige un reexamen du secretariat, qui peut transmettre a nouveau ou renvoyer a l enseignant. Les brouillons sont exclus. Ces validations ne publient pas les notes aux etudiants.",
                 "operationId": "listerNotesTransmisesAdministration",
                 "parameters": [
                     {
@@ -9262,7 +9262,7 @@
                 "tags": [
                     "Administration des notes"
                 ],
-                "summary": "Valider une feuille au secretariat academique",
+                "summary": "Valider une feuille au secretariat academique (ancien circuit)",
                 "description": "ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Accepte les statuts transmise et rejetee_direction et passe a validee_secretariat. Une correction en cours bloque la transition.",
                 "operationId": "validerNotesSecretariat",
                 "parameters": [
@@ -9292,6 +9292,7 @@
                         "description": "Transition impossible ou correction en cours."
                     }
                 },
+                "deprecated": true,
                 "security": [
                     {
                         "sanctum": []
@@ -9366,8 +9367,8 @@
                 "tags": [
                     "Administration des notes"
                 ],
-                "summary": "Transmettre une feuille validee par le secretariat a la direction",
-                "description": "ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Seul le statut validee_secretariat permet la transmission. Passe a transmise_direction. Les notes restent verrouillees pour l enseignant.",
+                "summary": "Transmettre une feuille verifiee par le secretariat a la direction",
+                "description": "ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Apres verification, transmettre directement depuis transmise ou rejetee_direction. Accepte aussi validee_secretariat pour les anciennes feuilles. Aucune validation intermediaire requise. Passe a transmise_direction. Les notes restent verrouillees pour l enseignant.",
                 "operationId": "transmettreNotesDirection",
                 "parameters": [
                     {
@@ -9393,7 +9394,7 @@
                         "description": "Feuille introuvable."
                     },
                     "422": {
-                        "description": "Validation du secretariat requise ou correction en cours."
+                        "description": "Feuille non transmissible ou correction en cours."
                     }
                 },
                 "security": [
@@ -12389,13 +12390,14 @@
             },
             "DemandeCorrectionNote": {
                 "required": [
+                    "id_seance",
                     "id_note",
                     "note_proposee",
                     "motif"
                 ],
                 "properties": {
                     "id_seance": {
-                        "description": "Facultatif. Doit correspondre a la seance de toutes les notes demandees.",
+                        "description": "Obligatoire. Doit correspondre a la seance de toutes les notes demandees.",
                         "type": "integer",
                         "example": 1
                     },
@@ -12421,12 +12423,13 @@
             },
             "DemandesCorrectionsNotesGroupees": {
                 "required": [
+                    "id_seance",
                     "motif",
                     "notes"
                 ],
                 "properties": {
                     "id_seance": {
-                        "description": "Facultatif. Doit correspondre a la seance de toutes les notes demandees.",
+                        "description": "Obligatoire. Doit correspondre a la seance de toutes les notes demandees.",
                         "type": "integer",
                         "example": 1
                     },

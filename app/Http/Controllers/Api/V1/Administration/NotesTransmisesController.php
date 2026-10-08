@@ -103,7 +103,7 @@ class NotesTransmisesController extends Controller
 
     public function transmettreDirection(Request $request, int $id): JsonResponse
     {
-        return $this->transition($request, $id, ['validee_secretariat'], 'transmise_direction', 'transmission_direction');
+        return $this->transition($request, $id, ['transmise', 'validee_secretariat', 'rejetee_direction'], 'transmise_direction', 'transmission_direction');
     }
 
     public function validerDirection(Request $request, int $id): JsonResponse

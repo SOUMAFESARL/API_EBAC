@@ -45,7 +45,7 @@ class CorrectionNoteController extends Controller
     {
         $data = $request->validate([
             'id_note' => ['required', 'integer'],
-            'id_seance' => ['sometimes', 'integer', 'exists:seances_cahier_texte,id'],
+            'id_seance' => ['required', 'integer', 'exists:seances_cahier_texte,id'],
             'note_proposee' => ['required', 'numeric', 'between:0,20', 'decimal:0,2'],
             'motif' => ['required', 'string', 'max:5000'],
         ]);
@@ -59,7 +59,7 @@ class CorrectionNoteController extends Controller
         $note = NoteCours::whereKey($data['id_note'])->lockForUpdate()->firstOrFail();
         $this->verifierAccesNote($request, $note);
         $feuille = $this->verifierFeuille($note);
-        if (isset($data['id_seance']) && (int) $data['id_seance'] !== $feuille->id_seance) {
+        if ((int) $data['id_seance'] !== $feuille->id_seance) {
             throw ValidationException::withMessages(['id_seance' => 'La note ne correspond pas a la seance indiquee.']);
         }
         unset($data['id_seance']);

@@ -101,16 +101,13 @@ class NotesTransmisesApiTest extends TestCase
         [$users, $feuille] = $this->contexte();
         $url = $this->url($feuille);
         Sanctum::actingAs($users['SECRETAIRE_ACADEMIQUE']);
-        $this->postJson($url.'/transmettre-direction')->assertUnprocessable();
-        $this->postJson($url.'/valider-secretariat')->assertOk()->assertJsonPath('feuille_notes.statut', 'validee_secretariat');
-        $this->postJson($url.'/valider-secretariat')->assertUnprocessable();
         $this->postJson($url.'/transmettre-direction')->assertOk()->assertJsonPath('feuille_notes.statut', 'transmise_direction');
         Sanctum::actingAs($users['DIRECTION']);
         $this->postJson($url.'/valider-direction')->assertOk()->assertJsonPath('feuille_notes.statut', 'validee');
         $this->postJson($url.'/rejeter-direction', ['motif' => 'Trop tard'])->assertUnprocessable();
-        $this->getJson($url)->assertOk()->assertJsonCount(3, 'feuille_notes.historique')
+        $this->getJson($url)->assertOk()->assertJsonCount(2, 'feuille_notes.historique')
             ->assertJsonPath('feuille_notes.historique.0.id_acteur', $users['SECRETAIRE_ACADEMIQUE']->id)
-            ->assertJsonPath('feuille_notes.historique.2.id_acteur', $users['DIRECTION']->id)
+            ->assertJsonPath('feuille_notes.historique.1.id_acteur', $users['DIRECTION']->id)
             ->assertJsonPath('feuille_notes.notes.0.note', 14);
         $this->getJson('/api/v1/administration/notes-transmises?statut=validee_direction')->assertOk()->assertJsonPath('meta.total', 1);
         $this->getJson('/api/v1/administration/notes-transmises?statut=transmise')->assertOk()->assertJsonPath('meta.total', 0);
@@ -123,7 +120,6 @@ class NotesTransmisesApiTest extends TestCase
         $url = $this->url($feuille);
         Sanctum::actingAs($users['SECRETARIAT']);
         $this->postJson($url.'/rejeter-secretariat')->assertUnprocessable()->assertJsonValidationErrors('motif');
-        $this->postJson($url.'/valider-secretariat')->assertOk();
         $this->postJson($url.'/transmettre-direction')->assertOk();
         Sanctum::actingAs($users['DIRECTION']);
         foreach ([[], ['motif' => '   '], ['motif' => str_repeat('a', 5001)]] as $payload) {
@@ -131,13 +127,11 @@ class NotesTransmisesApiTest extends TestCase
         }
         $this->postJson($url.'/rejeter-direction', ['motif' => 'Verifier les notes'])->assertOk()
             ->assertJsonPath('feuille_notes.statut', 'rejetee')
-            ->assertJsonPath('feuille_notes.historique.2.motif', 'Verifier les notes');
+            ->assertJsonPath('feuille_notes.historique.1.motif', 'Verifier les notes');
         Sanctum::actingAs($users['SECRETAIRE_ACADEMIQUE']);
-        $this->postJson($url.'/transmettre-direction')->assertUnprocessable();
-        $this->postJson($url.'/valider-secretariat')->assertOk();
         $this->postJson($url.'/transmettre-direction')->assertOk();
         Sanctum::actingAs($users['DIRECTION']);
-        $this->postJson($url.'/valider-direction')->assertOk()->assertJsonCount(6, 'feuille_notes.historique');
+        $this->postJson($url.'/valider-direction')->assertOk()->assertJsonCount(4, 'feuille_notes.historique');
     }
 
     public function test_refus_secretariat_est_visible_et_ne_supprime_pas_notes(): void
@@ -149,6 +143,15 @@ class NotesTransmisesApiTest extends TestCase
         $this->getJson($this->url($feuille))->assertOk()->assertJsonPath('feuille_notes.notes.0.note', 14)
             ->assertJsonPath('feuille_notes.historique.0.motif', 'Notes incompletes');
         $this->postJson($this->url($feuille).'/valider-secretariat')->assertUnprocessable();
+    }
+
+    public function test_direction_ne_transmet_pas_les_feuilles_du_secretariat(): void
+    {
+        [$users, $feuille] = $this->contexte();
+        Sanctum::actingAs($users['DIRECTION']);
+        $this->postJson($this->url($feuille).'/transmettre-direction')->assertForbidden();
+        $feuille->update(['statut' => 'validee_secretariat']);
+        $this->postJson($this->url($feuille).'/transmettre-direction')->assertForbidden();
     }
 
     public function test_roles_et_interdiction_de_sauter_des_etapes(): void
@@ -179,13 +182,19 @@ class NotesTransmisesApiTest extends TestCase
     public function test_correction_bloque_validation_et_relance_controle_apres_application(): void
     {
         [$users, $feuille, $note] = $this->contexte();
+        $seance = \App\Models\SeanceCahierTexte::create([
+            'enseignant_id' => $users['ENSEIGNANT']->id,
+            'id_niveau' => $feuille->promotion->id_niveau, 'id_matiere' => $feuille->id_matiere,
+            'date_prevue' => '2026-09-14', 'heure_debut_prevue' => '08:00:00', 'statut' => 'realisee',
+        ]);
+        $feuille->update(['id_seance' => $seance->id]);
         Sanctum::actingAs($users['ADMIN']);
         $url = $this->url($feuille);
         $this->postJson($url.'/valider-secretariat')->assertOk();
         $this->postJson($url.'/transmettre-direction')->assertOk();
         $this->postJson($url.'/valider-direction')->assertOk();
         $response = $this->postJson('/api/v1/administration/corrections-notes', [
-            'id_note' => $note->id, 'note_proposee' => 16, 'motif' => 'Erreur de saisie',
+            'id_seance' => $seance->id, 'id_note' => $note->id, 'note_proposee' => 16, 'motif' => 'Erreur de saisie',
         ])->assertCreated();
         $correctionUrl = '/api/v1/administration/corrections-notes/'.$response->json('correction.id');
         $this->postJson($correctionUrl.'/autoriser')->assertOk();
@@ -193,7 +202,7 @@ class NotesTransmisesApiTest extends TestCase
         $this->assertDatabaseHas('feuilles_notes', ['id' => $feuille->id, 'statut' => 'transmise']);
         $this->assertDatabaseHas('notes_cours', ['id' => $note->id, 'note' => 16]);
         $response = $this->postJson('/api/v1/administration/corrections-notes', [
-            'id_note' => $note->id, 'note_proposee' => 17, 'motif' => 'Deuxieme verification',
+            'id_seance' => $seance->id, 'id_note' => $note->id, 'note_proposee' => 17, 'motif' => 'Deuxieme verification',
         ])->assertCreated();
         $this->postJson($url.'/valider-secretariat')->assertUnprocessable()->assertJsonValidationErrors('notes');
         $this->postJson('/api/v1/administration/corrections-notes/'.$response->json('correction.id').'/rejeter', ['motif' => 'Non justifie'])->assertOk();

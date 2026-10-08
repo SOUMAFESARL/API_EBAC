@@ -239,6 +239,11 @@ class NotesEnseignantApiTest extends TestCase
         $base = '/api/v1/enseignant/corrections-notes';
         $payload = ['id_note' => $note->id, 'note_proposee' => 16,
             'motif' => 'Erreur de saisie', 'id_seance' => $data['seance']->id];
+        $sansSeance = $payload;
+        unset($sansSeance['id_seance']);
+        foreach ([$sansSeance, [...$payload, 'id_seance' => null]] as $invalide) {
+            $this->postJson($base, $invalide)->assertUnprocessable()->assertJsonValidationErrors('id_seance');
+        }
         $this->postJson($base, [...$payload, 'id_seance' => 999999])->assertUnprocessable()
             ->assertJsonValidationErrors('id_seance');
         $this->postJson($base, [...$payload, 'id_seance' => $autre->id])->assertUnprocessable()
@@ -270,6 +275,9 @@ class NotesEnseignantApiTest extends TestCase
             ['id_note' => $notes[0]->id, 'note_proposee' => 15],
             ['id_note' => $notes[1]->id, 'note_proposee' => 16],
         ]];
+        $sansSeance = $payload;
+        unset($sansSeance['id_seance']);
+        $this->postJson($base, $sansSeance)->assertUnprocessable()->assertJsonValidationErrors('id_seance');
         $this->postJson($base, [...$payload, 'notes' => []])->assertUnprocessable();
         $this->postJson($base, [...$payload, 'motif' => ' '])->assertUnprocessable();
         $this->postJson($base, [...$payload, 'id_note' => $notes[0]->id])->assertUnprocessable()
@@ -328,7 +336,7 @@ class NotesEnseignantApiTest extends TestCase
         ])->assertOk();
         $note = NoteCours::firstOrFail();
         $base = '/api/v1/enseignant/corrections-notes';
-        $id = $this->postJson($base, ['id_note' => $note->id, 'note_proposee' => 16, 'motif' => 'Erreur'])->assertCreated()->json('correction.id');
+        $id = $this->postJson($base, ['id_seance' => $data['seance']->id, 'id_note' => $note->id, 'note_proposee' => 16, 'motif' => 'Erreur'])->assertCreated()->json('correction.id');
         Sanctum::actingAs($data['admin']);
         $this->postJson('/api/v1/administration/corrections-notes/'.$id.'/autoriser')->assertOk();
         Sanctum::actingAs($data['enseignant']);
@@ -351,7 +359,7 @@ class NotesEnseignantApiTest extends TestCase
         $this->putJson($url, ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12]]])->assertOk();
         $note = NoteCours::firstOrFail();
         $base = '/api/v1/enseignant/corrections-notes';
-        $payload = ['id_note' => $note->id, 'note_proposee' => 16, 'motif' => 'Erreur sur la copie'];
+        $payload = ['id_seance' => $data['seance']->id, 'id_note' => $note->id, 'note_proposee' => 16, 'motif' => 'Erreur sur la copie'];
         FeuilleNotes::firstOrFail()->update(['statut' => 'brouillon']);
         $this->postJson($base, $payload)->assertUnprocessable();
         $this->postJson(str_replace('?', '/transmettre?', $url))->assertOk();
@@ -396,7 +404,7 @@ class NotesEnseignantApiTest extends TestCase
         ])->assertOk();
         $note = NoteCours::firstOrFail();
         $base = '/api/v1/enseignant/corrections-notes';
-        $id = $this->postJson($base, ['id_note' => $note->id, 'note_proposee' => 14, 'motif' => 'Erreur de saisie'])->assertCreated()->json('correction.id');
+        $id = $this->postJson($base, ['id_seance' => $data['seance']->id, 'id_note' => $note->id, 'note_proposee' => 14, 'motif' => 'Erreur de saisie'])->assertCreated()->json('correction.id');
         $this->postJson('/api/v1/administration/corrections-notes/'.$id.'/autoriser')->assertForbidden();
         Sanctum::actingAs($data['admin']);
         $this->postJson('/api/v1/administration/corrections-notes/'.$id.'/autoriser')->assertOk();
@@ -687,7 +695,7 @@ class NotesEnseignantApiTest extends TestCase
         ])->assertOk();
         $note = NoteCours::firstOrFail();
         $base = '/api/v1/administration/corrections-notes';
-        $payload = ['id_note' => $note->id, 'note_proposee' => 16.5, 'motif' => 'Erreur de saisie'];
+        $payload = ['id_seance' => $data['seance']->id, 'id_note' => $note->id, 'note_proposee' => 16.5, 'motif' => 'Erreur de saisie'];
         $this->postJson($base, $payload)->assertForbidden();
         Sanctum::actingAs($data['admin']);
         $id = $this->postJson($base, $payload)->assertCreated()->json('correction.id');
@@ -718,7 +726,7 @@ class NotesEnseignantApiTest extends TestCase
         ])->assertOk();
         $idNote = $reponse->json('feuille_notes.etudiants.0.id_note');
         $base = '/api/v1/administration/corrections-notes';
-        $payload = ['id_note' => $idNote, 'note_proposee' => 16.5, 'motif' => 'Erreur de saisie par matière'];
+        $payload = ['id_seance' => $data['seance']->id, 'id_note' => $idNote, 'note_proposee' => 16.5, 'motif' => 'Erreur de saisie par matière'];
         $this->postJson($base, $payload)->assertForbidden();
         Sanctum::actingAs($data['admin']);
         FeuilleNotes::firstOrFail()->update(['statut' => 'brouillon']);
@@ -748,7 +756,7 @@ class NotesEnseignantApiTest extends TestCase
         $this->putJson($this->url($data), ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12]]])->assertOk();
         $note = NoteCours::firstOrFail();
         $base = '/api/v1/administration/corrections-notes';
-        $payload = ['id_note' => $note->id, 'note_proposee' => 16, 'motif' => 'Erreur'];
+        $payload = ['id_seance' => $data['seance']->id, 'id_note' => $note->id, 'note_proposee' => 16, 'motif' => 'Erreur'];
         Sanctum::actingAs($data['admin']);
         FeuilleNotes::firstOrFail()->update(['statut' => 'brouillon']);
         $this->postJson($base, $payload)->assertUnprocessable();

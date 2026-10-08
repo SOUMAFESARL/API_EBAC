@@ -4,8 +4,8 @@ namespace App\OpenApi;
 
 use OpenApi\Attributes as OA;
 
-#[OA\Schema(schema: 'DemandesCorrectionsNotesGroupees', type: 'object', required: ['motif', 'notes'], properties: [
-    new OA\Property(property: 'id_seance', type: 'integer', description: 'Facultatif. Doit correspondre a la seance de toutes les notes demandees.', example: 1),
+#[OA\Schema(schema: 'DemandesCorrectionsNotesGroupees', type: 'object', required: ['id_seance', 'motif', 'notes'], properties: [
+    new OA\Property(property: 'id_seance', type: 'integer', description: 'Obligatoire. Doit correspondre a la seance de toutes les notes demandees.', example: 1),
     new OA\Property(property: 'motif', type: 'string', maxLength: 5000, example: 'Erreur de report des notes'),
     new OA\Property(property: 'notes', type: 'array', minItems: 1, maxItems: 100,
         items: new OA\Items(type: 'object', required: ['id_note', 'note_proposee'], properties: [
@@ -22,7 +22,7 @@ use OpenApi\Attributes as OA;
     ], responses: [new OA\Response(response: 200, description: 'Demandes du seul enseignant connecte, pagination Laravel.'),
         new OA\Response(response: 401, description: 'Authentification requise.'), new OA\Response(response: 403, description: 'Role ENSEIGNANT requis.')])]
 #[OA\Post(path: '/enseignant/corrections-notes', summary: 'Demander la modification d une ou plusieurs notes transmises',
-    description: 'Format unitaire : id_note, id_seance facultatif, note_proposee, motif. Format groupe : id_seance facultatif commun a toutes les notes. Chaque correction retournee contient id_seance, null pour une ancienne feuille sans seance. Format groupe : motif commun et notes contenant jusqu a 100 couples id_note/note_proposee distincts. Les formats ne peuvent pas etre melanges. id_note est fourni par la feuille de notes. Chaque note doit etre accessible a l enseignant et transmise. Si une ligne echoue, aucune demande ni trace n est creee. Les notes restent inchangees. Chaque correction retournee doit etre autorisee par l administration puis appliquee par l enseignant.',
+    description: 'Format unitaire : id_note, id_seance obligatoire, note_proposee, motif. Format groupe : id_seance obligatoire commun a toutes les notes. Chaque correction retournee contient id_seance, null pour une ancienne feuille sans seance. Format groupe : motif commun et notes contenant jusqu a 100 couples id_note/note_proposee distincts. Les formats ne peuvent pas etre melanges. id_note est fourni par la feuille de notes. Chaque note doit etre accessible a l enseignant et transmise. Si une ligne echoue, aucune demande ni trace n est creee. Les notes restent inchangees. Chaque correction retournee doit etre autorisee par l administration puis appliquee par l enseignant.',
     tags: ['Corrections des notes'], security: [['sanctum' => []]],
     requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(oneOf: [
         new OA\Schema(ref: '#/components/schemas/DemandeCorrectionNote'),
