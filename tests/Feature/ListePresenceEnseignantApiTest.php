@@ -105,6 +105,32 @@ class ListePresenceEnseignantApiTest extends TestCase
         $this->postJson($url.'/valider')->assertUnprocessable()->assertJsonValidationErrors('presences');
     }
 
+    public function test_rejet_administration_remet_presence_a_transmettre(): void
+    {
+        $data = $this->contexte();
+        $seance = $data['seance'];
+        $url = '/api/v1/enseignant/liste-presence/'.$seance->id;
+        $presences = $data['etudiants']->map(fn ($e) => ['id_etudiant' => $e->id, 'statut' => 'present'])->all();
+        $notes = \App\Models\FeuilleNotes::create(['id_seance' => $seance->id,
+            'id_annee_academique' => $seance->moduleCalendrier->calendrier->id_annee_academique,
+            'id_matiere' => $seance->id_matiere, 'id_promotion' => $seance->id_promotion,
+            'updated_by' => $data['enseignant']->id, 'transmise_par' => $data['enseignant']->id]);
+        foreach (['secretariat' => 'transmise', 'direction' => 'transmise_direction'] as $origine => $statut) {
+            $this->postJson($url.'/valider', compact('presences'))->assertOk();
+            $notes->update(['statut' => $statut]);
+            Sanctum::actingAs($data['admin']);
+            $this->postJson('/api/v1/administration/notes-transmises/'.$notes->id.'/rejeter-'.$origine,
+                ['motif' => 'Presences incorrectes'])->assertOk();
+            Sanctum::actingAs($data['enseignant']);
+            $this->getJson($url)->assertOk()->assertJsonPath('feuille_presence.presence.statut', 'a_transmettre')
+                ->assertJsonPath('feuille_presence.modifiable', true)->assertJsonPath('feuille_presence.date_validation', null);
+            $this->getJson('/api/v1/enseignant/liste-presence')->assertOk()
+                ->assertJsonPath('seances.0.presence.statut', 'a_transmettre');
+            $this->assertDatabaseHas('feuilles_presence', ['id_seance' => $seance->id,
+                'statut' => 'brouillon', 'validee_par' => null]);
+        }
+    }
+
     public function test_rejet_notes_autorise_correction_et_revalidation_des_presences(): void
     {
         $data = $this->contexte();
@@ -122,7 +148,7 @@ class ListePresenceEnseignantApiTest extends TestCase
             $this->getJson($url)->assertOk()->assertJsonPath('feuille_presence.modifiable', true);
             $presences[1]['statut'] = 'absent';
             $this->putJson($url, compact('presences'))->assertOk()
-                ->assertJsonPath('feuille_presence.presence.statut', 'brouillon')
+                ->assertJsonPath('feuille_presence.presence.statut', 'a_transmettre')
                 ->assertJsonPath('feuille_presence.date_validation', null);
             $this->postJson($url.'/valider')->assertOk()
                 ->assertJsonPath('feuille_presence.presence.statut', 'validee');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Administration;
 
 use App\Http\Controllers\Controller;
 use App\Models\FeuilleNotes;
+use App\Models\FeuillePresence;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -129,6 +130,12 @@ class NotesTransmisesController extends Controller
                 throw ValidationException::withMessages(['notes' => 'Une correction est en cours. Traitez-la avant de poursuivre le circuit de validation.']);
             }
             $feuille->changerStatut($statut, $request->user()->id, $action, $data['motif'] ?? null);
+            if (in_array($statut, ['rejetee_secretariat', 'rejetee_direction'], true) && $feuille->id_seance !== null) {
+                FeuillePresence::where('id_seance', $feuille->id_seance)->update([
+                    'statut' => 'brouillon', 'date_validation' => null,
+                    'validee_par' => null, 'updated_by' => $request->user()->id,
+                ]);
+            }
 
             return $feuille;
         });

@@ -32,7 +32,7 @@ use OpenApi\Attributes as OA;
             property: 'presence',
             type: 'object',
             properties: [
-                new OA\Property(property: 'statut', type: 'string', example: 'a_soumettre'),
+                new OA\Property(property: 'statut', type: 'string', description: 'a_transmettre apres rejet de la feuille de notes liee : presences modifiables et a revalider. Sinon a_soumettre, brouillon ou validee.', example: 'a_transmettre'),
                 new OA\Property(property: 'presents', type: 'integer', example: 15),
                 new OA\Property(property: 'absents', type: 'integer', example: 2),
             ]

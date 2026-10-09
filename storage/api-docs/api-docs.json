@@ -13771,8 +13771,9 @@
                     "presence": {
                         "properties": {
                             "statut": {
+                                "description": "a_transmettre apres rejet de la feuille de notes liee : presences modifiables et a revalider. Sinon a_soumettre, brouillon ou validee.",
                                 "type": "string",
-                                "example": "a_soumettre"
+                                "example": "a_transmettre"
                             },
                             "presents": {
                                 "type": "integer",
