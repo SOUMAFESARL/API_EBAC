@@ -145,13 +145,17 @@ class ListePresenceEnseignantApiTest extends TestCase
             'transmise_par' => $data['enseignant']->id, 'updated_by' => $data['enseignant']->id, 'statut' => 'transmise']);
         foreach (['rejetee_secretariat', 'rejetee_direction'] as $statut) {
             $notes->update(['statut' => $statut]);
-            $this->getJson($url)->assertOk()->assertJsonPath('feuille_presence.modifiable', true);
+            $this->getJson($url)->assertOk()->assertJsonPath('feuille_presence.modifiable', true)
+                ->assertJsonPath('feuille_presence.presence.statut', 'a_transmettre');
+            $this->getJson('/api/v1/enseignant/liste-presence')->assertOk()
+                ->assertJsonPath('seances.0.presence.statut', 'a_transmettre');
             $presences[1]['statut'] = 'absent';
             $this->putJson($url, compact('presences'))->assertOk()
                 ->assertJsonPath('feuille_presence.presence.statut', 'a_transmettre')
                 ->assertJsonPath('feuille_presence.date_validation', null);
             $this->postJson($url.'/valider')->assertOk()
-                ->assertJsonPath('feuille_presence.presence.statut', 'validee');
+                ->assertJsonPath('feuille_presence.presence.statut', 'a_transmettre');
+            $this->assertDatabaseHas('feuilles_presence', ['id_seance' => $seance->id, 'statut' => 'validee']);
             $notes->update(['statut' => 'transmise']);
             $this->getJson($url)->assertOk()->assertJsonPath('feuille_presence.modifiable', false);
             $this->putJson($url, compact('presences'))->assertUnprocessable();

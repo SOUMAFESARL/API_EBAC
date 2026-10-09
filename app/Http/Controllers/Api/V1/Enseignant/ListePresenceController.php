@@ -232,7 +232,7 @@ class ListePresenceController extends Controller
             'cours' => $seance->cours?->only(['id', 'code', 'libelle']),
             'promotion' => $seance->promotion?->only(['id', 'code', 'num_promotion']),
             'presence' => [
-                'statut' => $seance->feuillePresence?->statut === 'brouillon' && $this->notesRejetees($seance)
+                'statut' => $this->notesRejetees($seance)
                     ? 'a_transmettre' : ($seance->feuillePresence?->statut ?? 'a_soumettre'),
                 'presents' => $seance->feuillePresence?->presences?->where('statut', 'present')->count() ?? 0,
                 'absents' => $seance->feuillePresence?->presences?->where('statut', 'absent')->count() ?? 0,
