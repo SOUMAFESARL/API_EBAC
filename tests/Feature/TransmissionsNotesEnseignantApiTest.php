@@ -21,6 +21,34 @@ class TransmissionsNotesEnseignantApiTest extends TestCase
 
     private const URL = '/api/v1/enseignant/transmissions-notes';
 
+    public function test_tableau_general_exclut_feuilles_rejetees_et_reaffiche_apres_retransmission(): void
+    {
+        $c = $this->contexte();
+        $etudiant = \App\Models\Etudiant::create(['matricule' => 'REJET-GENERAL', 'nom' => 'KONE',
+            'prenoms' => 'Test', 'date_inscription' => '2026-09-01']);
+        $c['feuille']->update(['statut' => 'validee_direction']);
+        $c['feuille']->notes()->create(['id_etudiant' => $etudiant->id, 'evaluation' => 'devoir', 'note' => 14]);
+        $autre = $c['feuille']->replicate();
+        $autre->statut = 'transmise';
+        $autre->save();
+        $autre->notes()->create(['id_etudiant' => $etudiant->id, 'evaluation' => 'oral', 'note' => 18]);
+        $url = self::URL.'/tableau-general';
+        $this->getJson($url)->assertOk()->assertJsonCount(2, 'tableaux.0.colonnes');
+        foreach (['rejetee_secretariat', 'rejetee_direction'] as $statut) {
+            $autre->changerStatut($statut, $c['admin']->id, $statut, 'Erreur');
+            $response = $this->getJson($url)->assertOk()->assertJsonCount(1, 'tableaux.0.colonnes')
+                ->assertJsonPath('tableaux.0.colonnes.0.id_feuille_notes', $c['feuille']->id)
+                ->assertJsonPath('tableaux.0.lignes.0.moyenne', 14);
+            $this->assertSame([14], array_values($response->json('tableaux.0.lignes.0.notes')));
+            $this->getJson($url.'?statut='.$statut)->assertOk()->assertJsonCount(0, 'tableaux');
+            $this->getJson(self::URL.'/'.$autre->id)->assertOk()->assertJsonPath('transmission.statut_workflow', $statut);
+            $autre->changerStatut('transmise', $c['enseignant']->id, 'transmission_secretariat');
+            $response = $this->getJson($url)->assertOk()->assertJsonCount(2, 'tableaux.0.colonnes')
+                ->assertJsonPath('tableaux.0.lignes.0.moyenne', 14);
+            $this->assertContains(18, array_values($response->json('tableaux.0.lignes.0.notes')));
+        }
+    }
+
     public function test_tableau_general_cumule_transmissions_sans_melanger_promotions(): void
     {
         $c = $this->contexte();

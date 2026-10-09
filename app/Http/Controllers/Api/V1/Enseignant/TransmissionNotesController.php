@@ -99,7 +99,7 @@ class TransmissionNotesController extends Controller
     public function tableauGeneral(Request $request): JsonResponse
     {
         [$query] = $this->filtrer($request);
-        $feuilles = $query->with(['notes' => fn ($q) => $q->orderBy('id'),
+        $feuilles = $query->whereNotIn('statut', ['rejetee_secretariat', 'rejetee_direction'])->with(['notes' => fn ($q) => $q->orderBy('id'),
             'notes.etudiant:id,matricule,nom,prenoms', 'seance'])->get();
 
         // Une promotion et une annee distinctes ne partagent jamais le meme tableau.
