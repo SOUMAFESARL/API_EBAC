@@ -8848,6 +8848,258 @@
                 ]
             }
         },
+        "/enseignant/notes/matieres/{matiere}": {
+            "get": {
+                "tags": [
+                    "Saisie des notes"
+                ],
+                "summary": "Consulter la feuille par matiere",
+                "description": "La matiere est indiquee dans le chemin. Fournir id_seance, id_promotion et id_annee_academique. PUT corrige et retransmet la meme feuille apres rejet du secretariat ou de la direction. Les notes sont ensuite verrouillees.",
+                "operationId": "consulterNotesMatiereExplicite",
+                "parameters": [
+                    {
+                        "name": "matiere",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_seance",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Feuille de notes.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotesCoursReponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Matiere inaccessible."
+                    },
+                    "422": {
+                        "description": "Contexte invalide ou saisie fermee."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Saisie des notes"
+                ],
+                "summary": "Modifier et retransmettre une feuille par matiere",
+                "description": "La matiere est indiquee dans le chemin. Fournir id_seance, id_promotion et id_annee_academique. PUT corrige et retransmet la meme feuille apres rejet du secretariat ou de la direction. Les notes sont ensuite verrouillees.",
+                "operationId": "modifierNotesMatiereExplicite",
+                "parameters": [
+                    {
+                        "name": "matiere",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_seance",
+                                    "id_promotion",
+                                    "id_annee_academique",
+                                    "notes"
+                                ],
+                                "properties": {
+                                    "id_seance": {
+                                        "type": "integer"
+                                    },
+                                    "id_promotion": {
+                                        "type": "integer"
+                                    },
+                                    "id_annee_academique": {
+                                        "type": "integer"
+                                    },
+                                    "notes": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "id_etudiant",
+                                                "note"
+                                            ],
+                                            "properties": {
+                                                "id_etudiant": {
+                                                    "type": "integer"
+                                                },
+                                                "evaluation": {
+                                                    "type": "string"
+                                                },
+                                                "note": {
+                                                    "type": "number",
+                                                    "maximum": 20,
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "minItems": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Feuille de notes.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotesCoursReponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Matiere inaccessible."
+                    },
+                    "422": {
+                        "description": "Contexte invalide ou saisie fermee."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/enseignant/notes/matieres/{matiere}/transmettre": {
+            "post": {
+                "tags": [
+                    "Saisie des notes"
+                ],
+                "summary": "Transmettre une feuille par matiere",
+                "description": "La matiere est indiquee dans le chemin. Fournir id_seance, id_promotion et id_annee_academique. PUT corrige et retransmet la meme feuille apres rejet du secretariat ou de la direction. Les notes sont ensuite verrouillees.",
+                "operationId": "transmettreNotesMatiereExplicite",
+                "parameters": [
+                    {
+                        "name": "matiere",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_seance",
+                                    "id_promotion",
+                                    "id_annee_academique"
+                                ],
+                                "properties": {
+                                    "id_seance": {
+                                        "type": "integer"
+                                    },
+                                    "id_promotion": {
+                                        "type": "integer"
+                                    },
+                                    "id_annee_academique": {
+                                        "type": "integer"
+                                    },
+                                    "notes": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "id_etudiant",
+                                                "note"
+                                            ],
+                                            "properties": {
+                                                "id_etudiant": {
+                                                    "type": "integer"
+                                                },
+                                                "evaluation": {
+                                                    "type": "string"
+                                                },
+                                                "note": {
+                                                    "type": "number",
+                                                    "maximum": 20,
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "minItems": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Feuille de notes.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotesCoursReponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Matiere inaccessible."
+                    },
+                    "422": {
+                        "description": "Contexte invalide ou saisie fermee."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/enseignant/notes/feuille": {
             "get": {
                 "tags": [

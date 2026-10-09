@@ -286,6 +286,9 @@ Route::prefix('v1/enseignant/notes')
         Route::get('tableau', [NoteController::class, 'tableau'])->name('matiere.tableau');
         Route::put('/', [NoteController::class, 'update'])->name('matiere.update');
         Route::post('transmettre', [NoteController::class, 'transmettre'])->name('matiere.transmettre');
+        Route::get('matieres/{matiere}', [NoteController::class, 'showMatiere'])->whereNumber('matiere')->name('matiere.explicite.show');
+        Route::put('matieres/{matiere}', [NoteController::class, 'updateMatiere'])->whereNumber('matiere')->name('matiere.explicite.update');
+        Route::post('matieres/{matiere}/transmettre', [NoteController::class, 'transmettreMatiere'])->whereNumber('matiere')->name('matiere.explicite.transmettre');
         Route::get('{cours}', [NoteController::class, 'show'])->whereNumber('cours')->name('show');
         Route::put('{cours}', [NoteController::class, 'update'])->whereNumber('cours')->name('update');
         Route::post('{cours}/transmettre', [NoteController::class, 'transmettre'])->whereNumber('cours')->name('transmettre');

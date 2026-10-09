@@ -177,6 +177,27 @@ class NoteController extends Controller
             'notes_manquantes' => $lignes->where('evaluable', true)->filter(fn ($ligne) => $ligne['notes']->isEmpty())->count(), 'etudiants' => $lignes];
     }
 
+    public function showMatiere(Request $request, int $matiere)
+    {
+        $request->merge(['id_matiere' => $matiere]);
+
+        return $this->show($request);
+    }
+
+    public function updateMatiere(Request $request, int $matiere)
+    {
+        $request->merge(['id_matiere' => $matiere]);
+
+        return $this->update($request);
+    }
+
+    public function transmettreMatiere(Request $request, int $matiere)
+    {
+        $request->merge(['id_matiere' => $matiere]);
+
+        return $this->transmettre($request);
+    }
+
     public function show(Request $request, ?int $cours = null)
     {
         return response()->json(['feuille_notes' => $this->presenter(...$this->contexte($request, $cours))]);
