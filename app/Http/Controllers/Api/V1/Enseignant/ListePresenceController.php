@@ -7,6 +7,7 @@ use App\Models\AnneeAcademique;
 use App\Models\CoursAFaire;
 use App\Models\Etudiant;
 use App\Models\FeuillePresence;
+use App\Models\FeuilleNotes;
 use App\Models\SeanceCahierTexte;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -152,13 +153,21 @@ class ListePresenceController extends Controller
         }
     }
 
+    private function notesRejetees(SeanceCahierTexte $seance): bool
+    {
+        $statuts = FeuilleNotes::where('id_seance', $seance->id)->pluck('statut');
+
+        return $statuts->contains(fn ($statut) => in_array($statut, ['rejetee_secretariat', 'rejetee_direction'], true))
+            && ! $statuts->contains(fn ($statut) => in_array($statut, ['transmise', 'validee_secretariat', 'transmise_direction', 'validee_direction'], true));
+    }
+
     private function synchroniser(SeanceCahierTexte $seance, array $presences, int $userId): FeuillePresence
     {
         $feuille = FeuillePresence::with('presences')->where('id_seance', $seance->id)->lockForUpdate()->firstOrCreate(
             ['id_seance' => $seance->id],
             ['statut' => 'brouillon', 'created_by' => $userId],
         );
-        if ($feuille->statut === 'validee') {
+        if ($feuille->statut === 'validee' && ! $this->notesRejetees($seance)) {
             throw ValidationException::withMessages(['presences' => ['Cette liste est validée et ne peut plus être modifiée.']]);
         }
         $concernes = $this->etudiantsConcernes($seance)->pluck('id')->sort()->values();
@@ -175,7 +184,8 @@ class ListePresenceController extends Controller
                 ['statut' => $presence['statut']],
             );
         }
-        $feuille->update(['updated_by' => $userId]);
+        $feuille->update(['updated_by' => $userId, 'statut' => 'brouillon',
+            'date_validation' => null, 'validee_par' => null]);
 
         return $feuille->fresh('presences');
     }
@@ -249,7 +259,7 @@ class ListePresenceController extends Controller
                 ...$etudiant->only(['id', 'matricule', 'nom', 'prenoms']),
                 'statut_presence' => $marques->get($etudiant->id)?->statut,
             ]),
-            'modifiable' => $seance->feuillePresence?->statut !== 'validee',
+            'modifiable' => $seance->feuillePresence?->statut !== 'validee' || $this->notesRejetees($seance),
             'date_validation' => $seance->feuillePresence?->date_validation,
         ];
     }

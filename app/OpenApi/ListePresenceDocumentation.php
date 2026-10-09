@@ -42,7 +42,7 @@ use OpenApi\Attributes as OA;
             type: 'array',
             items: new OA\Items(ref: '#/components/schemas/EtudiantPresence')
         ),
-        new OA\Property(property: 'modifiable', type: 'boolean', example: true),
+        new OA\Property(property: 'modifiable', type: 'boolean', description: 'Une feuille de notes rejetee par le secretariat ou la direction permet de corriger les presences de sa seance. Apres modification, revalider les presences avant de retransmettre les notes.', example: true),
         new OA\Property(property: 'date_validation', type: 'string', format: 'date-time', nullable: true),
     ]
 )]

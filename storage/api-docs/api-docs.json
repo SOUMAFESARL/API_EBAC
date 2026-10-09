@@ -13792,6 +13792,7 @@
                         }
                     },
                     "modifiable": {
+                        "description": "Une feuille de notes rejetee par le secretariat ou la direction permet de corriger les presences de sa seance. Apres modification, revalider les presences avant de retransmettre les notes.",
                         "type": "boolean",
                         "example": true
                     },

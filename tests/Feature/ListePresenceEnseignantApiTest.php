@@ -105,6 +105,36 @@ class ListePresenceEnseignantApiTest extends TestCase
         $this->postJson($url.'/valider')->assertUnprocessable()->assertJsonValidationErrors('presences');
     }
 
+    public function test_rejet_notes_autorise_correction_et_revalidation_des_presences(): void
+    {
+        $data = $this->contexte();
+        $seance = $data['seance'];
+        $url = '/api/v1/enseignant/liste-presence/'.$seance->id;
+        $presences = [['id_etudiant' => $data['etudiants'][0]->id, 'statut' => 'present'],
+            ['id_etudiant' => $data['etudiants'][1]->id, 'statut' => 'present']];
+        $this->postJson($url.'/valider', compact('presences'))->assertOk();
+        $notes = \App\Models\FeuilleNotes::create(['id_seance' => $seance->id,
+            'id_annee_academique' => $seance->moduleCalendrier->calendrier->id_annee_academique,
+            'id_matiere' => $seance->id_matiere, 'id_promotion' => $seance->id_promotion,
+            'transmise_par' => $data['enseignant']->id, 'updated_by' => $data['enseignant']->id, 'statut' => 'transmise']);
+        foreach (['rejetee_secretariat', 'rejetee_direction'] as $statut) {
+            $notes->update(['statut' => $statut]);
+            $this->getJson($url)->assertOk()->assertJsonPath('feuille_presence.modifiable', true);
+            $presences[1]['statut'] = 'absent';
+            $this->putJson($url, compact('presences'))->assertOk()
+                ->assertJsonPath('feuille_presence.presence.statut', 'brouillon')
+                ->assertJsonPath('feuille_presence.date_validation', null);
+            $this->postJson($url.'/valider')->assertOk()
+                ->assertJsonPath('feuille_presence.presence.statut', 'validee');
+            $notes->update(['statut' => 'transmise']);
+            $this->getJson($url)->assertOk()->assertJsonPath('feuille_presence.modifiable', false);
+            $this->putJson($url, compact('presences'))->assertUnprocessable();
+            Sanctum::actingAs($data['autreEnseignant']);
+            $this->putJson($url, compact('presences'))->assertNotFound();
+            Sanctum::actingAs($data['enseignant']);
+        }
+    }
+
     public function test_refuse_liste_incomplete_doublon_et_etudiant_non_concerne(): void
     {
         $data = $this->contexte();
