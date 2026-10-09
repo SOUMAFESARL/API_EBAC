@@ -187,6 +187,7 @@ class TransmissionsNotesEnseignantApiTest extends TestCase
                 ->assertJsonPath('transmission.statut_workflow', $statut)
                 ->assertJsonPath('transmission.circuit_validation.etape_actuelle', $etape)
                 ->assertJsonPath('transmission.circuit_validation.rejetee', $rejet)
+                ->assertJsonPath('transmission.motif', $rejet ? 'Verifier les notes' : null)
                 ->assertJsonPath('transmission.circuit_validation.motif_rejet', $rejet ? 'Verifier les notes' : null)
                 ->assertJsonPath('transmission.circuit_validation.correction_enseignant_requise', in_array($statut, ['rejetee_secretariat', 'rejetee_direction'], true));
             $this->getJson(self::URL.'?statut=transmise')->assertOk()

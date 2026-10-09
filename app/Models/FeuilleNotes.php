@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class FeuilleNotes extends Model
 {
@@ -47,6 +48,21 @@ class FeuilleNotes extends Model
     public function historique(): HasMany
     {
         return $this->hasMany(HistoriqueFeuilleNotes::class, 'id_feuille_notes')->orderBy('id');
+    }
+
+    public function derniereDecision(): HasOne
+    {
+        return $this->hasOne(HistoriqueFeuilleNotes::class, 'id_feuille_notes')->latestOfMany();
+    }
+
+    public function motifRejet(): ?string
+    {
+        if (! in_array($this->statut, ['rejetee_secretariat', 'rejetee_direction'], true)) {
+            return null;
+        }
+
+        return $this->relationLoaded('historique')
+            ? $this->historique->last()?->motif : $this->derniereDecision?->motif;
     }
 
     public function changerStatut(string $statut, int $acteur, string $action, ?string $motif = null): void

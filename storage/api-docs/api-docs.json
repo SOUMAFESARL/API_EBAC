@@ -13926,6 +13926,11 @@
                         "description": "Statut interne du circuit de validation ; utiliser saisie_ouverte pour savoir si les notes peuvent etre modifiees.",
                         "type": "string"
                     },
+                    "motif": {
+                        "description": "Motif du rejet actuel par le secretariat ou la direction ; null si la feuille ne reste pas rejetee.",
+                        "type": "string",
+                        "nullable": true
+                    },
                     "date_transmission": {
                         "type": "string",
                         "example": null,
@@ -14179,6 +14184,11 @@
                             "validee_direction",
                             "rejetee_direction"
                         ]
+                    },
+                    "motif": {
+                        "description": "Motif du rejet actuel par le secretariat ou la direction ; null si la feuille ne reste pas rejetee.",
+                        "type": "string",
+                        "nullable": true
                     },
                     "date_transmission": {
                         "type": "string",
@@ -15339,6 +15349,11 @@
                             "validee_direction",
                             "rejetee_direction"
                         ]
+                    },
+                    "motif": {
+                        "description": "Motif du rejet actuel par le secretariat ou la direction ; null si la feuille ne reste pas rejetee.",
+                        "type": "string",
+                        "nullable": true
                     },
                     "date_transmission": {
                         "type": "string",

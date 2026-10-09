@@ -40,6 +40,7 @@ DOC)]
     new OA\Property(property: 'id_seance', type: 'integer', nullable: true, example: 157),
     new OA\Property(property: 'statut', type: 'string', enum: ['non_transmise', 'transmise'], example: 'transmise'),
     new OA\Property(property: 'statut_workflow', type: 'string', description: 'Statut interne du circuit de validation ; utiliser saisie_ouverte pour savoir si les notes peuvent etre modifiees.'),
+        new OA\Property(property: 'motif', type: 'string', nullable: true, description: 'Motif du rejet actuel par le secretariat ou la direction ; null si la feuille ne reste pas rejetee.'),
     new OA\Property(property: 'date_transmission', type: 'string', nullable: true, example: null),
     new OA\Property(property: 'saisie_ouverte', type: 'boolean', description: 'Ouverte avant transmission ou apres un refus du secretariat, avec des presences validees et completes. Fermee immediatement apres enregistrement.', example: false),
     new OA\Property(property: 'historique', type: 'array', description: 'Décisions et transmissions avec acteur, date et motif.', items: new OA\Items(type: 'object')),

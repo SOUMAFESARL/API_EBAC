@@ -134,6 +134,27 @@ class NotesTransmisesApiTest extends TestCase
         $this->postJson($url.'/valider-direction')->assertOk()->assertJsonCount(4, 'feuille_notes.historique');
     }
 
+    public function test_motif_rejet_visible_dans_liste_et_detail_sans_motif_perime(): void
+    {
+        [$users, $feuille] = $this->contexte();
+        Sanctum::actingAs($users['ADMIN']);
+        $url = $this->url($feuille);
+        foreach (['secretariat', 'direction'] as $origine) {
+            if ($origine === 'direction') {
+                $feuille->update(['statut' => 'transmise_direction']);
+            }
+            $motif = 'Erreur '.$origine;
+            $this->postJson($url.'/rejeter-'.$origine, ['motif' => $motif])->assertOk()
+                ->assertJsonPath('feuille_notes.motif', $motif);
+            $this->getJson($url)->assertOk()->assertJsonPath('feuille_notes.motif', $motif);
+            $this->getJson('/api/v1/administration/notes-transmises')->assertOk()
+                ->assertJsonPath('feuilles_notes.0.motif', $motif);
+        }
+        $this->postJson($url.'/transmettre-direction')->assertOk()->assertJsonPath('feuille_notes.motif', null);
+        $this->getJson('/api/v1/administration/notes-transmises')->assertOk()
+            ->assertJsonPath('feuilles_notes.0.motif', null);
+    }
+
     public function test_refus_secretariat_est_visible_et_ne_supprime_pas_notes(): void
     {
         [$users, $feuille] = $this->contexte();

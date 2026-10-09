@@ -10,6 +10,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'id', type: 'integer', description: 'Identifiant de la feuille de notes.'),
         new OA\Property(property: 'statut', type: 'string', description: 'Reste transmise chez l enseignant ; statut_workflow indique les decisions administratives.', enum: ['transmise']),
         new OA\Property(property: 'statut_workflow', type: 'string', enum: ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction']),
+        new OA\Property(property: 'motif', type: 'string', nullable: true, description: 'Motif du rejet actuel par le secretariat ou la direction ; null si la feuille ne reste pas rejetee.'),
         new OA\Property(property: 'date_transmission', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'transmise_par', type: 'integer', description: 'Enseignant ayant transmis la feuille.'),
         new OA\Property(property: 'id_annee_academique', type: 'integer'),

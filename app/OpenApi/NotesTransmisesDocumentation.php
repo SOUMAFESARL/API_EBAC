@@ -30,6 +30,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'id_cours', type: 'integer', nullable: true),
         new OA\Property(property: 'statut', type: 'string', description: 'Statut selon le role : a_verifier au secretariat ; en_attente, validee ou rejetee a la direction. ADMIN conserve le statut interne.', enum: ['a_verifier', 'en_attente', 'validee', 'rejetee', 'transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction']),
         new OA\Property(property: 'statut_workflow', type: 'string', enum: ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'], example: 'transmise'),
+        new OA\Property(property: 'motif', type: 'string', nullable: true, description: 'Motif du rejet actuel par le secretariat ou la direction ; null si la feuille ne reste pas rejetee.'),
         new OA\Property(property: 'date_transmission', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'annee_academique', type: 'object', nullable: true, properties: [
             new OA\Property(property: 'id', type: 'integer'),

@@ -168,6 +168,7 @@ class NoteController extends Controller
             'promotion' => $promotion->only(['id', 'code', 'num_promotion']), 'id_annee_academique' => $cle['id_annee_academique'],
             'statut' => ! $feuille || $feuille->statut === 'brouillon' ? 'non_transmise' : $feuille->statutPourRole('ENSEIGNANT'),
             'statut_workflow' => $feuille?->statut ?? 'brouillon',
+            'motif' => $feuille?->motifRejet(),
             'date_transmission' => $feuille?->date_transmission,
             'historique' => $feuille?->historique()->with('acteur:id,nom,prenoms')->get() ?? collect(),
             'saisie_ouverte' => $ouverte && (! $feuille || in_array($feuille->statut, ['brouillon', 'rejetee_secretariat', 'rejetee_direction'], true)),

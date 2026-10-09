@@ -15,7 +15,7 @@ class NotesTransmisesController extends Controller
     private function feuilles()
     {
         return FeuilleNotes::query()->whereIn('statut', FeuilleNotes::STATUTS_TRANSMIS)
-            ->with(['anneeAcademique', 'promotion', 'matiere', 'cours.module.matiere', 'enseignant:id,nom,prenoms', 'dernierModificateur:id,nom,prenoms']);
+            ->with(['derniereDecision', 'anneeAcademique', 'promotion', 'matiere', 'cours.module.matiere', 'enseignant:id,nom,prenoms', 'dernierModificateur:id,nom,prenoms']);
     }
 
     private function presenter(FeuilleNotes $feuille, Request $request): array
@@ -24,6 +24,7 @@ class NotesTransmisesController extends Controller
             ...$feuille->only(['id', 'id_annee_academique', 'id_promotion', 'id_matiere', 'id_cours', 'id_seance', 'statut', 'date_transmission']),
             'statut' => $feuille->statutPourRole($request->user()->role->code),
             'statut_workflow' => $feuille->statut,
+            'motif' => $feuille->motifRejet(),
             'annee_academique' => $feuille->anneeAcademique?->only(['id', 'libelle']),
             'promotion' => $feuille->promotion?->only(['id', 'code', 'num_promotion']),
             'matiere' => ($feuille->matiere ?? $feuille->cours?->module?->matiere)?->only(['id', 'code', 'libelle']),
