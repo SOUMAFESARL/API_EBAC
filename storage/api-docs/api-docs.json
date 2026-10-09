@@ -8848,42 +8848,18 @@
                 ]
             }
         },
-        "/enseignant/notes/feuille/{matiere}": {
+        "/enseignant/notes/feuille/{feuille}": {
             "get": {
                 "tags": [
                     "Saisie des notes"
                 ],
-                "summary": "Consulter la feuille par matiere",
-                "description": "La matiere est indiquee dans le chemin. Fournir id_seance, id_promotion et id_annee_academique. PUT corrige et retransmet la meme feuille apres rejet du secretariat ou de la direction. Les notes sont ensuite verrouillees.",
-                "operationId": "consulterNotesMatiereExplicite",
+                "summary": "Consulter la feuille par identifiant de feuille",
+                "description": "Le chemin contient l identifiant de la feuille. Sa matiere ou son cours, sa seance, sa promotion et son annee sont retrouves automatiquement. La feuille doit appartenir a l enseignant connecte. PUT corrige et retransmet la meme feuille apres rejet du secretariat ou de la direction. Les notes sont ensuite verrouillees.",
+                "operationId": "consulterNotesFeuilleExplicite",
                 "parameters": [
                     {
-                        "name": "matiere",
+                        "name": "feuille",
                         "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "id_seance",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "id_promotion",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "id_annee_academique",
-                        "in": "query",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -8918,12 +8894,12 @@
                 "tags": [
                     "Saisie des notes"
                 ],
-                "summary": "Modifier et retransmettre une feuille par matiere",
-                "description": "La matiere est indiquee dans le chemin. Fournir id_seance, id_promotion et id_annee_academique. PUT corrige et retransmet la meme feuille apres rejet du secretariat ou de la direction. Les notes sont ensuite verrouillees.",
-                "operationId": "modifierNotesMatiereExplicite",
+                "summary": "Modifier et retransmettre une feuille par identifiant de feuille",
+                "description": "Le chemin contient l identifiant de la feuille. Sa matiere ou son cours, sa seance, sa promotion et son annee sont retrouves automatiquement. La feuille doit appartenir a l enseignant connecte. PUT corrige et retransmet la meme feuille apres rejet du secretariat ou de la direction. Les notes sont ensuite verrouillees.",
+                "operationId": "modifierNotesFeuilleExplicite",
                 "parameters": [
                     {
-                        "name": "matiere",
+                        "name": "feuille",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -8937,21 +8913,9 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "id_seance",
-                                    "id_promotion",
-                                    "id_annee_academique",
                                     "notes"
                                 ],
                                 "properties": {
-                                    "id_seance": {
-                                        "type": "integer"
-                                    },
-                                    "id_promotion": {
-                                        "type": "integer"
-                                    },
-                                    "id_annee_academique": {
-                                        "type": "integer"
-                                    },
                                     "notes": {
                                         "type": "array",
                                         "items": {
@@ -9007,17 +8971,17 @@
                 ]
             }
         },
-        "/enseignant/notes/feuille/{matiere}/transmettre": {
+        "/enseignant/notes/feuille/{feuille}/transmettre": {
             "post": {
                 "tags": [
                     "Saisie des notes"
                 ],
-                "summary": "Transmettre une feuille par matiere",
-                "description": "La matiere est indiquee dans le chemin. Fournir id_seance, id_promotion et id_annee_academique. PUT corrige et retransmet la meme feuille apres rejet du secretariat ou de la direction. Les notes sont ensuite verrouillees.",
-                "operationId": "transmettreNotesMatiereExplicite",
+                "summary": "Transmettre une feuille par identifiant de feuille",
+                "description": "Le chemin contient l identifiant de la feuille. Sa matiere ou son cours, sa seance, sa promotion et son annee sont retrouves automatiquement. La feuille doit appartenir a l enseignant connecte. PUT corrige et retransmet la meme feuille apres rejet du secretariat ou de la direction. Les notes sont ensuite verrouillees.",
+                "operationId": "transmettreNotesFeuilleExplicite",
                 "parameters": [
                     {
-                        "name": "matiere",
+                        "name": "feuille",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -9030,21 +8994,8 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "id_seance",
-                                    "id_promotion",
-                                    "id_annee_academique"
-                                ],
+                                "required": [],
                                 "properties": {
-                                    "id_seance": {
-                                        "type": "integer"
-                                    },
-                                    "id_promotion": {
-                                        "type": "integer"
-                                    },
-                                    "id_annee_academique": {
-                                        "type": "integer"
-                                    },
                                     "notes": {
                                         "type": "array",
                                         "items": {

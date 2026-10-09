@@ -177,25 +177,39 @@ class NoteController extends Controller
             'notes_manquantes' => $lignes->where('evaluable', true)->filter(fn ($ligne) => $ligne['notes']->isEmpty())->count(), 'etudiants' => $lignes];
     }
 
-    public function showMatiere(Request $request, int $matiere)
+    private function contexteFeuille(Request $request, int $id): FeuilleNotes
     {
-        $request->merge(['id_matiere' => $matiere]);
+        $feuille = FeuilleNotes::findOrFail($id);
+        abort_unless($feuille->transmise_par === $request->user()->id, 404);
+        $request->merge([
+            'id_matiere' => $feuille->id_matiere,
+            'id_seance' => $feuille->id_seance,
+            'id_promotion' => $feuille->id_promotion,
+            'id_annee_academique' => $feuille->id_annee_academique,
+        ]);
 
-        return $this->show($request);
+        return $feuille;
     }
 
-    public function updateMatiere(Request $request, int $matiere)
+    public function showFeuille(Request $request, int $feuille)
     {
-        $request->merge(['id_matiere' => $matiere]);
+        $selection = $this->contexteFeuille($request, $feuille);
 
-        return $this->update($request);
+        return $this->show($request, $selection->id_cours);
     }
 
-    public function transmettreMatiere(Request $request, int $matiere)
+    public function updateFeuille(Request $request, int $feuille)
     {
-        $request->merge(['id_matiere' => $matiere]);
+        $selection = $this->contexteFeuille($request, $feuille);
 
-        return $this->transmettre($request);
+        return $this->update($request, $selection->id_cours);
+    }
+
+    public function transmettreFeuille(Request $request, int $feuille)
+    {
+        $selection = $this->contexteFeuille($request, $feuille);
+
+        return $this->transmettre($request, $selection->id_cours);
     }
 
     public function show(Request $request, ?int $cours = null)

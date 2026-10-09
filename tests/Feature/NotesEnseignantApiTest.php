@@ -469,25 +469,35 @@ class NotesEnseignantApiTest extends TestCase
         $this->putJson($url, ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 18]]])->assertUnprocessable();
     }
 
-    public function test_route_explicite_matiere_corrige_et_retransmet_la_meme_feuille(): void
+    public function test_route_feuille_cible_la_feuille_rejetee_et_verifie_acces(): void
     {
         $data = $this->contexte();
         $this->presences($data);
         $matiere = $data['cours']->module->id_matiere;
-        $url = '/api/v1/enseignant/notes/feuille/'.$matiere;
-        $payload = ['id_seance' => $data['seance']->id, 'id_promotion' => $data['promotion']->id,
-            'id_annee_academique' => $data['annee']->id,
-            'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12]]];
-        $this->putJson($url, $payload)->assertOk()->assertJsonPath('feuille_notes.matiere.id', $matiere);
+        $this->putJson('/api/v1/enseignant/notes', [
+            'id_matiere' => $matiere, 'id_seance' => $data['seance']->id,
+            'id_promotion' => $data['promotion']->id, 'id_annee_academique' => $data['annee']->id,
+            'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12]],
+        ])->assertOk();
         $feuille = FeuilleNotes::firstOrFail();
+        $url = '/api/v1/enseignant/notes/feuille/'.$feuille->id;
         $feuille->changerStatut('rejetee_direction', $data['admin']->id, 'rejet_direction', 'Erreur');
-        $payload['notes'][0]['note'] = 16;
-        $this->putJson($url, $payload)->assertOk()->assertJsonPath('feuille_notes.statut_workflow', 'transmise');
+        $this->putJson($url, ['id_matiere' => 999999, 'id_seance' => 999999,
+            'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 16]],
+        ])->assertOk()->assertJsonPath('feuille_notes.statut_workflow', 'transmise')
+            ->assertJsonPath('feuille_notes.matiere.id', $matiere);
         $this->assertDatabaseCount('feuilles_notes', 1);
         $this->assertSame(16.0, $feuille->notes()->first()->note);
-        unset($payload['notes']);
-        $this->getJson($url.'?'.http_build_query($payload))->assertOk()->assertJsonPath('feuille_notes.matiere.id', $matiere);
-        $this->postJson($url.'/transmettre', $payload)->assertOk();
+        $this->getJson($url)->assertOk();
+        $this->postJson($url.'/transmettre')->assertOk();
+        $this->putJson('/api/v1/enseignant/notes/feuille/999999', [
+            'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 18]],
+        ])->assertNotFound();
+        $autre = User::factory()->create(['id_role' => $data['enseignant']->id_role]);
+        Sanctum::actingAs($autre);
+        $this->getJson($url)->assertNotFound();
+        $this->putJson($url, ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 18]]])->assertNotFound();
+        $this->assertSame(16.0, $feuille->notes()->first()->note);
     }
 
     public function test_decisions_direction_moyenne_et_reouverture_feuille_rejetee(): void
