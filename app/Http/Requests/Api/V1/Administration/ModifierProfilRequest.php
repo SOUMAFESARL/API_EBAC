@@ -26,7 +26,7 @@ class ModifierProfilRequest extends FormRequest
                 'required',
                 'email',
                 'max:150',
-                Rule::unique('users', 'email')->ignore($this->user()?->id),
+                Rule::unique('users', 'email')->withoutTrashed()->ignore($this->user()?->id),
             ],
             'photo' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'mot_de_passe_actuel' => ['required_with:password', 'current_password'],

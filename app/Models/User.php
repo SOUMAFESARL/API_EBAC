@@ -39,7 +39,7 @@ use Laravel\Sanctum\HasApiTokens;
     'updated_by',
     'deleted_by',
 ])]
-#[Hidden(['password'])]
+#[Hidden(['password', 'unicite_active'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */

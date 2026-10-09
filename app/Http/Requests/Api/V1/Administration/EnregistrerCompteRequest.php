@@ -25,7 +25,7 @@ class EnregistrerCompteRequest extends FormRequest
             'nom' => ['required', 'string', 'max:150'],
             'prenoms' => ['required', 'string', 'max:150'],
             'photo' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'email' => ['required', 'email', 'max:150', 'unique:users,email'],
+            'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')->withoutTrashed()],
             'id_role' => ['required', 'integer', 'exists:roles,id'],
             'is_active' => ['sometimes', 'boolean'],
             'statut' => ['sometimes', Rule::in(['Actif', 'Suspendu', 'Bloqué', 'Désactivé'])],

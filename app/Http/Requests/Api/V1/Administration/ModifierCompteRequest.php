@@ -32,7 +32,7 @@ class ModifierCompteRequest extends FormRequest
                 'required',
                 'email',
                 'max:150',
-                Rule::unique('users', 'email')->ignore($compte),
+                Rule::unique('users', 'email')->withoutTrashed()->ignore($compte),
             ],
             'password' => ['sometimes', 'required', 'string', 'min:8', 'confirmed'],
             'id_role' => ['sometimes', 'required', 'integer', 'exists:roles,id'],

@@ -21,6 +21,38 @@ class CompteCodeAutomatiqueTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_email_reutilisable_apres_suppression_mais_unique_pour_comptes_non_supprimes(): void
+    {
+        Notification::fake();
+        $role = Role::create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        $admin = User::factory()->create(['id_role' => $role->id]);
+        Sanctum::actingAs($admin);
+        $civilite = Civilite::create(['code' => 'M', 'name' => 'Monsieur']);
+        $payload = ['civilite_id' => $civilite->id, 'nom' => 'Test', 'prenoms' => 'Compte',
+            'email' => 'reutilise@example.net', 'id_role' => $role->id];
+        $url = '/api/v1/administration/comptes';
+        $ancien = $this->postJson($url, $payload)->assertCreated()->json('compte.id');
+        $this->postJson($url, $payload)->assertUnprocessable()->assertJsonValidationErrors('email');
+        $this->deleteJson($url.'/'.$ancien)->assertOk();
+        $nouveau = $this->postJson($url, $payload)->assertCreated()->json('compte.id');
+        $this->assertNotEquals($ancien, $nouveau);
+        $this->assertSoftDeleted('users', ['id' => $ancien, 'email' => $payload['email']]);
+        $this->assertDatabaseHas('users', ['id' => $nouveau, 'email' => $payload['email'], 'deleted_at' => null]);
+        $this->postJson($url, $payload)->assertUnprocessable()->assertJsonValidationErrors('email');
+        $this->deleteJson($url.'/'.$nouveau)->assertOk();
+        $this->postJson($url, $payload)->assertCreated();
+    }
+
+    public function test_base_refuse_email_duplique_et_restauration_en_conflit(): void
+    {
+        $role = Role::create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
+        $ancien = User::factory()->create(['id_role' => $role->id, 'email' => 'unique@example.net']);
+        $ancien->delete();
+        User::factory()->create(['id_role' => $role->id, 'email' => 'unique@example.net']);
+        $this->expectException(\Illuminate\Database\UniqueConstraintViolationException::class);
+        $ancien->restore();
+    }
+
     public function test_le_code_du_compte_est_genere_automatiquement(): void
     {
         Notification::fake();
