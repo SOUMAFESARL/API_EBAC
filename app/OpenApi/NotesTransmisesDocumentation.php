@@ -67,7 +67,7 @@ use OpenApi\Attributes as OA;
 #[OA\Get(
     path: '/administration/notes-transmises', operationId: 'listerNotesTransmisesAdministration',
     summary: 'Consulter les feuilles de notes transmises par les enseignants',
-    description: 'Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Circuit : transmise → validee_secretariat → transmise_direction → validee_direction. Un refus du secretariat (rejetee_secretariat) rouvre la saisie enseignant et exige une nouvelle transmission. Un rejet de la direction (rejetee_direction) exige un reexamen du secretariat, qui peut transmettre a nouveau ou renvoyer a l enseignant. Les brouillons sont exclus. Ces validations ne publient pas les notes aux etudiants.',
+    description: 'Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Circuit : transmise → validee_secretariat → transmise_direction → validee_direction. Un refus du secretariat (rejetee_secretariat) rouvre la saisie enseignant et exige une nouvelle transmission. Un rejet du secretariat ou de la direction rouvre la saisie de la seule feuille rejetee pour correction et nouvelle transmission. Les brouillons sont exclus. Ces validations ne publient pas les notes aux etudiants.',
     tags: ['Administration des notes'], security: [['sanctum' => []]],
     parameters: [
         new OA\Parameter(name: 'id_annee_academique', in: 'query', schema: new OA\Schema(type: 'integer')),
@@ -145,7 +145,7 @@ use OpenApi\Attributes as OA;
 #[OA\Post(
     path: '/administration/notes-transmises/{id}/rejeter-direction', operationId: 'rejeterNotesDirection',
     summary: 'Rejeter une feuille avec motif et la renvoyer au secretariat',
-    description: 'ADMIN, DIRECTION. Seul le statut transmise_direction est accepte. Passe a rejetee_direction. Le secretariat doit reexaminer la feuille avant toute nouvelle transmission a la direction.',
+    description: 'ADMIN, DIRECTION. Seul le statut transmise_direction est accepte. Passe a rejetee_direction. La saisie de cette feuille est rouverte pour l enseignant, qui peut corriger puis retransmettre au secretariat.',
     tags: ['Administration des notes'], security: [['sanctum' => []]],
     parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
     requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['motif'], properties: [new OA\Property(property: 'motif', type: 'string', maxLength: 5000, example: 'Incoherence dans les notes transmises.')])),

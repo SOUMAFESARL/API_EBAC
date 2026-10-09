@@ -8674,7 +8674,7 @@
                     "Saisie des notes"
                 ],
                 "summary": "Enregistrer et transmettre directement les notes sur 20",
-                "description": "Fournir cours, id_promotion et id_annee_academique et un corps JSON contenant notes. Tous les etudiants evaluables doivent avoir une note. La requete est atomique : une feuille incomplete ou une ligne invalide annule tout. Apres succes, statut=transmise et saisie_ouverte=false. Toute modification ulterieure necessite une correction autorisee ou un refus du secretariat.",
+                "description": "Fournir cours, id_promotion et id_annee_academique et un corps JSON contenant notes. Tous les etudiants evaluables doivent avoir une note. La requete est atomique : une feuille incomplete ou une ligne invalide annule tout. Apres succes, statut=transmise et saisie_ouverte=false. Toute modification ulterieure necessite une correction autorisee ou un rejet du secretariat ou de la direction.",
                 "operationId": "enseignantEnregistrerNotes",
                 "parameters": [
                     {
@@ -9059,7 +9059,7 @@
                     "Administration des notes"
                 ],
                 "summary": "Consulter les feuilles de notes transmises par les enseignants",
-                "description": "Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Circuit : transmise → validee_secretariat → transmise_direction → validee_direction. Un refus du secretariat (rejetee_secretariat) rouvre la saisie enseignant et exige une nouvelle transmission. Un rejet de la direction (rejetee_direction) exige un reexamen du secretariat, qui peut transmettre a nouveau ou renvoyer a l enseignant. Les brouillons sont exclus. Ces validations ne publient pas les notes aux etudiants.",
+                "description": "Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Circuit : transmise → validee_secretariat → transmise_direction → validee_direction. Un refus du secretariat (rejetee_secretariat) rouvre la saisie enseignant et exige une nouvelle transmission. Un rejet du secretariat ou de la direction rouvre la saisie de la seule feuille rejetee pour correction et nouvelle transmission. Les brouillons sont exclus. Ces validations ne publient pas les notes aux etudiants.",
                 "operationId": "listerNotesTransmisesAdministration",
                 "parameters": [
                     {
@@ -9452,7 +9452,7 @@
                     "Administration des notes"
                 ],
                 "summary": "Rejeter une feuille avec motif et la renvoyer au secretariat",
-                "description": "ADMIN, DIRECTION. Seul le statut transmise_direction est accepte. Passe a rejetee_direction. Le secretariat doit reexaminer la feuille avant toute nouvelle transmission a la direction.",
+                "description": "ADMIN, DIRECTION. Seul le statut transmise_direction est accepte. Passe a rejetee_direction. La saisie de cette feuille est rouverte pour l enseignant, qui peut corriger puis retransmettre au secretariat.",
                 "operationId": "rejeterNotesDirection",
                 "parameters": [
                     {
@@ -11767,6 +11767,7 @@
                                                                     }
                                                                 },
                                                                 "moyenne": {
+                                                                    "description": "Moyenne des seules feuilles validees par la direction ; null si aucune.",
                                                                     "type": "number",
                                                                     "nullable": true
                                                                 }
@@ -13857,7 +13858,7 @@
                         }
                     },
                     "moyenne_matiere": {
-                        "description": "Moyenne pondérée des cours notés de la matière, arrondie à deux décimales.",
+                        "description": "Moyenne des seules feuilles validees par la direction ; null si aucune.",
                         "type": "number",
                         "example": 14.25,
                         "nullable": true
@@ -13865,7 +13866,8 @@
                     "statut_moyenne": {
                         "type": "string",
                         "enum": [
-                            "provisoire"
+                            "en_attente",
+                            "validee"
                         ]
                     }
                 },
@@ -15535,7 +15537,7 @@
         },
         {
             "name": "Saisie des notes",
-            "description": "La saisie est liee a une seance precise. Fournir id_seance, id_matiere (ou cours dans le chemin), id_promotion et id_annee_academique. La seance doit appartenir a l enseignant connecte et correspondre au contexte. Une affectation active et un creneau correspondant sont requis.\r\nGET /enseignant/notes/feuille retourne les etudiants et leur eligibilite sur cette seance. GET /enseignant/notes/tableau retourne directement les notes de cette seance. Sans id_seance, GET consulte uniquement les anciennes feuilles sans seance ; aucune attribution automatique n est faite.\r\nPUT enregistre et transmet immediatement la feuille de la seance. id_seance est obligatoire pour PUT et POST /transmettre. Seule la presence de la seance choisie est controlee : seance realisee, presences validees et completes, etudiant present ou absence autorisee. Les autres seances ne bloquent pas la saisie.\r\nChaque seance a sa propre feuille et son verrouillage. Envoyer toutes les evaluations ensemble dans notes[].evaluation pour une matiere. Tous les etudiants evaluables doivent avoir au moins une note ; sinon la requete entiere est annulee. La moyenne matiere directe est la moyenne simple des notes de toutes ses seances dans la meme promotion et annee. Les notes par cours restent separees.\r\nApres succes, statut=transmise et saisie_ouverte=false. Une correction autorisee ou un refus du secretariat permet de corriger les notes. Les transmissions et leurs decisions restent suivies via /enseignant/transmissions-notes et /administration/notes-transmises. Aucune publication aux etudiants."
+            "description": "La saisie est liee a une seance precise. Fournir id_seance, id_matiere (ou cours dans le chemin), id_promotion et id_annee_academique. La seance doit appartenir a l enseignant connecte et correspondre au contexte. Une affectation active et un creneau correspondant sont requis.\r\nGET /enseignant/notes/feuille retourne les etudiants et leur eligibilite sur cette seance. GET /enseignant/notes/tableau retourne directement les notes de cette seance. Sans id_seance, GET consulte uniquement les anciennes feuilles sans seance ; aucune attribution automatique n est faite.\r\nPUT enregistre et transmet immediatement la feuille de la seance. id_seance est obligatoire pour PUT et POST /transmettre. Seule la presence de la seance choisie est controlee : seance realisee, presences validees et completes, etudiant present ou absence autorisee. Les autres seances ne bloquent pas la saisie.\r\nChaque seance a sa propre feuille et son verrouillage. Envoyer toutes les evaluations ensemble dans notes[].evaluation pour une matiere. Tous les etudiants evaluables doivent avoir au moins une note ; sinon la requete entiere est annulee. La moyenne matiere directe est la moyenne simple des notes de toutes ses seances dans la meme promotion et annee. Les notes par cours restent separees.\r\nApres succes, statut=transmise et saisie_ouverte=false. Une correction autorisee ou un rejet du secretariat ou de la direction permet de corriger les notes. Les transmissions et leurs decisions restent suivies via /enseignant/transmissions-notes et /administration/notes-transmises. Aucune publication aux etudiants."
         },
         {
             "name": "Permissions",

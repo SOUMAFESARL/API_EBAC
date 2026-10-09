@@ -4,6 +4,8 @@ namespace App\OpenApi;
 
 use OpenApi\Attributes as OA;
 
+// Les moyennes sont null avant validation et utilisent uniquement les feuilles validee_direction.
+
 #[OA\Get(
     path: '/enseignant/transmissions-notes/tableau-general',
     operationId: 'tableauGeneralNotesTransmisesEnseignant',
@@ -40,7 +42,7 @@ use OpenApi\Attributes as OA;
                     new OA\Property(property: 'id_etudiant', type: 'integer'),
                     new OA\Property(property: 'etudiant', type: 'object', nullable: true),
                     new OA\Property(property: 'notes', type: 'object', additionalProperties: new OA\AdditionalProperties(type: 'number', nullable: true)),
-                    new OA\Property(property: 'moyenne', type: 'number', nullable: true),
+                    new OA\Property(property: 'moyenne', type: 'number', description: 'Moyenne des seules feuilles validees par la direction ; null si aucune.', nullable: true),
                 ])),
             ])),
         ])),

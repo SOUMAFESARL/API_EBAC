@@ -27,7 +27,7 @@ class TransmissionsNotesEnseignantApiTest extends TestCase
         $seance = \App\Models\SeanceCahierTexte::create(['enseignant_id' => $c['enseignant']->id,
             'id_niveau' => $c['promotion']->id_niveau, 'id_matiere' => $c['matiere']->id,
             'date_prevue' => '2026-09-14', 'heure_debut_prevue' => '08:00:00', 'statut' => 'realisee']);
-        $c['feuille']->update(['id_seance' => $seance->id]);
+        $c['feuille']->update(['id_seance' => $seance->id, 'statut' => 'validee_direction']);
         $etudiant = \App\Models\Etudiant::create(['matricule' => 'GENERAL', 'nom' => 'KONE', 'prenoms' => 'Test', 'date_inscription' => '2026-09-01']);
         $autreEtudiant = \App\Models\Etudiant::create(['matricule' => 'GENERAL2', 'nom' => 'YAO', 'prenoms' => 'Test', 'date_inscription' => '2026-09-01']);
         $c['feuille']->notes()->create(['id_etudiant' => $etudiant->id, 'evaluation' => 'dev1', 'note' => 12]);
@@ -44,7 +44,7 @@ class TransmissionsNotesEnseignantApiTest extends TestCase
             'id_matiere' => null, 'id_cours' => $c['cours']->id])->save();
         $nouvelle->notes()->create(['id_etudiant' => $etudiant->id, 'evaluation' => 'dev2', 'note' => 18]);
         $this->getJson($url)->assertJsonCount(1, 'tableaux.0.colonnes');
-        $nouvelle->update(['statut' => 'transmise', 'date_transmission' => now()]);
+        $nouvelle->update(['statut' => 'validee_direction', 'date_transmission' => now()]);
         $response = $this->getJson($url)->assertOk()->assertJsonCount(2, 'tableaux.0.colonnes')
             ->assertJsonPath('tableaux.0.colonnes.0.cle', $cle)
             ->assertJsonPath('tableaux.0.colonnes.1.id_seance', $seance2->id)
@@ -153,11 +153,32 @@ class TransmissionsNotesEnseignantApiTest extends TestCase
         $this->assertSame(['terminee', 'terminee', 'terminee', 'terminee'], array_column($response->json('transmission.circuit_validation.etapes'), 'statut'));
     }
 
+    public function test_transmission_secretariat_met_a_jour_le_workflow_enseignant(): void
+    {
+        $c = $this->contexte();
+        $role = Role::create(['code' => 'SECRETAIRE_ACADEMIQUE', 'libelle' => 'Secretariat academique']);
+        $secretaire = User::factory()->create(['id_role' => $role->id]);
+        $id = $c['feuille']->id;
+        $this->getJson(self::URL.'/'.$id)->assertOk()
+            ->assertJsonPath('transmission.statut_workflow', 'transmise');
+        Sanctum::actingAs($secretaire);
+        $this->postJson('/api/v1/administration/notes-transmises/'.$id.'/transmettre-direction')
+            ->assertOk()->assertJsonPath('feuille_notes.statut_workflow', 'transmise_direction');
+        Sanctum::actingAs($c['enseignant']);
+        foreach ([self::URL.'/'.$id => 'transmission', self::URL => 'transmissions.0',
+            self::URL.'/feuilles' => 'feuilles_notes.0', self::URL.'/tableau' => '0'] as $url => $racine) {
+            $this->getJson($url)->assertOk()
+                ->assertJsonPath($racine.'.statut', 'transmise')
+                ->assertJsonPath($racine.'.statut_workflow', 'transmise_direction');
+        }
+        $this->assertDatabaseHas('feuilles_notes', ['id' => $id, 'statut' => 'transmise_direction']);
+    }
+
     public function test_tous_statuts_et_motifs_rejet_sont_presentes(): void
     {
         $c = $this->contexte();
         $etapes = ['transmise' => 2, 'validee_secretariat' => 3, 'transmise_direction' => 3,
-            'validee_direction' => 4, 'rejetee_secretariat' => 1, 'rejetee_direction' => 2];
+            'validee_direction' => 4, 'rejetee_secretariat' => 1, 'rejetee_direction' => 1];
         foreach ($etapes as $statut => $etape) {
             $rejet = str_starts_with($statut, 'rejetee');
             $c['feuille']->changerStatut($statut, $c['admin']->id, $statut, $rejet ? 'Verifier les notes' : null);
@@ -167,7 +188,7 @@ class TransmissionsNotesEnseignantApiTest extends TestCase
                 ->assertJsonPath('transmission.circuit_validation.etape_actuelle', $etape)
                 ->assertJsonPath('transmission.circuit_validation.rejetee', $rejet)
                 ->assertJsonPath('transmission.circuit_validation.motif_rejet', $rejet ? 'Verifier les notes' : null)
-                ->assertJsonPath('transmission.circuit_validation.correction_enseignant_requise', $statut === 'rejetee_secretariat');
+                ->assertJsonPath('transmission.circuit_validation.correction_enseignant_requise', in_array($statut, ['rejetee_secretariat', 'rejetee_direction'], true));
             $this->getJson(self::URL.'?statut=transmise')->assertOk()
                 ->assertJsonPath('meta.total', 1)
                 ->assertJsonPath('transmissions.0.statut', 'transmise');

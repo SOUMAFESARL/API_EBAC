@@ -4,12 +4,14 @@ namespace App\OpenApi;
 
 use OpenApi\Attributes as OA;
 
+// Les moyennes sont null avant validation et utilisent uniquement les feuilles validee_direction.
+
 #[OA\Tag(name: 'Saisie des notes', description: <<<'DOC'
 La saisie est liee a une seance precise. Fournir id_seance, id_matiere (ou cours dans le chemin), id_promotion et id_annee_academique. La seance doit appartenir a l enseignant connecte et correspondre au contexte. Une affectation active et un creneau correspondant sont requis.
 GET /enseignant/notes/feuille retourne les etudiants et leur eligibilite sur cette seance. GET /enseignant/notes/tableau retourne directement les notes de cette seance. Sans id_seance, GET consulte uniquement les anciennes feuilles sans seance ; aucune attribution automatique n est faite.
 PUT enregistre et transmet immediatement la feuille de la seance. id_seance est obligatoire pour PUT et POST /transmettre. Seule la presence de la seance choisie est controlee : seance realisee, presences validees et completes, etudiant present ou absence autorisee. Les autres seances ne bloquent pas la saisie.
 Chaque seance a sa propre feuille et son verrouillage. Envoyer toutes les evaluations ensemble dans notes[].evaluation pour une matiere. Tous les etudiants evaluables doivent avoir au moins une note ; sinon la requete entiere est annulee. La moyenne matiere directe est la moyenne simple des notes de toutes ses seances dans la meme promotion et annee. Les notes par cours restent separees.
-Apres succes, statut=transmise et saisie_ouverte=false. Une correction autorisee ou un refus du secretariat permet de corriger les notes. Les transmissions et leurs decisions restent suivies via /enseignant/transmissions-notes et /administration/notes-transmises. Aucune publication aux etudiants.
+Apres succes, statut=transmise et saisie_ouverte=false. Une correction autorisee ou un rejet du secretariat ou de la direction permet de corriger les notes. Les transmissions et leurs decisions restent suivies via /enseignant/transmissions-notes et /administration/notes-transmises. Aucune publication aux etudiants.
 DOC)]
 #[OA\Schema(schema: 'EtudiantNoteCours', type: 'object', properties: [
     new OA\Property(property: 'notes', type: 'array', description: 'Toutes les evaluations de cet etudiant. Utiliser notes[].id pour demander une correction. Le champ historique id_note correspond a la premiere note.', items: new OA\Items(type: 'object', properties: [
@@ -26,8 +28,8 @@ DOC)]
     new OA\Property(property: 'statut_presence', type: 'string', enum: ['present', 'absent', 'en_attente'], description: 'en_attente tant que les conditions de présence ne permettent pas la saisie.', example: 'present'),
     new OA\Property(property: 'evaluation_autorisee', type: 'boolean', description: 'Toutes les absences concernées sont autorisées et les présences sont validées et complètes.'),
     new OA\Property(property: 'absences_non_autorisees', type: 'array', description: 'Identifiants des lignes presences encore bloquantes.', items: new OA\Items(type: 'integer')),
-    new OA\Property(property: 'moyenne_matiere', type: 'number', nullable: true, description: 'Moyenne pondérée des cours notés de la matière, arrondie à deux décimales.', example: 14.25),
-    new OA\Property(property: 'statut_moyenne', type: 'string', enum: ['provisoire']),
+    new OA\Property(property: 'moyenne_matiere', type: 'number', description: 'Moyenne des seules feuilles validees par la direction ; null si aucune.', nullable: true, example: 14.25),
+    new OA\Property(property: 'statut_moyenne', type: 'string', enum: ['en_attente', 'validee']),
 ])]
 #[OA\Schema(schema: 'FeuilleNotesDetail', type: 'object', properties: [
     new OA\Property(property: 'cours', type: 'object', example: ['id' => 41, 'libelle' => 'La Trinité', 'coefficient' => '1.00']),
@@ -74,7 +76,7 @@ DOC)]
         new OA\Parameter(name: 'id_promotion', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
     ], responses: [new OA\Response(response: 200, description: 'Feuille de notes et conditions de saisie.', content: new OA\JsonContent(properties: [new OA\Property(property: 'feuille_notes', ref: '#/components/schemas/FeuilleNotesDetail')])), new OA\Response(response: 404, description: 'Cours, promotion ou année inaccessible.')])]
 #[OA\Put(path: '/enseignant/notes/{cours}', operationId: 'enseignantEnregistrerNotes', summary: 'Enregistrer et transmettre directement les notes sur 20',
-    description: 'Fournir cours, id_promotion et id_annee_academique et un corps JSON contenant notes. Tous les etudiants evaluables doivent avoir une note. La requete est atomique : une feuille incomplete ou une ligne invalide annule tout. Apres succes, statut=transmise et saisie_ouverte=false. Toute modification ulterieure necessite une correction autorisee ou un refus du secretariat.',
+    description: 'Fournir cours, id_promotion et id_annee_academique et un corps JSON contenant notes. Tous les etudiants evaluables doivent avoir une note. La requete est atomique : une feuille incomplete ou une ligne invalide annule tout. Apres succes, statut=transmise et saisie_ouverte=false. Toute modification ulterieure necessite une correction autorisee ou un rejet du secretariat ou de la direction.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]], parameters: [
         new OA\Parameter(name: 'cours', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_seance', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),

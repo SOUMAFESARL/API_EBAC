@@ -135,9 +135,11 @@ class TransmissionNotesController extends Controller
                 }
             }
             $vides = array_fill_keys(array_column($colonnes, 'cle'), null);
-            $lignes = collect($lignes)->map(function ($ligne) use ($vides) {
+            $clesValidees = $groupe->where('statut', 'validee_direction')->pluck('id');
+            $colonnesValidees = array_flip(collect($colonnes)->whereIn('id_feuille_notes', $clesValidees)->pluck('cle')->all());
+            $lignes = collect($lignes)->map(function ($ligne) use ($vides, $colonnesValidees) {
                 $ligne['notes'] = array_replace($vides, $ligne['notes']);
-                $valeurs = array_filter($ligne['notes'], fn ($note) => $note !== null);
+                $valeurs = array_filter(array_intersect_key($ligne['notes'], $colonnesValidees), fn ($note) => $note !== null);
                 $ligne['moyenne'] = count($valeurs) ? round(array_sum($valeurs) / count($valeurs), 2) : null;
 
                 return $ligne;
@@ -170,7 +172,7 @@ class TransmissionNotesController extends Controller
             'transmise_direction' => [3, 'Validation direction', 'Notes transmises à la direction, en attente de validation.'],
             'validee_direction' => [4, 'Validé et verrouillé', 'Notes validées par la direction et verrouillées.'],
             'rejetee_secretariat' => [1, 'Refus secrétariat', 'Notes refusées par le secrétariat. Corrigez la feuille puis transmettez-la à nouveau.'],
-            'rejetee_direction' => [2, 'Rejet direction', 'Notes rejetées par la direction, en attente de réexamen par le secrétariat.'],
+            'rejetee_direction' => [1, 'Rejet direction', 'Notes rejetées par la direction, en attente de réexamen par le secrétariat.'],
         };
         $rejet = in_array($feuille->statut, ['rejetee_secretariat', 'rejetee_direction'], true);
         $decision = $feuille->historique->last();
@@ -188,7 +190,7 @@ class TransmissionNotesController extends Controller
             'circuit_validation' => [
                 'etape_actuelle' => $etape, 'libelle' => $libelle, 'message' => $message,
                 'rejetee' => $rejet, 'motif_rejet' => $rejet ? $decision?->motif : null,
-                'correction_enseignant_requise' => $feuille->statut === 'rejetee_secretariat',
+                'correction_enseignant_requise' => in_array($feuille->statut, ['rejetee_secretariat', 'rejetee_direction'], true),
                 'validee_et_verrouillee' => $feuille->statut === 'validee_direction',
                 'etapes' => collect($libelles)->map(fn ($nom, $numero) => [
                     'numero' => $numero, 'libelle' => $nom,

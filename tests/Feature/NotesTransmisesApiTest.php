@@ -68,7 +68,7 @@ class NotesTransmisesApiTest extends TestCase
         }
         Sanctum::actingAs($users['SECRETAIRE_ACADEMIQUE']);
         $this->getJson($this->url($feuille))->assertOk()
-            ->assertJsonPath('feuille_notes.statut', 'a_verifier');
+            ->assertJsonPath('feuille_notes.statut', 'rejetee_direction');
         $this->assertSame('rejetee_direction', $feuille->fresh()->statut);
     }
 

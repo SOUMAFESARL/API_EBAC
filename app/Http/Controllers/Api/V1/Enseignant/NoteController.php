@@ -133,11 +133,11 @@ class NoteController extends Controller
         $feuille = FeuilleNotes::with('notes')->where($cle)->first();
         $notesParEtudiant = $feuille?->notes->sortBy('id')->groupBy('id_etudiant') ?? collect();
         $notes = $notesParEtudiant->map(fn ($groupe) => $groupe->first());
-        $moyennes = $parMatiere ? DB::table('notes_cours as n')->join('feuilles_notes as f', 'f.id', '=', 'n.id_feuille_notes')
+        $moyennes = $parMatiere ? DB::table('notes_cours as n')->join('feuilles_notes as f', 'f.id', '=', 'n.id_feuille_notes')->where('f.statut', 'validee_direction')
             ->where('f.id_matiere', $cours->id)->whereNull('f.id_cours')
             ->where('f.id_promotion', $promotion->id)->where('f.id_annee_academique', $cle['id_annee_academique'])
             ->selectRaw('n.id_etudiant, AVG(n.note) as moyenne')->groupBy('n.id_etudiant')->pluck('moyenne', 'id_etudiant')
-            : DB::table('notes_cours as n')->join('feuilles_notes as f', 'f.id', '=', 'n.id_feuille_notes')
+            : DB::table('notes_cours as n')->join('feuilles_notes as f', 'f.id', '=', 'n.id_feuille_notes')->where('f.statut', 'validee_direction')
             ->join('cours as c', 'c.id', '=', 'f.id_cours')->join('modules as m', 'm.id', '=', 'c.id_module')
             ->where('f.id_promotion', $promotion->id)->where('f.id_annee_academique', $cle['id_annee_academique'])
             ->where('m.id_matiere', $cours->module->id_matiere)->whereNull('c.deleted_at')->whereNull('m.deleted_at')
@@ -160,7 +160,7 @@ class NoteController extends Controller
                 'notes' => ($notesParEtudiant->get($etudiant->id) ?? collect())->map(fn ($note) =>
                     $note->only(['id', 'evaluation', 'note']))->values(),
                 'moyenne_matiere' => isset($moyennes[$etudiant->id]) ? round((float) $moyennes[$etudiant->id], 2) : null,
-                'statut_moyenne' => 'provisoire'];
+                'statut_moyenne' => isset($moyennes[$etudiant->id]) ? 'validee' : 'en_attente'];
         });
 
         return ['id_seance' => $cle['id_seance'], 'cours' => $parMatiere ? null : $cours->only(['id', 'libelle', 'coefficient']),
@@ -170,7 +170,7 @@ class NoteController extends Controller
             'statut_workflow' => $feuille?->statut ?? 'brouillon',
             'date_transmission' => $feuille?->date_transmission,
             'historique' => $feuille?->historique()->with('acteur:id,nom,prenoms')->get() ?? collect(),
-            'saisie_ouverte' => $ouverte && (! $feuille || in_array($feuille->statut, ['brouillon', 'rejetee_secretariat'], true)),
+            'saisie_ouverte' => $ouverte && (! $feuille || in_array($feuille->statut, ['brouillon', 'rejetee_secretariat', 'rejetee_direction'], true)),
             'seances_realisees' => $seances->count(), 'presences_validees' => $validees->count(),
             'seances_a_relever' => $seances->diff($validees)->pluck('id')->values(),
             'notes_manquantes' => $lignes->where('evaluable', true)->filter(fn ($ligne) => $ligne['notes']->isEmpty())->count(), 'etudiants' => $lignes];
@@ -221,7 +221,7 @@ class NoteController extends Controller
             Promotion::whereKey($promotion->id)->lockForUpdate()->firstOrFail();
             $existante = FeuilleNotes::where($cle)->lockForUpdate()->first();
             if ($existante && in_array($existante->statut, FeuilleNotes::STATUTS_TRANSMIS, true)
-                && $existante->statut !== 'rejetee_secretariat' && ! isset($data['notes'])) {
+                && ! in_array($existante->statut, ['rejetee_secretariat', 'rejetee_direction'], true) && ! isset($data['notes'])) {
                 return;
             }
             $etat = $this->presenter($item, $promotion, $cle);

@@ -15,7 +15,7 @@ class FeuilleNotes extends Model
         return collect(self::STATUTS_TRANSMIS)->mapWithKeys(fn ($statut) => [$statut => match ($role) {
             'ENSEIGNANT' => 'transmise',
             'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE' => match ($statut) {
-                'transmise', 'rejetee_direction' => 'a_verifier',
+                'transmise' => 'a_verifier',
                 default => $statut,
             },
             'DIRECTION' => match ($statut) {
