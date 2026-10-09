@@ -458,8 +458,15 @@ class NotesEnseignantApiTest extends TestCase
         Sanctum::actingAs($data['admin']);
         $this->postJson('/api/v1/administration/notes-transmises/'.$id.'/rejeter-secretariat', ['motif' => 'Verifier la copie'])->assertOk();
         Sanctum::actingAs($data['enseignant']);
-        $this->getJson($url)->assertOk()->assertJsonPath('feuille_notes.saisie_ouverte', true)
+        $this->getJson($url)->assertOk()->assertJsonPath('feuille_notes.saisie_ouverte', false)
             ->assertJsonPath('feuille_notes.historique.1.motif', 'Verifier la copie');
+        $this->putJson($url, ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 16]]])
+            ->assertUnprocessable()->assertJsonValidationErrors('notes');
+        $this->getJson('/api/v1/enseignant/liste-presence/'.$data['seance']->id)->assertOk()
+            ->assertJsonPath('feuille_presence.presence.statut', 'a_transmettre')
+            ->assertJsonPath('feuille_presence.modifiable', true);
+        $this->presences($data);
+        $this->getJson($url)->assertOk()->assertJsonPath('feuille_notes.saisie_ouverte', true);
         $this->putJson($url, ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 16]]])->assertOk();
         $this->postJson($transmission)->assertOk()->assertJsonPath('feuille_notes.statut', 'transmise')
             ->assertJsonPath('feuille_notes.saisie_ouverte', false)->assertJsonCount(3, 'feuille_notes.historique');
@@ -523,7 +530,11 @@ class NotesEnseignantApiTest extends TestCase
         $this->assertSame('transmise', $autre->fresh()->statut);
         Sanctum::actingAs($data['enseignant']);
         $this->getJson($url)->assertOk()->assertJsonPath('feuille_notes.statut_workflow', 'rejetee_direction')
-            ->assertJsonPath('feuille_notes.saisie_ouverte', true);
+            ->assertJsonPath('feuille_notes.saisie_ouverte', false);
+        $this->putJson($url, ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 16]]])
+            ->assertUnprocessable()->assertJsonValidationErrors('notes');
+        $this->presences($data);
+        $this->getJson($url)->assertOk()->assertJsonPath('feuille_notes.saisie_ouverte', true);
         $this->putJson($url, ['notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 16]]])->assertOk()
             ->assertJsonPath('feuille_notes.statut_workflow', 'transmise')->assertJsonPath('feuille_notes.saisie_ouverte', false);
         Sanctum::actingAs($data['admin']);
