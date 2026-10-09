@@ -474,7 +474,7 @@ class NotesEnseignantApiTest extends TestCase
         $data = $this->contexte();
         $this->presences($data);
         $matiere = $data['cours']->module->id_matiere;
-        $url = '/api/v1/enseignant/notes/matieres/'.$matiere;
+        $url = '/api/v1/enseignant/notes/feuille/'.$matiere;
         $payload = ['id_seance' => $data['seance']->id, 'id_promotion' => $data['promotion']->id,
             'id_annee_academique' => $data['annee']->id,
             'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12]]];

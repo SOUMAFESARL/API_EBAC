@@ -8848,7 +8848,7 @@
                 ]
             }
         },
-        "/enseignant/notes/matieres/{matiere}": {
+        "/enseignant/notes/feuille/{matiere}": {
             "get": {
                 "tags": [
                     "Saisie des notes"
@@ -9007,7 +9007,7 @@
                 ]
             }
         },
-        "/enseignant/notes/matieres/{matiere}/transmettre": {
+        "/enseignant/notes/feuille/{matiere}/transmettre": {
             "post": {
                 "tags": [
                     "Saisie des notes"

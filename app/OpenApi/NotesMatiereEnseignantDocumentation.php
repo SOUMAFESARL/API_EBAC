@@ -16,7 +16,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'note', type: 'number', minimum: 0, maximum: 20, nullable: true, example: 15.5),
     ])),
 ])]
-#[OA\Get(path: '/enseignant/notes/matieres/{matiere}', operationId: 'consulterNotesMatiereExplicite', summary: 'Consulter la feuille par matiere',
+#[OA\Get(path: '/enseignant/notes/feuille/{matiere}', operationId: 'consulterNotesMatiereExplicite', summary: 'Consulter la feuille par matiere',
     description: 'La matiere est indiquee dans le chemin. Fournir id_seance, id_promotion et id_annee_academique. PUT corrige et retransmet la meme feuille apres rejet du secretariat ou de la direction. Les notes sont ensuite verrouillees.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]],
     parameters: [new OA\Parameter(name: 'matiere', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -25,7 +25,7 @@ use OpenApi\Attributes as OA;
         new OA\Parameter(name: 'id_annee_academique', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
     ],
     responses: [new OA\Response(response: 200, description: 'Feuille de notes.', content: new OA\JsonContent(ref: '#/components/schemas/NotesCoursReponse')), new OA\Response(response: 404, description: 'Matiere inaccessible.'), new OA\Response(response: 422, description: 'Contexte invalide ou saisie fermee.')])]
-#[OA\Put(path: '/enseignant/notes/matieres/{matiere}', operationId: 'modifierNotesMatiereExplicite', summary: 'Modifier et retransmettre une feuille par matiere',
+#[OA\Put(path: '/enseignant/notes/feuille/{matiere}', operationId: 'modifierNotesMatiereExplicite', summary: 'Modifier et retransmettre une feuille par matiere',
     description: 'La matiere est indiquee dans le chemin. Fournir id_seance, id_promotion et id_annee_academique. PUT corrige et retransmet la meme feuille apres rejet du secretariat ou de la direction. Les notes sont ensuite verrouillees.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]],
     parameters: [new OA\Parameter(name: 'matiere', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
@@ -37,7 +37,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'notes', type: 'array', minItems: 1, items: new OA\Items(type: 'object', required: ['id_etudiant', 'note'], properties: [new OA\Property(property: 'id_etudiant', type: 'integer'), new OA\Property(property: 'evaluation', type: 'string'), new OA\Property(property: 'note', type: 'number', minimum: 0, maximum: 20)])),
     ])),
     responses: [new OA\Response(response: 200, description: 'Feuille de notes.', content: new OA\JsonContent(ref: '#/components/schemas/NotesCoursReponse')), new OA\Response(response: 404, description: 'Matiere inaccessible.'), new OA\Response(response: 422, description: 'Contexte invalide ou saisie fermee.')])]
-#[OA\Post(path: '/enseignant/notes/matieres/{matiere}/transmettre', operationId: 'transmettreNotesMatiereExplicite', summary: 'Transmettre une feuille par matiere',
+#[OA\Post(path: '/enseignant/notes/feuille/{matiere}/transmettre', operationId: 'transmettreNotesMatiereExplicite', summary: 'Transmettre une feuille par matiere',
     description: 'La matiere est indiquee dans le chemin. Fournir id_seance, id_promotion et id_annee_academique. PUT corrige et retransmet la meme feuille apres rejet du secretariat ou de la direction. Les notes sont ensuite verrouillees.',
     tags: ['Saisie des notes'], security: [['sanctum' => []]],
     parameters: [new OA\Parameter(name: 'matiere', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
