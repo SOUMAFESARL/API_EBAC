@@ -147,10 +147,14 @@ class ListePresenceEnseignantApiTest extends TestCase
                 'statut' => 'brouillon', 'validee_par' => null]);
             $this->putJson($url, compact('presences'))->assertOk()
                 ->assertJsonPath('feuille_presence.presence.statut', 'validee')
-                ->assertJsonPath('feuille_presence.modifiable', true);
-            $this->getJson($url)->assertOk()->assertJsonPath('feuille_presence.presence.statut', 'validee');
+                ->assertJsonPath('feuille_presence.modifiable', false);
+            $this->getJson($url)->assertOk()->assertJsonPath('feuille_presence.presence.statut', 'validee')
+                ->assertJsonPath('feuille_presence.modifiable', false);
+            $this->putJson($url, compact('presences'))->assertUnprocessable()->assertJsonValidationErrors('presences');
+            $this->postJson($url.'/valider', compact('presences'))->assertUnprocessable()->assertJsonValidationErrors('presences');
             $this->getJson('/api/v1/enseignant/liste-presence')->assertOk()
-                ->assertJsonPath('seances.0.presence.statut', 'validee');
+                ->assertJsonPath('seances.0.presence.statut', 'validee')
+                ->assertJsonPath('seances.0.modifiable', false);
         }
     }
 
@@ -176,9 +180,10 @@ class ListePresenceEnseignantApiTest extends TestCase
             $presences[1]['statut'] = 'absent';
             $this->putJson($url, compact('presences'))->assertOk()
                 ->assertJsonPath('feuille_presence.presence.statut', 'validee')
-                ->assertJsonPath('feuille_presence.modifiable', true)
+                ->assertJsonPath('feuille_presence.modifiable', false)
                 ->assertJsonPath('feuille_presence.date_validation', now()->toJSON());
             $this->assertDatabaseHas('feuilles_presence', ['id_seance' => $seance->id, 'statut' => 'validee']);
+            $this->putJson($url, compact('presences'))->assertUnprocessable()->assertJsonValidationErrors('presences');
             $notes->update(['statut' => 'transmise']);
             $this->getJson($url)->assertOk()->assertJsonPath('feuille_presence.modifiable', false);
             $this->putJson($url, compact('presences'))->assertUnprocessable();

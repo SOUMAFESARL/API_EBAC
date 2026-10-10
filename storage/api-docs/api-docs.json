@@ -14156,7 +14156,7 @@
                         }
                     },
                     "modifiable": {
-                        "description": "Une feuille de notes rejetee par le secretariat ou la direction permet de corriger les presences de sa seance. Le PUT corrige et revalide automatiquement les presences avant de retransmettre les notes.",
+                        "description": "Une feuille de notes rejetee par le secretariat ou la direction permet de corriger les presences de sa seance. Le PUT corrige et revalide automatiquement les presences, puis verrouille la liste (modifiable=false), meme si les notes restent rejetees. Un nouveau rejet remet la liste en brouillon et permet une nouvelle correction.",
                         "type": "boolean",
                         "example": true
                     },

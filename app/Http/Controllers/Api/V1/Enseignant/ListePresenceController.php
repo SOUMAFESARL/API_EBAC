@@ -165,7 +165,7 @@ class ListePresenceController extends Controller
             ['id_seance' => $seance->id],
             ['statut' => 'brouillon', 'created_by' => $userId],
         );
-        if ($feuille->statut === 'validee' && ! $this->notesRejetees($seance)) {
+        if ($feuille->statut === 'validee') {
             throw ValidationException::withMessages(['presences' => ['Cette liste est validée et ne peut plus être modifiée.']]);
         }
         $concernes = $this->etudiantsConcernes($seance)->pluck('id')->sort()->values();
@@ -258,7 +258,7 @@ class ListePresenceController extends Controller
                 ...$etudiant->only(['id', 'matricule', 'nom', 'prenoms']),
                 'statut_presence' => $marques->get($etudiant->id)?->statut,
             ]),
-            'modifiable' => $seance->feuillePresence?->statut !== 'validee' || $this->notesRejetees($seance),
+            'modifiable' => $seance->feuillePresence?->statut !== 'validee',
             'date_validation' => $seance->feuillePresence?->date_validation,
         ];
     }

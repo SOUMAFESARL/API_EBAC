@@ -42,7 +42,7 @@ use OpenApi\Attributes as OA;
             type: 'array',
             items: new OA\Items(ref: '#/components/schemas/EtudiantPresence')
         ),
-        new OA\Property(property: 'modifiable', type: 'boolean', description: 'Une feuille de notes rejetee par le secretariat ou la direction permet de corriger les presences de sa seance. Le PUT corrige et revalide automatiquement les presences avant de retransmettre les notes.', example: true),
+        new OA\Property(property: 'modifiable', type: 'boolean', description: 'Une feuille de notes rejetee par le secretariat ou la direction permet de corriger les presences de sa seance. Le PUT corrige et revalide automatiquement les presences, puis verrouille la liste (modifiable=false), meme si les notes restent rejetees. Un nouveau rejet remet la liste en brouillon et permet une nouvelle correction.', example: true),
         new OA\Property(property: 'date_validation', type: 'string', format: 'date-time', nullable: true),
     ]
 )]
