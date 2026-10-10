@@ -7392,8 +7392,8 @@
                 "tags": [
                     "Liste de présence"
                 ],
-                "summary": "Enregistrer la liste de présence en brouillon",
-                "description": "Enregistre les statuts (présent ou absent) pour tous les étudiants concernés. La liste doit contenir exactement tous les étudiants sans doublon.",
+                "summary": "Enregistrer et valider la liste de présence",
+                "description": "Enregistre et valide automatiquement les présences pour tous les étudiants concernés, sans doublon. La séance doit être réalisée. Chaque absent reçoit automatiquement un cours à faire.",
                 "operationId": "enregistrerListePresence",
                 "parameters": [
                     {
@@ -7417,14 +7417,14 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Brouillon enregistré avec succès.",
+                        "description": "Liste enregistrée et validée définitivement.",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Liste de présence enregistrée."
+                                            "example": "Liste de présence validée définitivement."
                                         },
                                         "feuille_presence": {
                                             "$ref": "#/components/schemas/FeuillePresenceDetail"
@@ -7439,7 +7439,7 @@
                         "description": "Séance inaccessible."
                     },
                     "422": {
-                        "description": "Liste incomplète, doublon ou étudiant non concerné."
+                        "description": "Séance non réalisée, liste déjà validée, liste incomplète, doublon ou étudiant non concerné."
                     }
                 },
                 "security": [
@@ -7614,7 +7614,7 @@
                     "Espace étudiant"
                 ],
                 "summary": "Lister les cours a rattraper de l etudiant connecte",
-                "description": "Retourne uniquement ses entrees au statut a_faire, creees lors de la validation des absences, avec la matiere, le cours si renseigne et le contenu de la seance.",
+                "description": "Retourne uniquement ses entrees au statut a_faire, creees lors de la validation des absences, avec la matiere, le cours si renseigne et le contenu de la seance. Le champ rattrapage expose la programmation (date, horaires, enseignant, salle, statut), ou null.",
                 "operationId": "listerMesCoursAFaire",
                 "parameters": [
                     {
@@ -10637,6 +10637,369 @@
                     },
                     "422": {
                         "description": "Calendrier non publié."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/rattrapages": {
+            "get": {
+                "tags": [
+                    "Rattrapages"
+                ],
+                "summary": "Lister les programmations de rattrapage",
+                "description": "Roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Pagination Laravel data, total, current_page. Relations cours_a_faire (etudiant, seance, cours, matiere), enseignant et salle.",
+                "operationId": "listerRattrapages",
+                "parameters": [
+                    {
+                        "name": "id_etudiant",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "id_seance",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "id_cours",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "id_matiere",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "programme",
+                                "realise",
+                                "annule"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "enseignant_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "date_prevue",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succes."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role non autorise."
+                    },
+                    "404": {
+                        "description": "Ressource introuvable."
+                    },
+                    "422": {
+                        "description": "Donnees invalides, absence non eligible ou programmation existante."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Rattrapages"
+                ],
+                "summary": "Programmer un rattrapage",
+                "description": "Une programmation par cours a faire. Etudiant, seance, cours et matiere sont derives de cette absence, sans saisie manuelle. Date a partir de la seance manquee. La programmation est visible dans GET /etudiant/cours-a-faire.",
+                "operationId": "programmerRattrapage",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProgrammationRattrapagePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Succes."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role non autorise."
+                    },
+                    "404": {
+                        "description": "Ressource introuvable."
+                    },
+                    "422": {
+                        "description": "Donnees invalides, absence non eligible ou programmation existante."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/rattrapages/cours-a-rattraper": {
+            "get": {
+                "tags": [
+                    "Rattrapages"
+                ],
+                "summary": "Lister les absences a rattraper",
+                "description": "Uniquement les cours a_faire issus des absences actuelles sur des feuilles validees et seances realisees. Inclut la programmation existante dans rattrapage.",
+                "operationId": "listerAbsencesARattraper",
+                "parameters": [
+                    {
+                        "name": "id_etudiant",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "id_seance",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "id_cours",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "id_matiere",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succes."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role non autorise."
+                    },
+                    "404": {
+                        "description": "Ressource introuvable."
+                    },
+                    "422": {
+                        "description": "Donnees invalides, absence non eligible ou programmation existante."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/rattrapages/{id}": {
+            "get": {
+                "tags": [
+                    "Rattrapages"
+                ],
+                "summary": "Afficher un rattrapage",
+                "description": "Retourne rattrapage avec ses relations.",
+                "operationId": "afficherRattrapage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succes."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role non autorise."
+                    },
+                    "404": {
+                        "description": "Ressource introuvable."
+                    },
+                    "422": {
+                        "description": "Donnees invalides, absence non eligible ou programmation existante."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Rattrapages"
+                ],
+                "summary": "Modifier une programmation",
+                "description": "La cible id_cours_a_faire est immuable. Date et horaires et enseignant requis. Absence toujours validee et cours restant a faire requis.",
+                "operationId": "modifierRattrapage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ModificationRattrapagePayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succes."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role non autorise."
+                    },
+                    "404": {
+                        "description": "Ressource introuvable."
+                    },
+                    "422": {
+                        "description": "Donnees invalides, absence non eligible ou programmation existante."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Rattrapages"
+                ],
+                "summary": "Supprimer une programmation",
+                "description": "Conserve le cours a faire et la presence initiale. Permet une nouvelle programmation.",
+                "operationId": "supprimerRattrapage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succes."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role non autorise."
+                    },
+                    "404": {
+                        "description": "Ressource introuvable."
+                    },
+                    "422": {
+                        "description": "Donnees invalides, absence non eligible ou programmation existante."
                     }
                 },
                 "security": [
@@ -13771,7 +14134,7 @@
                     "presence": {
                         "properties": {
                             "statut": {
-                                "description": "a_transmettre apres rejet de la feuille de notes liee : presences modifiables et a revalider. Sinon a_soumettre, brouillon ou validee.",
+                                "description": "a_transmettre apres rejet de la feuille de notes liee tant que les presences ne sont pas revalidees. Apres correction par PUT, validee, meme si les notes restent rejetees. Sinon a_soumettre ou brouillon.",
                                 "type": "string",
                                 "example": "a_transmettre"
                             },
@@ -13793,7 +14156,7 @@
                         }
                     },
                     "modifiable": {
-                        "description": "Une feuille de notes rejetee par le secretariat ou la direction permet de corriger les presences de sa seance. Apres modification, revalider les presences avant de retransmettre les notes.",
+                        "description": "Une feuille de notes rejetee par le secretariat ou la direction permet de corriger les presences de sa seance. Le PUT corrige et revalide automatiquement les presences avant de retransmettre les notes.",
                         "type": "boolean",
                         "example": true
                     },
@@ -15431,6 +15794,106 @@
                     }
                 ]
             },
+            "ProgrammationRattrapagePayload": {
+                "required": [
+                    "id_cours_a_faire",
+                    "date_prevue",
+                    "heure_debut",
+                    "heure_fin",
+                    "enseignant_id"
+                ],
+                "properties": {
+                    "id_cours_a_faire": {
+                        "description": "Identifiant obtenu via GET /administration/rattrapages/cours-a-rattraper. Interdit en modification : la cible reste identique.",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "date_prevue": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-10-15"
+                    },
+                    "heure_debut": {
+                        "type": "string",
+                        "example": "08:00"
+                    },
+                    "heure_fin": {
+                        "description": "HH:mm, strictement apres heure_debut.",
+                        "type": "string",
+                        "example": "10:00"
+                    },
+                    "enseignant_id": {
+                        "description": "Compte actif de role ENSEIGNANT.",
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "id_salle": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "statut": {
+                        "description": "Statut de programmation uniquement. Ne modifie ni la presence initiale ni le statut du cours a faire.",
+                        "type": "string",
+                        "default": "programme",
+                        "enum": [
+                            "programme",
+                            "realise",
+                            "annule"
+                        ]
+                    },
+                    "observations": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 5000
+                    }
+                },
+                "type": "object"
+            },
+            "ModificationRattrapagePayload": {
+                "required": [
+                    "date_prevue",
+                    "heure_debut",
+                    "heure_fin",
+                    "enseignant_id"
+                ],
+                "properties": {
+                    "date_prevue": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-10-16"
+                    },
+                    "heure_debut": {
+                        "type": "string",
+                        "example": "08:00"
+                    },
+                    "heure_fin": {
+                        "type": "string",
+                        "example": "10:00"
+                    },
+                    "enseignant_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "id_salle": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "statut": {
+                        "type": "string",
+                        "enum": [
+                            "programme",
+                            "realise",
+                            "annule"
+                        ]
+                    },
+                    "observations": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 5000
+                    }
+                },
+                "type": "object"
+            },
             "SallePayload": {
                 "required": [
                     "nom",
@@ -15882,6 +16345,10 @@
         {
             "name": "Publication du programme",
             "description": "Publication du programme"
+        },
+        {
+            "name": "Rattrapages",
+            "description": "Rattrapages"
         },
         {
             "name": "Réclamations des notes",

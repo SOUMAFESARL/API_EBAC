@@ -48,6 +48,18 @@ use App\Http\Controllers\Api\V1\Parametre\SalleController;
 use App\Http\Controllers\Api\V1\ProgrammePublieController;
 use Illuminate\Support\Facades\Route;
 
+Route::prefix('v1/administration/rattrapages')->name('api.v1.administration.rattrapages.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE'])
+    ->controller(App\Http\Controllers\Api\V1\Administration\RattrapageController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('cours-a-rattraper', 'coursARattraper')->name('cours-a-rattraper');
+        Route::post('/', 'store')->name('store');
+        Route::get('{id}', 'show')->whereNumber('id')->name('show');
+        Route::put('{id}', 'update')->whereNumber('id')->name('update');
+        Route::delete('{id}', 'destroy')->whereNumber('id')->name('destroy');
+    });
+
 Route::prefix('v1/administration/autorisations-evaluations')->name('api.v1.administration.autorisations-evaluations.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,DIRECTION,SECRETARIAT,SECRETAIRE_ACADEMIQUE'])
     ->controller(AutorisationEvaluationController::class)

@@ -4,12 +4,23 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class CoursAFaire extends Model
 {
     protected $table = 'cours_a_faire';
 
     protected $fillable = ['id_etudiant', 'id_cours', 'id_matiere', 'id_seance', 'statut', 'motif'];
+
+    public function etudiant(): BelongsTo
+    {
+        return $this->belongsTo(Etudiant::class, 'id_etudiant');
+    }
+
+    public function rattrapage(): HasOne
+    {
+        return $this->hasOne(ProgrammationRattrapage::class, 'id_cours_a_faire');
+    }
 
     public function cours(): BelongsTo
     {

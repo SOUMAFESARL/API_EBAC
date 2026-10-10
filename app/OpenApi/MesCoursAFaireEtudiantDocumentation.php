@@ -8,7 +8,7 @@ use OpenApi\Attributes as OA;
     path: '/etudiant/cours-a-faire',
     operationId: 'listerMesCoursAFaire',
     summary: 'Lister les cours a rattraper de l etudiant connecte',
-    description: 'Retourne uniquement ses entrees au statut a_faire, creees lors de la validation des absences, avec la matiere, le cours si renseigne et le contenu de la seance.',
+    description: 'Retourne uniquement ses entrees au statut a_faire, creees lors de la validation des absences, avec la matiere, le cours si renseigne et le contenu de la seance. Le champ rattrapage expose la programmation (date, horaires, enseignant, salle, statut), ou null.',
     tags: ['Espace étudiant'], security: [['sanctum' => []]],
     parameters: [
         new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1)),
