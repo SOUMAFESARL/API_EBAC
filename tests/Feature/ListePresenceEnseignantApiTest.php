@@ -98,11 +98,28 @@ class ListePresenceEnseignantApiTest extends TestCase
         Sanctum::actingAs($data['enseignant']);
         $presences = [['id_etudiant' => $data['etudiants'][0]->id, 'statut' => 'present'], ['id_etudiant' => $data['etudiants'][1]->id, 'statut' => 'absent']];
         $url = '/api/v1/enseignant/liste-presence/'.$data['seance']->id;
-        $this->putJson($url, compact('presences'))->assertOk()->assertJsonPath('feuille_presence.presence.absents', 1);
-        $this->postJson($url.'/valider')->assertOk()->assertJsonPath('feuille_presence.modifiable', false);
+        $this->putJson($url, compact('presences'))->assertOk()
+            ->assertJsonPath('feuille_presence.presence.absents', 1)
+            ->assertJsonPath('feuille_presence.presence.statut', 'validee')
+            ->assertJsonPath('feuille_presence.modifiable', false)
+            ->assertJsonPath('feuille_presence.date_validation', now()->toJSON());
+        $this->assertDatabaseHas('feuilles_presence', ['id_seance' => $data['seance']->id,
+            'statut' => 'validee', 'validee_par' => $data['enseignant']->id]);
         $this->assertDatabaseHas('cours_a_faire', ['id_etudiant' => $data['etudiants'][1]->id, 'id_seance' => $data['seance']->id, 'statut' => 'a_faire']);
         $this->putJson($url, compact('presences'))->assertUnprocessable()->assertJsonValidationErrors('presences');
         $this->postJson($url.'/valider')->assertUnprocessable()->assertJsonValidationErrors('presences');
+    }
+
+    public function test_put_refuse_seance_non_realisee_et_presences_manquantes(): void
+    {
+        $data = $this->contexte();
+        $url = '/api/v1/enseignant/liste-presence/'.$data['seance']->id;
+        $this->putJson($url, [])->assertUnprocessable()->assertJsonValidationErrors('presences');
+        $data['seance']->update(['statut' => 'prevue']);
+        $presences = $data['etudiants']->map(fn ($e) => ['id_etudiant' => $e->id, 'statut' => 'absent'])->all();
+        $this->putJson($url, compact('presences'))->assertUnprocessable()->assertJsonValidationErrors('seance');
+        $this->assertDatabaseMissing('feuilles_presence', ['id_seance' => $data['seance']->id]);
+        $this->assertDatabaseMissing('cours_a_faire', ['id_seance' => $data['seance']->id]);
     }
 
     public function test_rejet_administration_remet_presence_a_transmettre(): void
@@ -152,9 +169,7 @@ class ListePresenceEnseignantApiTest extends TestCase
             $presences[1]['statut'] = 'absent';
             $this->putJson($url, compact('presences'))->assertOk()
                 ->assertJsonPath('feuille_presence.presence.statut', 'a_transmettre')
-                ->assertJsonPath('feuille_presence.date_validation', null);
-            $this->postJson($url.'/valider')->assertOk()
-                ->assertJsonPath('feuille_presence.presence.statut', 'a_transmettre');
+                ->assertJsonPath('feuille_presence.date_validation', now()->toJSON());
             $this->assertDatabaseHas('feuilles_presence', ['id_seance' => $seance->id, 'statut' => 'validee']);
             $notes->update(['statut' => 'transmise']);
             $this->getJson($url)->assertOk()->assertJsonPath('feuille_presence.modifiable', false);
@@ -206,7 +221,7 @@ class ListePresenceEnseignantApiTest extends TestCase
         $this->putJson($url, ['presences' => [
             ['id_etudiant' => $data['etudiants'][0]->id, 'statut' => 'present'],
         ]])->assertOk();
-        $this->postJson($url.'/valider')->assertOk();
+        $this->assertDatabaseHas('feuilles_presence', ['id_seance' => $data['seance']->id, 'statut' => 'validee']);
         $this->assertDatabaseMissing('presences', ['id_etudiant' => $data['etudiants'][1]->id]);
         $this->assertDatabaseMissing('cours_a_faire', ['id_etudiant' => $data['etudiants'][1]->id]);
     }

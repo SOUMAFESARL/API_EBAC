@@ -73,19 +73,17 @@ class ListePresenceController extends Controller
 
     public function update(Request $request, int $seance): JsonResponse
     {
-        $data = $this->validerPayload($request, true);
-        $item = $this->seances($request)->with('moduleCalendrier.calendrier')->findOrFail($seance);
-        $feuille = DB::transaction(fn () => $this->synchroniser($item, $data['presences'], $request->user()->id));
-
-        return response()->json([
-            'message' => 'Liste de présence enregistrée.',
-            'feuille_presence' => $this->presenter($item->fresh()),
-        ]);
+        return $this->enregistrerEtValider($request, $seance, true);
     }
 
     public function valider(Request $request, int $seance): JsonResponse
     {
-        $data = $this->validerPayload($request, false);
+        return $this->enregistrerEtValider($request, $seance, false);
+    }
+
+    private function enregistrerEtValider(Request $request, int $seance, bool $presencesObligatoires): JsonResponse
+    {
+        $data = $this->validerPayload($request, $presencesObligatoires);
         $item = $this->seances($request)->with('moduleCalendrier.calendrier')->findOrFail($seance);
         if ($item->statut !== 'realisee') {
             throw ValidationException::withMessages(['seance' => ['Seule une séance réalisée peut recevoir une liste de présence définitive.']]);

@@ -42,7 +42,7 @@ use OpenApi\Attributes as OA;
             type: 'array',
             items: new OA\Items(ref: '#/components/schemas/EtudiantPresence')
         ),
-        new OA\Property(property: 'modifiable', type: 'boolean', description: 'Une feuille de notes rejetee par le secretariat ou la direction permet de corriger les presences de sa seance. Apres modification, revalider les presences avant de retransmettre les notes.', example: true),
+        new OA\Property(property: 'modifiable', type: 'boolean', description: 'Une feuille de notes rejetee par le secretariat ou la direction permet de corriger les presences de sa seance. Le PUT corrige et revalide automatiquement les presences avant de retransmettre les notes.', example: true),
         new OA\Property(property: 'date_validation', type: 'string', format: 'date-time', nullable: true),
     ]
 )]
@@ -123,8 +123,8 @@ use OpenApi\Attributes as OA;
 #[OA\Put(
     path: '/enseignant/liste-presence/{seance}',
     operationId: 'enregistrerListePresence',
-    summary: 'Enregistrer la liste de présence en brouillon',
-    description: 'Enregistre les statuts (présent ou absent) pour tous les étudiants concernés. La liste doit contenir exactement tous les étudiants sans doublon.',
+    summary: 'Enregistrer et valider la liste de présence',
+    description: 'Enregistre et valide automatiquement les présences pour tous les étudiants concernés, sans doublon. La séance doit être réalisée. Chaque absent reçoit automatiquement un cours à faire.',
     tags: ['Liste de présence'],
     security: [['sanctum' => []]],
     parameters: [
@@ -134,16 +134,16 @@ use OpenApi\Attributes as OA;
     responses: [
         new OA\Response(
             response: 200,
-            description: 'Brouillon enregistré avec succès.',
+            description: 'Liste enregistrée et validée définitivement.',
             content: new OA\JsonContent(
                 properties: [
-                    new OA\Property(property: 'message', type: 'string', example: 'Liste de présence enregistrée.'),
+                    new OA\Property(property: 'message', type: 'string', example: 'Liste de présence validée définitivement.'),
                     new OA\Property(property: 'feuille_presence', ref: '#/components/schemas/FeuillePresenceDetail'),
                 ]
             )
         ),
         new OA\Response(response: 404, description: 'Séance inaccessible.'),
-        new OA\Response(response: 422, description: 'Liste incomplète, doublon ou étudiant non concerné.'),
+        new OA\Response(response: 422, description: 'Séance non réalisée, liste déjà validée, liste incomplète, doublon ou étudiant non concerné.'),
     ]
 )]
 #[OA\Post(
