@@ -123,6 +123,7 @@ Route::prefix('v1/administration/corrections-notes')
         Route::post('/', 'store')->name('store');
         Route::get('{id}', 'show')->whereNumber('id')->name('show');
         Route::post('{id}/autoriser', 'autoriser')->whereNumber('id')->middleware('roles.autorises:ADMIN,DIRECTION,SECRETARIAT,SECRETAIRE_ACADEMIQUE')->name('autoriser');
+        Route::post('{id}/valider', 'autoriser')->whereNumber('id')->middleware('roles.autorises:ADMIN,DIRECTION,SECRETARIAT,SECRETAIRE_ACADEMIQUE')->name('valider');
         Route::post('{id}/rejeter', 'rejeter')->whereNumber('id')->middleware('roles.autorises:ADMIN,DIRECTION,SECRETARIAT,SECRETAIRE_ACADEMIQUE')->name('rejeter');
         Route::post('{id}/appliquer', 'appliquer')->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE')->name('appliquer');
     });
@@ -135,6 +136,7 @@ Route::prefix('v1/enseignant/corrections-notes')
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
         Route::get('{id}', 'show')->whereNumber('id')->name('show');
+        Route::put('{id}', 'update')->whereNumber('id')->name('update');
         Route::post('{id}/appliquer', 'appliquer')->whereNumber('id')->name('appliquer');
     });
 

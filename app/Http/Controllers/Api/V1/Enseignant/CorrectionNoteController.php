@@ -4,14 +4,112 @@ namespace App\Http\Controllers\Api\V1\Enseignant;
 
 use App\Models\AffectationEnseignant;
 use App\Models\Cours;
+use App\Models\CorrectionNote;
 use App\Models\Creneau;
 use App\Models\FeuilleNotes;
 use App\Models\NoteCours;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
 class CorrectionNoteController extends \App\Http\Controllers\Api\V1\Administration\CorrectionNoteController
 {
+    public function index(Request $request)
+    {
+        $data = $request->validate([
+            'id_note' => ['sometimes', 'integer'],
+            'id_seance' => ['sometimes', 'integer'],
+            'statut' => ['sometimes', Rule::in(['en_attente', 'autorisee', 'appliquee', 'rejetee'])],
+            'search' => ['sometimes', 'string', 'max:255'],
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'integer', 'between:1,100'],
+        ]);
+        $query = $this->corrections($request)
+            ->when(isset($data['id_note']), fn ($q) => $q->where('id_note', $data['id_note']))
+            ->when(isset($data['statut']), fn ($q) => $q->where('statut', $data['statut']))
+            ->when(isset($data['id_seance']), fn ($q) => $q->whereHas('note.feuilleNotes', fn ($f) => $f->where('id_seance', $data['id_seance'])));
+        if (isset($data['search']) && trim($data['search']) !== '') {
+            $search = '%'.trim($data['search']).'%';
+            $query->where(fn ($q) => $q
+                ->whereHas('note.etudiant', fn ($e) => $e->where(fn ($e) => $e
+                    ->where('nom', 'like', $search)->orWhere('prenoms', 'like', $search)->orWhere('matricule', 'like', $search)))
+                ->orWhereHas('note.feuilleNotes.matiere', fn ($m) => $m->where('libelle', 'like', $search))
+                ->orWhereHas('note.feuilleNotes.cours.module.matiere', fn ($m) => $m->where('libelle', 'like', $search))
+                ->orWhereHas('note.feuilleNotes.cours', fn ($c) => $c->where('libelle', 'like', $search)));
+        }
+        $items = $query->latest('id')->paginate($data['per_page'] ?? 20);
+        $items->through(fn ($correction) => $this->presenter($correction));
+
+        return response()->json($items);
+    }
+
+    public function show(Request $request, int $id)
+    {
+        $correction = $this->corrections($request)->findOrFail($id);
+
+        return response()->json([
+            'correction' => $this->presenter($correction),
+            'historique' => DB::table('traces_corrections_notes')->where('id_correction', $id)->orderBy('id')->get(),
+        ]);
+    }
+
+    private function presenter(CorrectionNote $correction): array
+    {
+        $note = $correction->note;
+        $feuille = $note?->feuilleNotes;
+
+        return [
+            ...$correction->toArray(),
+            'modifiable' => $correction->statut === 'en_attente',
+            'evaluation' => $note?->evaluation,
+            'etudiant' => $note?->etudiant?->only(['id', 'matricule', 'nom', 'prenoms']),
+            'feuille_notes' => $feuille ? [
+                ...$feuille->only(['id', 'id_seance', 'id_annee_academique', 'id_promotion', 'id_cours', 'id_matiere', 'date_transmission']),
+                'matiere' => ($feuille->cours?->module?->matiere ?? $feuille->matiere)?->only(['id', 'code', 'libelle']),
+                'cours' => $feuille->cours?->only(['id', 'code', 'libelle']),
+                'promotion' => $feuille->promotion ? [
+                    ...$feuille->promotion->only(['id', 'num_promotion', 'annee_entree']),
+                    'niveau' => $feuille->promotion->niveau?->only(['id', 'code', 'libelle']),
+                ] : null,
+            ] : null,
+        ];
+    }
+
+    public function update(Request $request, int $id)
+    {
+        $data = $request->validate([
+            'id_note' => ['prohibited'],
+            'id_seance' => ['prohibited'],
+            'note_proposee' => ['required', 'numeric', 'between:0,20', 'decimal:0,2'],
+            'motif' => ['required', 'string', 'max:5000'],
+        ]);
+        $correction = DB::transaction(function () use ($request, $id, $data) {
+            $correction = $this->corrections($request)->whereKey($id)->lockForUpdate()->firstOrFail();
+            if ($correction->statut !== 'en_attente') {
+                throw ValidationException::withMessages(['statut' => 'Seule une demande en attente peut être modifiée.']);
+            }
+            $note = NoteCours::whereKey($correction->id_note)->lockForUpdate()->firstOrFail();
+            $this->verifierAccesNote($request, $note);
+            $this->verifierFeuille($note);
+            if ($note->note !== $correction->note_initiale) {
+                throw ValidationException::withMessages(['id_note' => 'La note a changé depuis la demande de correction.']);
+            }
+            if ((float) $data['note_proposee'] === $note->note) {
+                throw ValidationException::withMessages(['note_proposee' => 'La nouvelle note doit être différente de la note actuelle.']);
+            }
+            $avant = $correction->only(['note_proposee', 'motif']);
+            $correction->update($data);
+            $this->tracer($correction, $request, 'modification', json_encode([
+                'avant' => $avant, 'apres' => $correction->only(['note_proposee', 'motif']),
+            ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+
+            return $correction;
+        });
+
+        return response()->json(['message' => 'Demande de correction modifiée.', 'correction' => $correction]);
+    }
+
     public function store(Request $request)
     {
         if (! $request->exists('notes')) {
@@ -46,7 +144,9 @@ class CorrectionNoteController extends \App\Http\Controllers\Api\V1\Administrati
 
     protected function corrections(Request $request)
     {
-        return parent::corrections($request)->where('demande_par', $request->user()->id);
+        return parent::corrections($request)->where('demande_par', $request->user()->id)
+            ->with(['note.etudiant:id,matricule,nom,prenoms', 'note.feuilleNotes.matiere',
+                'note.feuilleNotes.cours.module.matiere', 'note.feuilleNotes.promotion.niveau']);
     }
 
     protected function verifierAccesNote(Request $request, NoteCours $note): void

@@ -20,6 +20,11 @@ class CorrectionNote extends Model
         return $this->belongsTo(NoteCours::class, 'id_note');
     }
 
+    public function demandeur(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'demande_par');
+    }
+
     public function getIdSeanceAttribute(): ?int
     {
         return $this->note?->feuilleNotes?->id_seance;

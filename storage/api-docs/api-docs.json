@@ -5885,6 +5885,30 @@
                         }
                     },
                     {
+                        "name": "id_seance",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "demande_par",
+                        "in": "query",
+                        "description": "Identifiant du demandeur.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par demandeur, etudiant (nom, prenoms, matricule), matiere ou cours.",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
                         "name": "statut",
                         "in": "query",
                         "schema": {
@@ -5917,7 +5941,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Pagination Laravel : data, current_page, total et liens."
+                        "description": "Pagination Laravel : data, current_page, total et liens. Chaque correction inclut demandeur (id, nom, prenoms, role), etudiant, evaluation, feuille_notes (matiere, cours, promotion et niveau), actions (peut_valider, peut_rejeter, peut_appliquer). Une ligne par note corrigee."
                     },
                     "401": {
                         "description": "Non authentifié."
@@ -6027,6 +6051,48 @@
                     },
                     "422": {
                         "description": "Statut incompatible."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/corrections-notes/{id}/valider": {
+            "post": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Valider une demande de correction (secretariat ou direction)",
+                "description": "Alias de /autoriser. Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION actifs. Sans corps. Passe de en_attente a autorisee ; conserve autorisee_par, autorisee_le et une trace avec acteur et date. La note reste inchangee jusqu a /appliquer. Une demande deja tranchee ne peut pas etre validee de nouveau.",
+                "operationId": "a818e4301e865adaca1fc9c5e73f8f74",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message et correction autorisee."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role interdit ou compte inactif."
+                    },
+                    "404": {
+                        "description": "Correction introuvable."
+                    },
+                    "422": {
+                        "description": "Demande deja autorisee, appliquee ou rejetee."
                     }
                 },
                 "security": [
@@ -6148,6 +6214,22 @@
                         }
                     },
                     {
+                        "name": "id_seance",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Nom, prenoms ou matricule de l etudiant, libelle de matiere ou de cours.",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
                         "name": "statut",
                         "in": "query",
                         "schema": {
@@ -6172,7 +6254,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Demandes du seul enseignant connecte, pagination Laravel."
+                        "description": "Demandes du seul enseignant connecte, pagination Laravel. Chaque ligne contient etudiant, evaluation, modifiable et feuille_notes (matiere, cours, promotion et niveau)."
                     },
                     "401": {
                         "description": "Authentification requise."
@@ -6248,10 +6330,71 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "correction et historique."
+                        "description": "correction avec etudiant, evaluation, modifiable, feuille_notes et historique."
                     },
                     "404": {
                         "description": "Demande inexistante ou appartenant a un autre enseignant."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Modifier ma demande de correction en attente",
+                "description": "Seul le demandeur peut modifier note_proposee et motif tant que le statut est en_attente et que son affectation est active. La note et la seance de la demande restent fixes. La note initiale reste inchangee. Chaque modification est tracee avec les anciennes et nouvelles valeurs. Pour une creation groupee, appeler cette route pour chaque identifiant de correction retourne.",
+                "operationId": "85ea0a9f96255082a66ad87f96c43373",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "note_proposee",
+                                    "motif"
+                                ],
+                                "properties": {
+                                    "note_proposee": {
+                                        "type": "number",
+                                        "example": 16.5,
+                                        "maximum": 20,
+                                        "minimum": 0
+                                    },
+                                    "motif": {
+                                        "type": "string",
+                                        "example": "Copies recomptees",
+                                        "maxLength": 5000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Demande modifiee, correction et historique mis a jour."
+                    },
+                    "404": {
+                        "description": "Demande d un autre enseignant ou affectation non autorisee."
+                    },
+                    "422": {
+                        "description": "Demande deja tranchee, note ou motif invalide, ou note initiale modifiee."
                     }
                 },
                 "security": [

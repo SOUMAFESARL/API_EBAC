@@ -13,10 +13,13 @@ use OpenApi\Attributes as OA;
 ])]
 #[OA\Get(path: '/administration/corrections-notes', summary: 'Lister les demandes de correction', tags: ['Corrections des notes'], security: [['sanctum' => []]], parameters: [
     new OA\Parameter(name: 'id_note', in: 'query', schema: new OA\Schema(type: 'integer')),
+    new OA\Parameter(name: 'id_seance', in: 'query', schema: new OA\Schema(type: 'integer')),
+    new OA\Parameter(name: 'demande_par', in: 'query', description: 'Identifiant du demandeur.', schema: new OA\Schema(type: 'integer')),
+    new OA\Parameter(name: 'search', in: 'query', description: 'Recherche par demandeur, etudiant (nom, prenoms, matricule), matiere ou cours.', schema: new OA\Schema(type: 'string', maxLength: 255)),
     new OA\Parameter(name: 'statut', in: 'query', schema: new OA\Schema(type: 'string', enum: ['en_attente', 'autorisee', 'appliquee', 'rejetee'])),
     new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 20)),
     new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer')),
-], responses: [new OA\Response(response: 200, description: 'Pagination Laravel : data, current_page, total et liens.'), new OA\Response(response: 401, description: 'Non authentifié.'), new OA\Response(response: 403, description: 'Accès interdit.')])]
+], responses: [new OA\Response(response: 200, description: 'Pagination Laravel : data, current_page, total et liens. Chaque correction inclut demandeur (id, nom, prenoms, role), etudiant, evaluation, feuille_notes (matiere, cours, promotion et niveau), actions (peut_valider, peut_rejeter, peut_appliquer). Une ligne par note corrigee.'), new OA\Response(response: 401, description: 'Non authentifié.'), new OA\Response(response: 403, description: 'Accès interdit.')])]
 #[OA\Post(path: '/administration/corrections-notes', summary: 'Demander une correction de note transmise', tags: ['Corrections des notes'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/DemandeCorrectionNote')), responses: [
     new OA\Response(response: 201, description: 'message et correction avec id, note_initiale, note_proposee, motif, demande_par, statut en_attente et dates.'),
     new OA\Response(response: 404, description: 'Note introuvable.'),
@@ -28,6 +31,15 @@ use OpenApi\Attributes as OA;
 #[OA\Post(path: '/administration/corrections-notes/{id}/autoriser', summary: 'Autoriser une demande en attente (ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE, DIRECTION)', tags: ['Corrections des notes'], security: [['sanctum' => []]], parameters: [
     new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
 ], responses: [new OA\Response(response: 200, description: 'message et correction autorisee ; aucune modification de note à cette étape.'), new OA\Response(response: 403, description: 'Rôle non autorisé.'), new OA\Response(response: 404, description: 'Correction introuvable.'), new OA\Response(response: 422, description: 'Statut incompatible.')])]
+#[OA\Post(path: '/administration/corrections-notes/{id}/valider', summary: 'Valider une demande de correction (secretariat ou direction)',
+    description: 'Alias de /autoriser. Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION actifs. Sans corps. Passe de en_attente a autorisee ; conserve autorisee_par, autorisee_le et une trace avec acteur et date. La note reste inchangee jusqu a /appliquer. Une demande deja tranchee ne peut pas etre validee de nouveau.',
+    tags: ['Corrections des notes'], security: [['sanctum' => []]],
+    parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+    responses: [new OA\Response(response: 200, description: 'message et correction autorisee.'),
+        new OA\Response(response: 401, description: 'Authentification requise.'),
+        new OA\Response(response: 403, description: 'Role interdit ou compte inactif.'),
+        new OA\Response(response: 404, description: 'Correction introuvable.'),
+        new OA\Response(response: 422, description: 'Demande deja autorisee, appliquee ou rejetee.')])]
 #[OA\Post(path: '/administration/corrections-notes/{id}/rejeter', summary: 'Rejeter une demande en attente (ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE, DIRECTION)', tags: ['Corrections des notes'], security: [['sanctum' => []]], parameters: [
     new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
 ], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['motif'], properties: [new OA\Property(property: 'motif', type: 'string', maxLength: 5000, example: 'La copie ne justifie pas cette correction.')])), responses: [new OA\Response(response: 200, description: 'message et correction rejetee ; motif conservé dans l’historique.'), new OA\Response(response: 403, description: 'Rôle non autorisé.'), new OA\Response(response: 404, description: 'Correction introuvable.'), new OA\Response(response: 422, description: 'Motif manquant ou statut incompatible.')])]

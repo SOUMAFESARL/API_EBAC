@@ -15,7 +15,9 @@ class CorrectionNoteController extends Controller
 {
     protected function corrections(Request $request)
     {
-        return CorrectionNote::query()->with('note.feuilleNotes');
+        return CorrectionNote::query()->with(['note.feuilleNotes.matiere', 'note.feuilleNotes.cours.module.matiere',
+            'note.feuilleNotes.promotion.niveau', 'note.etudiant:id,matricule,nom,prenoms',
+            'demandeur:id,nom,prenoms,id_role', 'demandeur.role:id,code,libelle']);
     }
 
     protected function verifierAccesNote(Request $request, NoteCours $note): void {}
@@ -24,23 +26,71 @@ class CorrectionNoteController extends Controller
     {
         $data = $request->validate([
             'id_note' => ['sometimes', 'integer'],
+            'id_seance' => ['sometimes', 'integer'],
+            'demande_par' => ['sometimes', 'integer'],
+            'search' => ['sometimes', 'string', 'max:255'],
+            'page' => ['sometimes', 'integer', 'min:1'],
             'statut' => ['sometimes', Rule::in(['en_attente', 'autorisee', 'appliquee', 'rejetee'])],
             'per_page' => ['sometimes', 'integer', 'between:1,100'],
         ]);
 
-        return response()->json($this->corrections($request)
+        $query = $this->corrections($request)
             ->when(isset($data['id_note']), fn ($q) => $q->where('id_note', $data['id_note']))
+            ->when(isset($data['demande_par']), fn ($q) => $q->where('demande_par', $data['demande_par']))
+            ->when(isset($data['id_seance']), fn ($q) => $q->whereHas('note.feuilleNotes', fn ($f) => $f->where('id_seance', $data['id_seance'])))
             ->when(isset($data['statut']), fn ($q) => $q->where('statut', $data['statut']))
-            ->latest('id')->paginate($data['per_page'] ?? 20));
+            ->when(isset($data['search']) && trim($data['search']) !== '', function ($q) use ($data) {
+                $search = '%'.trim($data['search']).'%';
+                $q->where(fn ($q) => $q
+                    ->whereHas('demandeur', fn ($u) => $u->where(fn ($u) => $u->where('nom', 'like', $search)->orWhere('prenoms', 'like', $search)))
+                    ->orWhereHas('note.etudiant', fn ($e) => $e->where(fn ($e) => $e->where('nom', 'like', $search)->orWhere('prenoms', 'like', $search)->orWhere('matricule', 'like', $search)))
+                    ->orWhereHas('note.feuilleNotes.matiere', fn ($m) => $m->where('libelle', 'like', $search))
+                    ->orWhereHas('note.feuilleNotes.cours.module.matiere', fn ($m) => $m->where('libelle', 'like', $search))
+                    ->orWhereHas('note.feuilleNotes.cours', fn ($c) => $c->where('libelle', 'like', $search)));
+            });
+        $items = $query->latest('id')->paginate($data['per_page'] ?? 20);
+        $items->through(fn ($c) => $this->presenterAdministration($request, $c));
+
+        return response()->json($items);
     }
 
     public function show(Request $request, int $id)
     {
-        return response()->json(['correction' => $this->corrections($request)->findOrFail($id),
+        return response()->json(['correction' => $this->presenterAdministration($request, $this->corrections($request)->findOrFail($id)),
             'historique' => DB::table('traces_corrections_notes')->where('id_correction', $id)->orderBy('id')->get()]);
     }
 
-    // do
+    private function presenterAdministration(Request $request, CorrectionNote $correction): array
+    {
+        $feuille = $correction->note?->feuilleNotes;
+        $role = $request->user()->role?->code;
+        $decideur = in_array($role, ['ADMIN', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE', 'DIRECTION'], true);
+
+        return [
+            ...$correction->toArray(),
+            'demandeur' => $correction->demandeur ? [
+                ...$correction->demandeur->only(['id', 'nom', 'prenoms']),
+                'role' => $correction->demandeur->role?->only(['code', 'libelle']),
+            ] : null,
+            'evaluation' => $correction->note?->evaluation,
+            'etudiant' => $correction->note?->etudiant?->only(['id', 'matricule', 'nom', 'prenoms']),
+            'feuille_notes' => $feuille ? [
+                ...$feuille->only(['id', 'id_seance', 'id_annee_academique', 'id_promotion', 'id_matiere', 'id_cours']),
+                'matiere' => ($feuille->cours?->module?->matiere ?? $feuille->matiere)?->only(['id', 'code', 'libelle']),
+                'cours' => $feuille->cours?->only(['id', 'code', 'libelle']),
+                'promotion' => $feuille->promotion ? [
+                    ...$feuille->promotion->only(['id', 'num_promotion']),
+                    'niveau' => $feuille->promotion->niveau?->only(['id', 'code', 'libelle']),
+                ] : null,
+            ] : null,
+            'actions' => [
+                'peut_valider' => $decideur && $correction->statut === 'en_attente',
+                'peut_rejeter' => $decideur && $correction->statut === 'en_attente',
+                'peut_appliquer' => in_array($role, ['ADMIN', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true) && $correction->statut === 'autorisee',
+            ],
+        ];
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -127,7 +177,7 @@ class CorrectionNoteController extends Controller
         return response()->json(['message' => 'Correction '.$statut.'.', 'correction' => $correction]);
     }
 
-    private function verifierFeuille(NoteCours $note): FeuilleNotes
+    protected function verifierFeuille(NoteCours $note): FeuilleNotes
     {
         $feuille = FeuilleNotes::whereKey($note->id_feuille_notes)->lockForUpdate()->firstOrFail();
         if (! in_array($feuille->statut, ['transmise', 'validee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'], true)) {
@@ -137,7 +187,7 @@ class CorrectionNoteController extends Controller
         return $feuille;
     }
 
-    private function tracer(CorrectionNote $correction, Request $request, string $action, ?string $details): void
+    protected function tracer(CorrectionNote $correction, Request $request, string $action, ?string $details): void
     {
         DB::table('traces_corrections_notes')->insert(['id_correction' => $correction->id,
             'id_acteur' => $request->user()->id, 'action' => $action, 'details' => $details, 'created_at' => now()]);

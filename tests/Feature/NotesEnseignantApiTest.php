@@ -252,8 +252,78 @@ class NotesEnseignantApiTest extends TestCase
         $id = $this->postJson($base, $payload)->assertCreated()
             ->assertJsonPath('correction.id_seance', $data['seance']->id)->json('correction.id');
         $this->getJson($base.'/'.$id)->assertOk()
-            ->assertJsonPath('correction.id_seance', $data['seance']->id);
+            ->assertJsonPath('correction.id_seance', $data['seance']->id)
+            ->assertJsonPath('correction.modifiable', true)
+            ->assertJsonPath('correction.evaluation', $note->evaluation)
+            ->assertJsonPath('correction.etudiant.matricule', $data['etudiants'][0]->matricule)
+            ->assertJsonPath('correction.feuille_notes.cours.id', $data['cours']->id)
+            ->assertJsonPath('correction.feuille_notes.matiere.id', $data['cours']->module->id_matiere)
+            ->assertJsonPath('correction.feuille_notes.promotion.id', $data['promotion']->id);
         $this->getJson($base)->assertOk()->assertJsonPath('data.0.id_seance', $data['seance']->id);
+        foreach ([$data['etudiants'][0]->matricule, $data['cours']->libelle, $data['cours']->module->matiere->libelle] as $search) {
+            $this->getJson($base.'?'.http_build_query(['search' => $search]))->assertOk()
+                ->assertJsonPath('total', 1)->assertJsonPath('data.0.id', $id);
+        }
+        $this->getJson($base.'?search=inexistant')->assertOk()->assertJsonPath('total', 0);
+        $this->getJson($base.'?id_seance='.$autre->id)->assertOk()->assertJsonPath('total', 0);
+        $this->getJson($base.'?id_seance='.$data['seance']->id)->assertOk()->assertJsonPath('total', 1);
+        $this->getJson($base.'?per_page=101')->assertUnprocessable();
+        Sanctum::actingAs($data['autreEnseignant']);
+        $this->getJson($base.'?'.http_build_query(['search' => $data['cours']->libelle]))->assertOk()
+            ->assertJsonPath('total', 0);
+        $this->getJson($base.'/'.$id)->assertNotFound();
+    }
+
+    public function test_secretariat_et_direction_valident_ou_rejettent_les_corrections(): void
+    {
+        $data = $this->contexte();
+        $this->presences($data);
+        $this->postJson(str_replace('?', '/transmettre?', $this->url($data)), [
+            'notes' => [['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12]],
+        ])->assertOk();
+        $note = NoteCours::firstOrFail();
+        $base = '/api/v1/administration/corrections-notes';
+        foreach (['SECRETARIAT', 'SECRETAIRE_ACADEMIQUE', 'DIRECTION'] as $code) {
+            $role = Role::firstOrCreate(['code' => $code], ['libelle' => $code]);
+            $decideur = User::factory()->create(['id_role' => $role->id]);
+            Sanctum::actingAs($data['enseignant']);
+            $payload = ['id_seance' => $data['seance']->id, 'id_note' => $note->id,
+                'note_proposee' => $note->fresh()->note + 1, 'motif' => 'Erreur de report'];
+            $id = $this->postJson('/api/v1/enseignant/corrections-notes', $payload)->assertCreated()->json('correction.id');
+            $this->postJson($base.'/'.$id.'/valider')->assertForbidden();
+            $this->postJson($base.'/'.$id.'/rejeter', ['motif' => 'Refus'])->assertForbidden();
+            Sanctum::actingAs($decideur);
+            $this->getJson($base.'/'.$id)->assertOk()
+                ->assertJsonPath('correction.demandeur.id', $data['enseignant']->id)
+                ->assertJsonPath('correction.demandeur.role.code', 'ENSEIGNANT')
+                ->assertJsonPath('correction.etudiant.id', $note->id_etudiant)
+                ->assertJsonPath('correction.actions.peut_valider', true)
+                ->assertJsonPath('correction.actions.peut_rejeter', true);
+            $this->getJson($base.'?'.http_build_query(['search' => $data['etudiants'][0]->matricule, 'statut' => 'en_attente']))
+                ->assertOk()->assertJsonPath('total', 1)->assertJsonPath('data.0.id', $id);
+            $this->postJson($base.'/'.$id.'/rejeter', ['motif' => ' '])->assertUnprocessable();
+            $this->postJson($base.'/'.$id.'/rejeter', ['motif' => 'Copie non justifiée'])->assertOk()
+                ->assertJsonPath('correction.statut', 'rejetee');
+            $this->assertDatabaseHas('traces_corrections_notes', ['id_correction' => $id, 'id_acteur' => $decideur->id,
+                'action' => 'rejetee', 'details' => 'Copie non justifiée']);
+            $this->postJson($base.'/'.$id.'/valider')->assertUnprocessable();
+            Sanctum::actingAs($data['enseignant']);
+            $id = $this->postJson('/api/v1/enseignant/corrections-notes', $payload)->assertCreated()->json('correction.id');
+            Sanctum::actingAs($decideur);
+            $this->postJson($base.'/'.$id.'/valider')->assertOk()
+                ->assertJsonPath('correction.statut', 'autorisee')->assertJsonPath('correction.autorisee_par', $decideur->id);
+            $this->assertEquals($payload['note_proposee'] - 1, $note->fresh()->note);
+            $this->postJson($base.'/'.$id.'/valider')->assertUnprocessable();
+            $this->postJson($base.'/'.$id.'/rejeter', ['motif' => 'Autre décision'])->assertUnprocessable();
+            $this->getJson($base.'/'.$id)->assertOk()->assertJsonPath('correction.actions.peut_valider', false)
+                ->assertJsonPath('correction.actions.peut_appliquer', $code !== 'DIRECTION');
+            if ($code === 'DIRECTION') {
+                $this->postJson($base.'/'.$id.'/appliquer')->assertForbidden();
+                Sanctum::actingAs($data['admin']);
+            }
+            $this->postJson($base.'/'.$id.'/appliquer')->assertOk()
+                ->assertJsonPath('correction.note_finale', fn ($valeur) => (float) $valeur === (float) $payload['note_proposee']);
+        }
     }
 
     public function test_demande_groupee_atomique_et_validation_des_notes(): void
@@ -325,6 +395,59 @@ class NotesEnseignantApiTest extends TestCase
         $this->assertEquals(15, $notes[0]->fresh()->note);
         $this->assertEquals(16, $notes[1]->fresh()->note);
         $this->assertDatabaseCount('traces_corrections_notes', 6);
+    }
+
+    public function test_modification_demande_en_attente_reservee_au_proprietaire(): void
+    {
+        $data = $this->contexte();
+        $this->presences($data);
+        $this->putJson($this->url($data), ['notes' => [
+            ['id_etudiant' => $data['etudiants'][0]->id, 'note' => 12],
+        ]])->assertOk();
+        $note = NoteCours::firstOrFail();
+        $base = '/api/v1/enseignant/corrections-notes';
+        $id = $this->postJson($base, ['id_seance' => $data['seance']->id,
+            'id_note' => $note->id, 'note_proposee' => 16, 'motif' => 'Erreur',
+        ])->assertCreated()->json('correction.id');
+        $payload = ['note_proposee' => 16.5, 'motif' => 'Copies recomptées'];
+        Sanctum::actingAs($data['autreEnseignant']);
+        $this->putJson($base.'/'.$id, $payload)->assertNotFound();
+        Sanctum::actingAs($data['admin']);
+        $this->putJson($base.'/'.$id, $payload)->assertForbidden();
+        Sanctum::actingAs($data['enseignant']);
+        foreach ([12, -1, 21, 16.123, null] as $valeur) {
+            $this->putJson($base.'/'.$id, [...$payload, 'note_proposee' => $valeur])->assertUnprocessable();
+        }
+        $this->putJson($base.'/'.$id, [...$payload, 'motif' => ' '])->assertUnprocessable();
+        $this->putJson($base.'/'.$id, [...$payload, 'id_note' => $note->id])->assertUnprocessable();
+        AffectationEnseignant::where('enseignant_id', $data['enseignant']->id)->update(['date_fin' => '2026-09-14']);
+        $this->putJson($base.'/'.$id, $payload)->assertNotFound();
+        AffectationEnseignant::where('enseignant_id', $data['enseignant']->id)->update(['date_fin' => null]);
+        $note->update(['note' => 13]);
+        $this->putJson($base.'/'.$id, $payload)->assertUnprocessable();
+        $note->update(['note' => 12]);
+        $this->assertDatabaseCount('traces_corrections_notes', 1);
+        $this->putJson($base.'/'.$id, $payload)->assertOk()
+            ->assertJsonPath('correction.note_proposee', 16.5)
+            ->assertJsonPath('correction.motif', 'Copies recomptées')
+            ->assertJsonPath('correction.statut', 'en_attente');
+        $this->assertEquals(12, $note->fresh()->note);
+        $trace = $this->getJson($base.'/'.$id)->assertOk()->assertJsonCount(2, 'historique')
+            ->assertJsonPath('historique.1.action', 'modification')->json('historique.1.details');
+        $this->assertEquals(16, json_decode($trace, true)['avant']['note_proposee']);
+        Sanctum::actingAs($data['admin']);
+        $this->postJson('/api/v1/administration/corrections-notes/'.$id.'/autoriser')->assertOk();
+        Sanctum::actingAs($data['enseignant']);
+        $this->putJson($base.'/'.$id, $payload)->assertUnprocessable()->assertJsonValidationErrors('statut');
+        $this->postJson($base.'/'.$id.'/appliquer')->assertOk()->assertJsonPath('correction.note_finale', 16.5);
+        $this->putJson($base.'/'.$id, $payload)->assertUnprocessable();
+        $id = $this->postJson($base, ['id_seance' => $data['seance']->id,
+            'id_note' => $note->id, 'note_proposee' => 15, 'motif' => 'Autre erreur',
+        ])->assertCreated()->json('correction.id');
+        Sanctum::actingAs($data['admin']);
+        $this->postJson('/api/v1/administration/corrections-notes/'.$id.'/rejeter', ['motif' => 'Non justifiée'])->assertOk();
+        Sanctum::actingAs($data['enseignant']);
+        $this->putJson($base.'/'.$id, $payload)->assertUnprocessable();
     }
 
     public function test_correction_refuse_affectation_expiree_et_note_changee(): void
