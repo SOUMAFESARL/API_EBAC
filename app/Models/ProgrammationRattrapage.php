@@ -10,7 +10,12 @@ class ProgrammationRattrapage extends Model
     protected $table = 'programmations_rattrapage';
 
     protected $fillable = ['id_cours_a_faire', 'date_prevue', 'heure_debut', 'heure_fin',
-        'enseignant_id', 'id_salle', 'statut', 'observations', 'created_by', 'updated_by'];
+        'enseignant_id', 'id_salle', 'statut', 'observations', 'created_by', 'updated_by', 'id_seance_rattrapage'];
+
+    public function session(): BelongsTo
+    {
+        return $this->belongsTo(SeanceCahierTexte::class, 'id_seance_rattrapage');
+    }
 
     protected function casts(): array
     {

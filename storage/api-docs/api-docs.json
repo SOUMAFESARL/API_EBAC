@@ -10375,6 +10375,227 @@
                 ]
             }
         },
+        "/administration/rattrapages/plan": {
+            "get": {
+                "tags": [
+                    "Rattrapages"
+                ],
+                "summary": "Consulter le plan de rattrapage et ses indicateurs",
+                "description": "ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE ou DIRECTION actif. Absences sur seances realisees et feuilles de presence validees. Une ligne par etudiant et seance manquee, avec matiere, cours facultatif, module, promotion origine et session retenue. La programmation ne change pas la promotion origine ni la presence initiale. Statistiques calculees apres recherche et filtres de contexte, avant filtre de statut et pagination. Part non planifiee = non_planifies / (non_planifies + inscrits) * 100, zero si aucun reste a faire. effectue signifie cours termine ou programmation realisee ; ne garantit pas une note saisie.",
+                "operationId": "d64baf6bb445cad61a9761d5ac710066",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "description": "Promotion de la seance origine.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_etudiant",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_matiere",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_cours",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_seance",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "non_planifie",
+                                "inscrit",
+                                "effectue"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pagination Laravel data et statistiques (non_planifies, inscrits, effectues, total, part_non_planifiee). Chaque ligne contient statut_plan."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role interdit."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/rattrapages/cours-a-rattraper/{id}/sessions": {
+            "get": {
+                "tags": [
+                    "Rattrapages"
+                ],
+                "summary": "Choisir une session pour un enseignement manque",
+                "description": "Seances prevues non passees de la meme matiere et du meme cours (ou sans cours pour une absence par matiere), avec horaires et enseignant actif. Inclut promotion, niveau, enseignant et salle. La promotion accueil peut differer de la promotion origine. id identifie le cours_a_faire.",
+                "operationId": "a28f67bac7f9825c86ab7c4817ed0263",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "sessions disponibles."
+                    },
+                    "403": {
+                        "description": "Role interdit."
+                    },
+                    "404": {
+                        "description": "Cours a faire introuvable."
+                    },
+                    "422": {
+                        "description": "Absence non eligible ou cours termine."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/rattrapages/inscrire": {
+            "post": {
+                "tags": [
+                    "Rattrapages"
+                ],
+                "summary": "Inscrire un etudiant a une session de rattrapage",
+                "description": "ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE ou DIRECTION. La date, les horaires, l enseignant et la salle sont derives de la session ; ne pas les fournir. La session doit correspondre au meme enseignement et etre prevue, non passee. Une programmation par absence. POST /administration/rattrapages accepte aussi ce format. Pour reprogrammer apres annulation, PUT /administration/rattrapages/{id} avec id_seance_rattrapage et observations facultatives, sans id_cours_a_faire. Une inscription ne valide pas le cours et ne cree aucune note.",
+                "operationId": "1ac17777a0aea440e45b93ed7771d24e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InscriptionSessionRattrapage"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "message et rattrapage programme, avec session et promotion accueil."
+                    },
+                    "403": {
+                        "description": "Role interdit."
+                    },
+                    "404": {
+                        "description": "Ressource introuvable."
+                    },
+                    "422": {
+                        "description": "Session incompatible, absence non eligible ou programmation existante."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/rattrapages/{id}/annuler": {
+            "post": {
+                "tags": [
+                    "Rattrapages"
+                ],
+                "summary": "Annuler une inscription en rattrapage",
+                "description": "Sans corps. Uniquement depuis programme. Conserve la programmation annulee, la presence initiale et le cours restant a faire. Le plan affiche de nouveau non_planifie. Acteur conserve dans updated_by.",
+                "operationId": "a60e7990c64da26d55404c6f70272756",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message et rattrapage annule."
+                    },
+                    "403": {
+                        "description": "Role interdit."
+                    },
+                    "404": {
+                        "description": "Rattrapage introuvable."
+                    },
+                    "422": {
+                        "description": "Rattrapage deja realise ou annule."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/administration/bulletins": {
             "get": {
                 "tags": [
@@ -10795,7 +11016,7 @@
                     "Rattrapages"
                 ],
                 "summary": "Lister les programmations de rattrapage",
-                "description": "Roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Pagination Laravel data, total, current_page. Relations cours_a_faire (etudiant, seance, cours, matiere), enseignant et salle.",
+                "description": "Roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE, DIRECTION. Pagination Laravel data, total, current_page. Relations cours_a_faire (etudiant, seance, cours, matiere), enseignant et salle.",
                 "operationId": "listerRattrapages",
                 "parameters": [
                     {
@@ -15892,6 +16113,28 @@
                     }
                 ]
             },
+            "InscriptionSessionRattrapage": {
+                "required": [
+                    "id_cours_a_faire",
+                    "id_seance_rattrapage"
+                ],
+                "properties": {
+                    "id_cours_a_faire": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_seance_rattrapage": {
+                        "type": "integer",
+                        "example": 25
+                    },
+                    "observations": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 5000
+                    }
+                },
+                "type": "object"
+            },
             "PublicationCalendrier": {
                 "properties": {
                     "statut": {
@@ -16482,16 +16725,16 @@
             "description": "Notes enseignant"
         },
         {
+            "name": "Rattrapages",
+            "description": "Rattrapages"
+        },
+        {
             "name": "Publication des bulletins",
             "description": "Publication des bulletins"
         },
         {
             "name": "Publication du programme",
             "description": "Publication du programme"
-        },
-        {
-            "name": "Rattrapages",
-            "description": "Rattrapages"
         },
         {
             "name": "Réclamations des notes",

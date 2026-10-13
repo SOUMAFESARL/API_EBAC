@@ -9,6 +9,7 @@ use App\Models\FeuillePresence;
 use App\Models\Matiere;
 use App\Models\Module;
 use App\Models\Niveau;
+use App\Models\Promotion;
 use App\Models\Role;
 use App\Models\SeanceCahierTexte;
 use App\Models\User;
@@ -122,5 +123,60 @@ class RattrapageApiTest extends TestCase
         $this->postJson(self::URL, $data['payload'])->assertForbidden();
         $this->putJson(self::URL.'/1', $data['payload'])->assertForbidden();
         $this->deleteJson(self::URL.'/1')->assertForbidden();
+    }
+
+    public function test_direction_planifie_une_session_et_annule_sans_changer_la_promotion(): void
+    {
+        $data = $this->contexte('DIRECTION');
+        $origine = Promotion::create(['num_promotion' => 4, 'annee_entree' => 2026, 'id_niveau' => $data['seance']->id_niveau]);
+        $accueil = Promotion::create(['num_promotion' => 5, 'annee_entree' => 2026, 'id_niveau' => $data['seance']->id_niveau]);
+        $data['seance']->update(['id_promotion' => $origine->id]);
+        $session = $data['seance']->replicate();
+        $session->fill(['date_prevue' => today()->addDays(10)->toDateString(), 'statut' => 'prevue',
+            'heure_debut_prevue' => '10:00', 'heure_fin_prevue' => '12:00', 'id_promotion' => $accueil->id]);
+        $session->save();
+        $this->getJson(self::URL.'/plan?search=ETU-1')->assertOk()
+            ->assertJsonPath('statistiques.non_planifies', 1)->assertJsonPath('data.0.statut_plan', 'non_planifie');
+        $this->getJson(self::URL.'/cours-a-rattraper/'.$data['aFaire']->id.'/sessions')->assertOk()
+            ->assertJsonCount(1, 'sessions')->assertJsonPath('sessions.0.id', $session->id);
+        $payload = ['id_cours_a_faire' => $data['aFaire']->id, 'id_seance_rattrapage' => $session->id];
+        $this->postJson(self::URL, [...$payload, 'id_seance_rattrapage' => $data['seance']->id])->assertUnprocessable();
+        $this->postJson(self::URL, [...$payload, 'enseignant_id' => $data['enseignant']->id])->assertUnprocessable();
+        $id = $this->postJson(self::URL.'/inscrire', $payload)->assertCreated()
+            ->assertJsonPath('rattrapage.id_seance_rattrapage', $session->id)
+            ->assertJsonPath('rattrapage.session.promotion.id', $accueil->id)
+            ->assertJsonPath('rattrapage.created_by', $data['admin']->id)->json('rattrapage.id');
+        $this->getJson(self::URL.'/plan?statut=inscrit')->assertOk()
+            ->assertJsonPath('total', 1)->assertJsonPath('statistiques.inscrits', 1)
+            ->assertJsonPath('data.0.promotion_origine.id', $origine->id);
+        $this->getJson(self::URL.'/plan?id_promotion='.$accueil->id)->assertOk()->assertJsonPath('total', 0);
+        $this->assertDatabaseHas('cours_a_faire', ['id' => $data['aFaire']->id, 'id_seance' => $data['seance']->id, 'statut' => 'a_faire']);
+        $this->assertDatabaseHas('presences', ['id' => $data['presence']->id, 'statut' => 'absent']);
+        $this->postJson(self::URL.'/'.$id.'/annuler')->assertOk()->assertJsonPath('rattrapage.statut', 'annule');
+        $this->postJson(self::URL.'/'.$id.'/annuler')->assertUnprocessable();
+        $this->getJson(self::URL.'/plan')->assertOk()->assertJsonPath('statistiques.non_planifies', 1);
+        $this->putJson(self::URL.'/'.$id, ['id_seance_rattrapage' => $session->id])->assertOk()
+            ->assertJsonPath('rattrapage.statut', 'programme');
+        $session->update(['id_cours' => null]);
+        $this->putJson(self::URL.'/'.$id, ['id_seance_rattrapage' => $session->id])->assertUnprocessable();
+        Sanctum::actingAs($data['enseignant']);
+        $this->getJson(self::URL.'/plan')->assertForbidden();
+        $this->postJson(self::URL.'/'.$id.'/annuler')->assertForbidden();
+    }
+
+    public function test_session_matiere_sans_cours_et_exclusion_sessions_passees(): void
+    {
+        $data = $this->contexte('SECRETARIAT');
+        $data['aFaire']->update(['id_cours' => null]);
+        $data['seance']->update(['id_cours' => null]);
+        $session = $data['seance']->replicate();
+        $session->fill(['date_prevue' => today()->addDays(7)->toDateString(), 'statut' => 'prevue',
+            'heure_debut_prevue' => '10:00', 'heure_fin_prevue' => '12:00']);
+        $session->save();
+        $payload = ['id_cours_a_faire' => $data['aFaire']->id, 'id_seance_rattrapage' => $session->id];
+        $session->update(['date_prevue' => today()->subDay()->toDateString()]);
+        $this->postJson(self::URL, $payload)->assertUnprocessable();
+        $session->update(['date_prevue' => today()->addDays(7)->toDateString()]);
+        $this->postJson(self::URL, $payload)->assertCreated();
     }
 }
