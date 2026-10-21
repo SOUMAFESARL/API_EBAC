@@ -66,7 +66,7 @@ class CorrectionNoteController extends Controller
         $role = $request->user()->role?->code;
         $secretariat = in_array($role, ['SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true);
         $direction = in_array($role, ['ADMIN', 'DIRECTION'], true);
-        $decideur = ($secretariat && $correction->statut === 'en_attente')
+        $decideur = ($secretariat && in_array($correction->statut, ['en_attente', 'transmise_direction'], true))
             || ($direction && in_array($correction->statut, ['en_attente', 'transmise_direction'], true));
 
         return [
@@ -75,6 +75,13 @@ class CorrectionNoteController extends Controller
                 ...$correction->demandeur->only(['id', 'nom', 'prenoms']),
                 'role' => $correction->demandeur->role?->only(['code', 'libelle']),
             ] : null,
+            'statut_libelle' => match ($correction->statut) {
+                'en_attente', 'transmise_direction' => '? v?rifier',
+                'autorisee' => 'Autoris?e',
+                'appliquee' => 'Correction appliqu?e',
+                'rejetee' => 'Rejet?e',
+            },
+            'note_actuelle' => $correction->note?->note,
             'evaluation' => $correction->note?->evaluation,
             'etudiant' => $correction->note?->etudiant?->only(['id', 'matricule', 'nom', 'prenoms']),
             'feuille_notes' => $feuille ? [
@@ -89,8 +96,8 @@ class CorrectionNoteController extends Controller
             'actions' => [
                 'peut_valider' => $decideur,
                 'peut_rejeter' => $decideur,
-                'peut_transmettre_direction' => ($secretariat || $role === 'ADMIN') && $correction->statut === 'en_attente',
-                'peut_appliquer' => in_array($role, ['ADMIN', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true) && $correction->statut === 'autorisee',
+                'peut_transmettre_direction' => false,
+                'peut_appliquer' => in_array($role, ['ADMIN', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true) && in_array($correction->statut, ['en_attente', 'transmise_direction', 'autorisee'], true),
             ],
         ];
     }
@@ -132,10 +139,6 @@ class CorrectionNoteController extends Controller
 
     public function autoriser(Request $request, int $id)
     {
-        if (in_array($request->user()->role?->code, ['SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true)) {
-            return $this->transmettreDirection($request, $id);
-        }
-
         return $this->transition($request, $id, 'autorisee');
     }
 
@@ -161,14 +164,14 @@ class CorrectionNoteController extends Controller
         $correction = DB::transaction(function () use ($request, $id, $statut) {
             $correction = $this->corrections($request)->whereKey($id)->lockForUpdate()->firstOrFail();
             $role = $request->user()->role?->code;
-            $secretariat = in_array($role, ['SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true);
             $attendus = match ($statut) {
-                'appliquee' => ['autorisee'],
+                'appliquee' => in_array($role, ['ADMIN', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true)
+                    ? ['en_attente', 'transmise_direction', 'autorisee'] : ['autorisee'],
                 'transmise_direction' => ['en_attente'],
-                default => $secretariat ? ['en_attente'] : ['en_attente', 'transmise_direction'],
+                default => ['en_attente', 'transmise_direction'],
             };
             if ($statut === 'autorisee') {
-                abort_unless(in_array($role, ['ADMIN', 'DIRECTION'], true), 403);
+                abort_unless(in_array($role, ['ADMIN', 'DIRECTION', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true), 403);
             }
             if (! in_array($correction->statut, $attendus, true)) {
                 throw ValidationException::withMessages(['statut' => 'Cette transition est impossible depuis le statut actuel.']);
@@ -179,6 +182,10 @@ class CorrectionNoteController extends Controller
                 $feuille = $this->verifierFeuille($note);
                 if ($note->note !== $correction->note_initiale) {
                     throw ValidationException::withMessages(['id_note' => 'La note a changé depuis la demande de correction.']);
+                }
+                if ($correction->statut !== 'autorisee') {
+                    $correction->fill(['autorisee_par' => $request->user()->id, 'autorisee_le' => now()]);
+                    $this->tracer($correction, $request, 'autorisee', 'Verification et application par le secretariat ou ADMIN.');
                 }
                 $note->update(['note' => $correction->note_proposee]);
                 if ($feuille->statut !== 'transmise') {
@@ -196,7 +203,9 @@ class CorrectionNoteController extends Controller
             return $correction;
         });
 
-        return response()->json(['message' => 'Correction '.$statut.'.', 'correction' => $correction]);
+        return response()->json(['message' => 'Correction '.$statut.'.', 'correction' =>
+            in_array($request->user()->role?->code, ['ADMIN', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE', 'DIRECTION'], true)
+                ? $this->presenterAdministration($request, $this->corrections($request)->findOrFail($id)) : $correction]);
     }
 
     protected function verifierFeuille(NoteCours $note): FeuilleNotes

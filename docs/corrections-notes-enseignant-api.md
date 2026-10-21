@@ -54,4 +54,4 @@ Une correction autorisée ne peut être appliquée qu'une fois. Si la note initi
 
 Erreurs : `401` sans authentification, `403` pour un rôle interdit, `404` pour une ressource inaccessible et `422` pour des données invalides ou un état incompatible.
 
-Le secr?tariat transmet les demandes v?rifi?es ? la direction (`transmise_direction`) ou les rejette. Son appel ? `/valider` ou `/autoriser` transmet la demande sans autorisation finale. La direction (ou ADMIN) autorise ou rejette ; apr?s transmission, la demande n?est plus modifiable par l?enseignant. Une demande `transmise_direction` bloque ?galement toute seconde demande pour la m?me note. Voir [le circuit de validation](validation-corrections-notes-api.md).
+Le secr?tariat v?rifie puis applique directement la demande par `/administration/corrections-notes/{id}/appliquer`, ou la rejette avec motif. Aucun accord de la direction n?est n?cessaire. La route enseignant historique `/appliquer` exige toujours une autorisation pr?alable.

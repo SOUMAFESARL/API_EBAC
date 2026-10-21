@@ -5942,7 +5942,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Pagination Laravel : data, current_page, total et liens. Chaque correction inclut demandeur (id, nom, prenoms, role), etudiant, evaluation, feuille_notes (matiere, cours, promotion et niveau), actions (peut_valider, peut_rejeter, peut_transmettre_direction, peut_appliquer). Une ligne par note corrigee."
+                        "description": "Pagination Laravel : data, current_page, total et liens. Chaque correction inclut demandeur (id, nom, prenoms, role), etudiant, evaluation, feuille_notes (matiere, cours, promotion et niveau), actions (peut_valider, peut_rejeter, peut_transmettre_direction, peut_appliquer). peut_appliquer est vrai pour le secretariat et ADMIN des en_attente ; peut_transmettre_direction est faux. Une ligne par note corrigee."
                     },
                     "401": {
                         "description": "Non authentifié."
@@ -6028,7 +6028,7 @@
                 "tags": [
                     "Corrections des notes"
                 ],
-                "summary": "Controler et transmettre (secretariat) ou autoriser (ADMIN, DIRECTION)",
+                "summary": "Autoriser une correction (etape facultative avant application)",
                 "operationId": "66d1ff3f6fce9b12fa07f0d2aaefb8f8",
                 "parameters": [
                     {
@@ -6042,7 +6042,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "message et correction transmise_direction (secretariat) ou autorisee (direction/ADMIN) ; aucune modification de note à cette étape."
+                        "description": "message et correction autorisee ; aucune modification de note à cette étape."
                     },
                     "403": {
                         "description": "Rôle non autorisé."
@@ -6066,8 +6066,8 @@
                 "tags": [
                     "Corrections des notes"
                 ],
-                "summary": "Controler puis transmettre ou donner l autorisation finale",
-                "description": "Alias de /autoriser. Secretariat : en_attente vers transmise_direction. ADMIN ou DIRECTION : en_attente ou transmise_direction vers autorisee. La note reste inchangee jusqu a /appliquer. Chaque transition est tracee.",
+                "summary": "Autoriser une demande de correction",
+                "description": "Alias de /autoriser. ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE ou DIRECTION : en_attente ou transmise_direction vers autorisee. Etape facultative : le secretariat peut directement appeler /appliquer.",
                 "operationId": "a818e4301e865adaca1fc9c5e73f8f74",
                 "parameters": [
                     {
@@ -6081,7 +6081,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "message et correction transmise_direction (secretariat) ou autorisee (direction/ADMIN)."
+                        "description": "message et correction autorisee."
                     },
                     "401": {
                         "description": "Authentification requise."
@@ -6108,7 +6108,7 @@
                 "tags": [
                     "Corrections des notes"
                 ],
-                "summary": "Rejeter une demande : en_attente au secretariat, en_attente ou transmise_direction pour ADMIN/DIRECTION",
+                "summary": "Rejeter une demande : en_attente ou ancien statut transmise_direction",
                 "operationId": "469c61ac0da9586cf97de97d50ae6da4",
                 "parameters": [
                     {
@@ -6166,7 +6166,8 @@
                 "tags": [
                     "Corrections des notes"
                 ],
-                "summary": "Appliquer une correction autorisée (ADMIN, secrétariat)",
+                "summary": "Verifier et appliquer directement une correction (ADMIN, secretariat)",
+                "description": "Sans corps. ADMIN, SECRETARIAT et SECRETAIRE_ACADEMIQUE peuvent appliquer directement une demande en_attente, autorisee ou dans l ancien statut transmise_direction. Aucune autorisation de direction requise. Verifie la note initiale, autorise si necessaire puis met a jour la note dans une transaction. Trace acteur et dates. La reponse contient correction : note_initiale, note_proposee, note_actuelle, note_finale, statut appliquee, autorisee_par, appliquee_par, dates, etudiant, demandeur, evaluation, feuille_notes et actions actualisees. Refuse une seconde application ou une note modifiee depuis la demande.",
                 "operationId": "71f792d0a09f3b35a78aa6e52f117d0b",
                 "parameters": [
                     {
@@ -6204,7 +6205,7 @@
                 "tags": [
                     "Corrections des notes"
                 ],
-                "summary": "Transmettre une correction verifiee a la direction (ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE)",
+                "summary": "Ancien circuit : transmission direction (facultatif)",
                 "description": "Sans corps. Passe de en_attente a transmise_direction et trace acteur et date. Ne modifie pas la note. La direction peut ensuite valider ou rejeter.",
                 "operationId": "23919af656e8557592def58737bf1187",
                 "parameters": [
@@ -6234,6 +6235,7 @@
                         "description": "Statut incompatible."
                     }
                 },
+                "deprecated": true,
                 "security": [
                     {
                         "sanctum": []
@@ -6318,7 +6320,7 @@
                     "Corrections des notes"
                 ],
                 "summary": "Demander la modification d une ou plusieurs notes transmises",
-                "description": "Format unitaire : id_note, id_seance obligatoire, note_proposee, motif. Format groupe : id_seance obligatoire commun a toutes les notes. Chaque correction retournee contient id_seance, null pour une ancienne feuille sans seance. Format groupe : motif commun et notes contenant jusqu a 100 couples id_note/note_proposee distincts. Les formats ne peuvent pas etre melanges. id_note est fourni par la feuille de notes. Chaque note doit etre accessible a l enseignant et transmise. Si une ligne echoue, aucune demande ni trace n est creee. Les notes restent inchangees. Chaque demande est soumise en_attente. Le secretariat la rejette ou la transmet a la direction (transmise_direction). La direction ou ADMIN autorise ou rejette. Apres autorisation finale, l enseignant peut appliquer la correction. Une demande transmise_direction ne peut plus etre modifiee et bloque les doublons.",
+                "description": "Format unitaire : id_note, id_seance obligatoire, note_proposee, motif. Format groupe : id_seance obligatoire commun a toutes les notes. Chaque correction retournee contient id_seance, null pour une ancienne feuille sans seance. Format groupe : motif commun et notes contenant jusqu a 100 couples id_note/note_proposee distincts. Les formats ne peuvent pas etre melanges. id_note est fourni par la feuille de notes. Chaque note doit etre accessible a l enseignant et transmise. Si une ligne echoue, aucune demande ni trace n est creee. Les notes restent inchangees. Chaque demande est soumise en_attente. Le secretariat verifie puis applique directement la correction ou la rejette avec motif. Aucune autorisation de direction requise. Les routes historiques d autorisation et d application enseignant restent disponibles.",
                 "operationId": "4ae295e38a64eefb142c9ef2ffb37e6a",
                 "requestBody": {
                     "required": true,
@@ -16733,7 +16735,7 @@
         },
         {
             "name": "Corrections des notes",
-            "description": "Demandes de correction des notes transmises. Secretariat : controle puis transmission a la direction ou rejet avec motif. DIRECTION et ADMIN : autorisation finale ou rejet, directement en_attente ou apres transmission. Les routes /valider et /autoriser transmettent au statut transmise_direction pour SECRETARIAT et SECRETAIRE_ACADEMIQUE ; elles autorisent pour DIRECTION et ADMIN. La note reste inchangee avant /appliquer. Application : ADMIN, secretariat ou enseignant demandeur via sa route. Apres application, la feuille revient au statut transmise pour controle. Chaque etape est tracee avec acteur et date. Compte actif et authentification requis."
+            "description": "Circuit : demande enseignant, verification par le secretariat, puis application directe ou rejet avec motif. Aucune autorisation de la direction requise. POST /{id}/appliquer autorise et applique atomiquement une demande en_attente pour ADMIN, SECRETARIAT ou SECRETAIRE_ACADEMIQUE. Les decisions sont tracees. Les routes historiques restent disponibles."
         },
         {
             "name": "Dossier étudiant",
