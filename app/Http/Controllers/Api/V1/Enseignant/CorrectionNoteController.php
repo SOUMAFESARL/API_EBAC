@@ -20,7 +20,7 @@ class CorrectionNoteController extends \App\Http\Controllers\Api\V1\Administrati
         $data = $request->validate([
             'id_note' => ['sometimes', 'integer'],
             'id_seance' => ['sometimes', 'integer'],
-            'statut' => ['sometimes', Rule::in(['en_attente', 'autorisee', 'appliquee', 'rejetee'])],
+            'statut' => ['sometimes', Rule::in(['en_attente', 'transmise_direction', 'autorisee', 'appliquee', 'rejetee'])],
             'search' => ['sometimes', 'string', 'max:255'],
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'between:1,100'],

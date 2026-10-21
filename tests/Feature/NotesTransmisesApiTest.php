@@ -42,6 +42,49 @@ class NotesTransmisesApiTest extends TestCase
         return '/api/v1/administration/notes-transmises/'.$feuille->id;
     }
 
+    public function test_contrat_supervision_pour_liste_detail_et_actions(): void
+    {
+        [$users, $feuille, $note] = $this->contexte();
+        $feuille->update(['transmise_par' => $users['ENSEIGNANT']->id]);
+        $note->update(['evaluation' => 'Participation']);
+        foreach ([[$note->id_etudiant, 14], [null, 15], [null, null]] as $index => [$etudiantId, $valeur]) {
+            if ($etudiantId === null) {
+                $etudiant = Etudiant::create(['matricule' => 'SUP-'.$index, 'nom' => 'Test', 'prenoms' => 'Etudiant', 'date_inscription' => '2026-09-01']);
+                $etudiantId = $etudiant->id;
+                if ($valeur !== null) {
+                    $feuille->notes()->create(['id_etudiant' => $etudiantId, 'evaluation' => 'Participation', 'note' => $valeur]);
+                }
+            }
+            \App\Models\Inscription::create(['id_etudiant' => $etudiantId, 'id_promotion' => $feuille->id_promotion,
+                'id_annee_academique' => $feuille->id_annee_academique, 'date_inscription' => '2026-09-01']);
+        }
+        Sanctum::actingAs($users['SECRETARIAT']);
+        $base = '/api/v1/administration/notes-transmises';
+        foreach ([[$base.'?search=Participation', 'feuilles_notes.0'], [$this->url($feuille), 'feuille_notes']] as [$url, $prefix]) {
+            $this->getJson($url)->assertOk()
+                ->assertJsonPath($prefix.'.evaluation', 'Participation')
+                ->assertJsonPath($prefix.'.notes_saisies', 2)
+                ->assertJsonPath($prefix.'.effectif', 3)
+                ->assertJsonPath($prefix.'.moyenne_cours', 14.5)
+                ->assertJsonPath($prefix.'.statut_libelle', 'Contr?le secr?tariat')
+                ->assertJsonPath($prefix.'.etape_courante', 2)
+                ->assertJsonPath($prefix.'.etapes.0.statut', 'terminee')
+                ->assertJsonPath($prefix.'.actions.peut_transmettre_direction', true)
+                ->assertJsonPath($prefix.'.actions.peut_valider_direction', false);
+        }
+        $this->getJson($base.'?search=introuvable')->assertOk()->assertJsonPath('meta.total', 0);
+        $this->postJson($this->url($feuille).'/transmettre-direction')->assertOk()
+            ->assertJsonPath('feuille_notes.etape_courante', 3)
+            ->assertJsonPath('feuille_notes.actions.peut_transmettre_direction', false);
+        Sanctum::actingAs($users['DIRECTION']);
+        $this->getJson($this->url($feuille))->assertOk()->assertJsonPath('feuille_notes.actions.peut_valider_direction', true);
+        $this->postJson($this->url($feuille).'/valider-direction')->assertOk()
+            ->assertJsonPath('feuille_notes.statut_libelle', 'Verrouill?')
+            ->assertJsonPath('feuille_notes.verrouillee', true)
+            ->assertJsonPath('feuille_notes.etape_courante', 4)
+            ->assertJsonPath('feuille_notes.actions.peut_valider_direction', false);
+    }
+
     public function test_statut_affiche_et_filtres_selon_le_destinataire(): void
     {
         [$users, $feuille] = $this->contexte();

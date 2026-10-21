@@ -5915,6 +5915,7 @@
                             "type": "string",
                             "enum": [
                                 "en_attente",
+                                "transmise_direction",
                                 "autorisee",
                                 "appliquee",
                                 "rejetee"
@@ -5941,7 +5942,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Pagination Laravel : data, current_page, total et liens. Chaque correction inclut demandeur (id, nom, prenoms, role), etudiant, evaluation, feuille_notes (matiere, cours, promotion et niveau), actions (peut_valider, peut_rejeter, peut_appliquer). Une ligne par note corrigee."
+                        "description": "Pagination Laravel : data, current_page, total et liens. Chaque correction inclut demandeur (id, nom, prenoms, role), etudiant, evaluation, feuille_notes (matiere, cours, promotion et niveau), actions (peut_valider, peut_rejeter, peut_transmettre_direction, peut_appliquer). Une ligne par note corrigee."
                     },
                     "401": {
                         "description": "Non authentifié."
@@ -6027,7 +6028,7 @@
                 "tags": [
                     "Corrections des notes"
                 ],
-                "summary": "Autoriser une demande en attente (ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE, DIRECTION)",
+                "summary": "Controler et transmettre (secretariat) ou autoriser (ADMIN, DIRECTION)",
                 "operationId": "66d1ff3f6fce9b12fa07f0d2aaefb8f8",
                 "parameters": [
                     {
@@ -6041,7 +6042,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "message et correction autorisee ; aucune modification de note à cette étape."
+                        "description": "message et correction transmise_direction (secretariat) ou autorisee (direction/ADMIN) ; aucune modification de note à cette étape."
                     },
                     "403": {
                         "description": "Rôle non autorisé."
@@ -6065,8 +6066,8 @@
                 "tags": [
                     "Corrections des notes"
                 ],
-                "summary": "Valider une demande de correction (secretariat ou direction)",
-                "description": "Alias de /autoriser. Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION actifs. Sans corps. Passe de en_attente a autorisee ; conserve autorisee_par, autorisee_le et une trace avec acteur et date. La note reste inchangee jusqu a /appliquer. Une demande deja tranchee ne peut pas etre validee de nouveau.",
+                "summary": "Controler puis transmettre ou donner l autorisation finale",
+                "description": "Alias de /autoriser. Secretariat : en_attente vers transmise_direction. ADMIN ou DIRECTION : en_attente ou transmise_direction vers autorisee. La note reste inchangee jusqu a /appliquer. Chaque transition est tracee.",
                 "operationId": "a818e4301e865adaca1fc9c5e73f8f74",
                 "parameters": [
                     {
@@ -6080,7 +6081,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "message et correction autorisee."
+                        "description": "message et correction transmise_direction (secretariat) ou autorisee (direction/ADMIN)."
                     },
                     "401": {
                         "description": "Authentification requise."
@@ -6107,7 +6108,7 @@
                 "tags": [
                     "Corrections des notes"
                 ],
-                "summary": "Rejeter une demande en attente (ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE, DIRECTION)",
+                "summary": "Rejeter une demande : en_attente au secretariat, en_attente ou transmise_direction pour ADMIN/DIRECTION",
                 "operationId": "469c61ac0da9586cf97de97d50ae6da4",
                 "parameters": [
                     {
@@ -6198,6 +6199,48 @@
                 ]
             }
         },
+        "/administration/corrections-notes/{id}/transmettre-direction": {
+            "post": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Transmettre une correction verifiee a la direction (ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE)",
+                "description": "Sans corps. Passe de en_attente a transmise_direction et trace acteur et date. Ne modifie pas la note. La direction peut ensuite valider ou rejeter.",
+                "operationId": "23919af656e8557592def58737bf1187",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message et correction transmise_direction."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role interdit ou compte inactif."
+                    },
+                    "404": {
+                        "description": "Correction introuvable."
+                    },
+                    "422": {
+                        "description": "Statut incompatible."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/enseignant/corrections-notes": {
             "get": {
                 "tags": [
@@ -6236,6 +6279,7 @@
                             "type": "string",
                             "enum": [
                                 "en_attente",
+                                "transmise_direction",
                                 "autorisee",
                                 "appliquee",
                                 "rejetee"
@@ -6274,7 +6318,7 @@
                     "Corrections des notes"
                 ],
                 "summary": "Demander la modification d une ou plusieurs notes transmises",
-                "description": "Format unitaire : id_note, id_seance obligatoire, note_proposee, motif. Format groupe : id_seance obligatoire commun a toutes les notes. Chaque correction retournee contient id_seance, null pour une ancienne feuille sans seance. Format groupe : motif commun et notes contenant jusqu a 100 couples id_note/note_proposee distincts. Les formats ne peuvent pas etre melanges. id_note est fourni par la feuille de notes. Chaque note doit etre accessible a l enseignant et transmise. Si une ligne echoue, aucune demande ni trace n est creee. Les notes restent inchangees. Chaque correction retournee doit etre autorisee par l administration puis appliquee par l enseignant.",
+                "description": "Format unitaire : id_note, id_seance obligatoire, note_proposee, motif. Format groupe : id_seance obligatoire commun a toutes les notes. Chaque correction retournee contient id_seance, null pour une ancienne feuille sans seance. Format groupe : motif commun et notes contenant jusqu a 100 couples id_note/note_proposee distincts. Les formats ne peuvent pas etre melanges. id_note est fourni par la feuille de notes. Chaque note doit etre accessible a l enseignant et transmise. Si une ligne echoue, aucune demande ni trace n est creee. Les notes restent inchangees. Chaque demande est soumise en_attente. Le secretariat la rejette ou la transmet a la direction (transmise_direction). La direction ou ADMIN autorise ou rejette. Apres autorisation finale, l enseignant peut appliquer la correction. Une demande transmise_direction ne peut plus etre modifiee et bloque les doublons.",
                 "operationId": "4ae295e38a64eefb142c9ef2ffb37e6a",
                 "requestBody": {
                     "required": true,
@@ -9408,6 +9452,15 @@
                 "description": "Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Circuit : transmise → validee_secretariat → transmise_direction → validee_direction. Un refus du secretariat (rejetee_secretariat) rouvre la saisie enseignant et exige une nouvelle transmission. Un rejet du secretariat ou de la direction rouvre la saisie de la seule feuille rejetee pour correction et nouvelle transmission. Les brouillons sont exclus. Ces validations ne publient pas les notes aux etudiants.",
                 "operationId": "listerNotesTransmisesAdministration",
                 "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche matiere, cours, numero de promotion, nom ou prenoms de l enseignant et evaluation.",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
                     {
                         "name": "id_annee_academique",
                         "in": "query",
@@ -15066,6 +15119,96 @@
             },
             "FeuilleNotesTransmiseAdministration": {
                 "properties": {
+                    "evaluation": {
+                        "description": "Evaluation unique de la feuille ; null si plusieurs evaluations. Utiliser evaluations et notes[].evaluation dans ce cas.",
+                        "type": "string",
+                        "example": "Participation",
+                        "nullable": true
+                    },
+                    "evaluations": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "statut_libelle": {
+                        "type": "string",
+                        "example": "Contr?le secr?tariat"
+                    },
+                    "verrouillee": {
+                        "description": "Validation finale par la direction.",
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "nombre_notes": {
+                        "description": "Nombre de lignes de notes.",
+                        "type": "integer"
+                    },
+                    "notes_saisies": {
+                        "description": "Nombre distinct d etudiants avec une note non nulle.",
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "effectif": {
+                        "description": "Etudiants inscrits dans cette promotion pour cette annee academique.",
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "moyenne_cours": {
+                        "description": "Moyenne des notes renseignees, arrondie a deux decimales ; null si aucune note.",
+                        "type": "number",
+                        "example": 13.67,
+                        "nullable": true
+                    },
+                    "correction_en_cours": {
+                        "type": "boolean"
+                    },
+                    "etape_courante": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "etapes": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "numero": {
+                                    "type": "integer"
+                                },
+                                "libelle": {
+                                    "type": "string"
+                                },
+                                "statut": {
+                                    "type": "string",
+                                    "enum": [
+                                        "terminee",
+                                        "courante",
+                                        "a_venir"
+                                    ]
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "actions": {
+                        "properties": {
+                            "peut_consulter": {
+                                "type": "boolean"
+                            },
+                            "peut_transmettre_direction": {
+                                "type": "boolean"
+                            },
+                            "peut_rejeter_secretariat": {
+                                "type": "boolean"
+                            },
+                            "peut_valider_direction": {
+                                "type": "boolean"
+                            },
+                            "peut_rejeter_direction": {
+                                "type": "boolean"
+                            }
+                        },
+                        "type": "object"
+                    },
                     "id": {
                         "type": "integer",
                         "example": 1
@@ -16590,7 +16733,7 @@
         },
         {
             "name": "Corrections des notes",
-            "description": "Correction des notes transmises : demande, autorisation puis application. Accès ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION avec un compte actif. Autoriser et rejeter : ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE ou DIRECTION. Les enseignants peuvent demander puis appliquer leur correction via /enseignant/corrections-notes apres autorisation. Appliquer : ADMIN ou secrétariat. Les brouillons et refus du secrétariat sont modifiables via la saisie enseignant. Une correction appliquée après validation ou transmission à la direction renvoie la feuille au statut transmise pour un nouveau contrôle du secrétariat. Les moyennes consultées reflètent la note corrigée. Chaque étape conserve son acteur et sa date dans l’historique."
+            "description": "Demandes de correction des notes transmises. Secretariat : controle puis transmission a la direction ou rejet avec motif. DIRECTION et ADMIN : autorisation finale ou rejet, directement en_attente ou apres transmission. Les routes /valider et /autoriser transmettent au statut transmise_direction pour SECRETARIAT et SECRETAIRE_ACADEMIQUE ; elles autorisent pour DIRECTION et ADMIN. La note reste inchangee avant /appliquer. Application : ADMIN, secretariat ou enseignant demandeur via sa route. Apres application, la feuille revient au statut transmise pour controle. Chaque etape est tracee avec acteur et date. Compte actif et authentification requis."
         },
         {
             "name": "Dossier étudiant",

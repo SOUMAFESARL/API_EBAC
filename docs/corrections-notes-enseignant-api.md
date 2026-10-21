@@ -44,7 +44,7 @@ Les lignes de liste et les détails incluent `note_initiale`, `note_proposee`, `
 
 ## Autorisation et contrôles
 
-L'administration autorise ou rejette chaque demande via `POST /api/v1/administration/corrections-notes/{id}/autoriser` ou `/rejeter` (avec `motif`). Les statuts sont `en_attente`, `autorisee`, `appliquee`, `rejetee`.
+L'administration autorise ou rejette chaque demande via `POST /api/v1/administration/corrections-notes/{id}/autoriser` ou `/rejeter` (avec `motif`). Les statuts sont `en_attente`, `transmise_direction`, `autorisee`, `appliquee`, `rejetee`.
 
 L'enseignant ne peut consulter et modifier que ses demandes. Pour créer, modifier ou appliquer une correction, il doit avoir une affectation active sur la matière ou le cours, un créneau correspondant à la promotion et à l'année académique, et être l'enseignant de la séance. Toutes les notes envoyées doivent correspondre à `id_seance`.
 
@@ -53,3 +53,5 @@ Les notes doivent être comprises entre 0 et 20, avec deux décimales au maximum
 Une correction autorisée ne peut être appliquée qu'une fois. Si la note initiale a changé, l'application est refusée. Après application, la feuille retourne au statut `transmise` pour vérification par le secrétariat. Chaque demande, modification et décision est tracée.
 
 Erreurs : `401` sans authentification, `403` pour un rôle interdit, `404` pour une ressource inaccessible et `422` pour des données invalides ou un état incompatible.
+
+Le secr?tariat transmet les demandes v?rifi?es ? la direction (`transmise_direction`) ou les rejette. Son appel ? `/valider` ou `/autoriser` transmet la demande sans autorisation finale. La direction (ou ADMIN) autorise ou rejette ; apr?s transmission, la demande n?est plus modifiable par l?enseignant. Une demande `transmise_direction` bloque ?galement toute seconde demande pour la m?me note. Voir [le circuit de validation](validation-corrections-notes-api.md).

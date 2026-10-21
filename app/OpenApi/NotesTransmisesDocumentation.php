@@ -22,6 +22,28 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(
     schema: 'FeuilleNotesTransmiseAdministration', type: 'object',
     properties: [
+        new OA\Property(property: 'evaluation', type: 'string', nullable: true, description: 'Evaluation unique de la feuille ; null si plusieurs evaluations. Utiliser evaluations et notes[].evaluation dans ce cas.', example: 'Participation'),
+        new OA\Property(property: 'evaluations', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'statut_libelle', type: 'string', example: 'Contr?le secr?tariat'),
+        new OA\Property(property: 'verrouillee', type: 'boolean', description: 'Validation finale par la direction.', example: false),
+        new OA\Property(property: 'nombre_notes', type: 'integer', description: 'Nombre de lignes de notes.'),
+        new OA\Property(property: 'notes_saisies', type: 'integer', description: 'Nombre distinct d etudiants avec une note non nulle.', example: 3),
+        new OA\Property(property: 'effectif', type: 'integer', description: 'Etudiants inscrits dans cette promotion pour cette annee academique.', example: 3),
+        new OA\Property(property: 'moyenne_cours', type: 'number', nullable: true, description: 'Moyenne des notes renseignees, arrondie a deux decimales ; null si aucune note.', example: 13.67),
+        new OA\Property(property: 'correction_en_cours', type: 'boolean'),
+        new OA\Property(property: 'etape_courante', type: 'integer', example: 2),
+        new OA\Property(property: 'etapes', type: 'array', items: new OA\Items(type: 'object', properties: [
+            new OA\Property(property: 'numero', type: 'integer'),
+            new OA\Property(property: 'libelle', type: 'string'),
+            new OA\Property(property: 'statut', type: 'string', enum: ['terminee', 'courante', 'a_venir']),
+        ])),
+        new OA\Property(property: 'actions', type: 'object', properties: [
+            new OA\Property(property: 'peut_consulter', type: 'boolean'),
+            new OA\Property(property: 'peut_transmettre_direction', type: 'boolean'),
+            new OA\Property(property: 'peut_rejeter_secretariat', type: 'boolean'),
+            new OA\Property(property: 'peut_valider_direction', type: 'boolean'),
+            new OA\Property(property: 'peut_rejeter_direction', type: 'boolean'),
+        ]),
         new OA\Property(property: 'id', type: 'integer', example: 1),
         new OA\Property(property: 'id_annee_academique', type: 'integer'),
         new OA\Property(property: 'id_promotion', type: 'integer'),
@@ -71,6 +93,7 @@ use OpenApi\Attributes as OA;
     description: 'Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Circuit : transmise → validee_secretariat → transmise_direction → validee_direction. Un refus du secretariat (rejetee_secretariat) rouvre la saisie enseignant et exige une nouvelle transmission. Un rejet du secretariat ou de la direction rouvre la saisie de la seule feuille rejetee pour correction et nouvelle transmission. Les brouillons sont exclus. Ces validations ne publient pas les notes aux etudiants.',
     tags: ['Administration des notes'], security: [['sanctum' => []]],
     parameters: [
+        new OA\Parameter(name: 'search', in: 'query', description: 'Recherche matiere, cours, numero de promotion, nom ou prenoms de l enseignant et evaluation.', schema: new OA\Schema(type: 'string', maxLength: 255)),
         new OA\Parameter(name: 'id_annee_academique', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_seance', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'id_promotion', in: 'query', schema: new OA\Schema(type: 'integer')),

@@ -30,7 +30,7 @@ class CorrectionNoteController extends Controller
             'demande_par' => ['sometimes', 'integer'],
             'search' => ['sometimes', 'string', 'max:255'],
             'page' => ['sometimes', 'integer', 'min:1'],
-            'statut' => ['sometimes', Rule::in(['en_attente', 'autorisee', 'appliquee', 'rejetee'])],
+            'statut' => ['sometimes', Rule::in(['en_attente', 'transmise_direction', 'autorisee', 'appliquee', 'rejetee'])],
             'per_page' => ['sometimes', 'integer', 'between:1,100'],
         ]);
 
@@ -64,7 +64,10 @@ class CorrectionNoteController extends Controller
     {
         $feuille = $correction->note?->feuilleNotes;
         $role = $request->user()->role?->code;
-        $decideur = in_array($role, ['ADMIN', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE', 'DIRECTION'], true);
+        $secretariat = in_array($role, ['SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true);
+        $direction = in_array($role, ['ADMIN', 'DIRECTION'], true);
+        $decideur = ($secretariat && $correction->statut === 'en_attente')
+            || ($direction && in_array($correction->statut, ['en_attente', 'transmise_direction'], true));
 
         return [
             ...$correction->toArray(),
@@ -84,8 +87,9 @@ class CorrectionNoteController extends Controller
                 ] : null,
             ] : null,
             'actions' => [
-                'peut_valider' => $decideur && $correction->statut === 'en_attente',
-                'peut_rejeter' => $decideur && $correction->statut === 'en_attente',
+                'peut_valider' => $decideur,
+                'peut_rejeter' => $decideur,
+                'peut_transmettre_direction' => ($secretariat || $role === 'ADMIN') && $correction->statut === 'en_attente',
                 'peut_appliquer' => in_array($role, ['ADMIN', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true) && $correction->statut === 'autorisee',
             ],
         ];
@@ -113,7 +117,7 @@ class CorrectionNoteController extends Controller
             throw ValidationException::withMessages(['id_seance' => 'La note ne correspond pas a la seance indiquee.']);
         }
         unset($data['id_seance']);
-        if (CorrectionNote::where('id_note', $note->id)->whereIn('statut', ['en_attente', 'autorisee'])->exists()) {
+        if (CorrectionNote::where('id_note', $note->id)->whereIn('statut', ['en_attente', 'transmise_direction', 'autorisee'])->exists()) {
             throw ValidationException::withMessages(['id_note' => 'Une correction est déjà en cours pour cette note.']);
         }
         if ((float) $data['note_proposee'] === $note->note) {
@@ -128,7 +132,16 @@ class CorrectionNoteController extends Controller
 
     public function autoriser(Request $request, int $id)
     {
+        if (in_array($request->user()->role?->code, ['SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true)) {
+            return $this->transmettreDirection($request, $id);
+        }
+
         return $this->transition($request, $id, 'autorisee');
+    }
+
+    public function transmettreDirection(Request $request, int $id)
+    {
+        return $this->transition($request, $id, 'transmise_direction');
     }
 
     public function rejeter(Request $request, int $id)
@@ -147,8 +160,17 @@ class CorrectionNoteController extends Controller
     {
         $correction = DB::transaction(function () use ($request, $id, $statut) {
             $correction = $this->corrections($request)->whereKey($id)->lockForUpdate()->firstOrFail();
-            $attendu = $statut === 'appliquee' ? 'autorisee' : 'en_attente';
-            if ($correction->statut !== $attendu) {
+            $role = $request->user()->role?->code;
+            $secretariat = in_array($role, ['SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true);
+            $attendus = match ($statut) {
+                'appliquee' => ['autorisee'],
+                'transmise_direction' => ['en_attente'],
+                default => $secretariat ? ['en_attente'] : ['en_attente', 'transmise_direction'],
+            };
+            if ($statut === 'autorisee') {
+                abort_unless(in_array($role, ['ADMIN', 'DIRECTION'], true), 403);
+            }
+            if (! in_array($correction->statut, $attendus, true)) {
                 throw ValidationException::withMessages(['statut' => 'Cette transition est impossible depuis le statut actuel.']);
             }
             if ($statut === 'appliquee') {
