@@ -5264,6 +5264,269 @@
                 ]
             }
         },
+        "/administration/bulletins-notes/{id}": {
+            "get": {
+                "tags": [
+                    "Bulletin de notes calcule"
+                ],
+                "summary": "Bulletin etudiant : matieres, coefficients, notes, decisions, enseignants et moyenne",
+                "description": "id est l identifiant etudiant. Inscription requise dans la promotion et l annee demandees. Seules les feuilles validee_direction contribuent. Meme calcul de notes que /administration/notes-matieres ; moyenne generale ponderee par les coefficients des matieres, sans arrondi intermediaire. Les matieres sans note validee pour cet etudiant sont absentes. Bulletin partiel si toutes les evaluations ne sont pas encore validees. credits_valides est la somme des coefficients des matieres validees. Une correction renvoyee au controle ne contribue de nouveau qu apres revalidation.",
+                "operationId": "fec0acc92e371db37d61084c6bf6297d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifiant etudiant.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 24
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 22
+                    },
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 16
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bulletin calcule en temps reel.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "bulletin": {
+                                            "properties": {
+                                                "id_inscription": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "etudiant": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 24
+                                                        },
+                                                        "matricule": {
+                                                            "type": "string",
+                                                            "example": "EBAC-0016-2026"
+                                                        },
+                                                        "nom": {
+                                                            "type": "string",
+                                                            "example": "ANGE"
+                                                        },
+                                                        "prenoms": {
+                                                            "type": "string",
+                                                            "example": "HERO"
+                                                        },
+                                                        "photo_identite_url": {
+                                                            "type": "string",
+                                                            "nullable": true
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "promotion": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 22
+                                                        },
+                                                        "code": {
+                                                            "type": "string",
+                                                            "example": "PROMO-000001",
+                                                            "nullable": true
+                                                        },
+                                                        "num_promotion": {
+                                                            "type": "integer",
+                                                            "example": 17
+                                                        }
+                                                    },
+                                                    "type": "object",
+                                                    "nullable": true
+                                                },
+                                                "niveau": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 25
+                                                        },
+                                                        "code": {
+                                                            "type": "string",
+                                                            "example": "A1"
+                                                        },
+                                                        "libelle": {
+                                                            "type": "string",
+                                                            "example": "1ere Annee"
+                                                        }
+                                                    },
+                                                    "type": "object",
+                                                    "nullable": true
+                                                },
+                                                "annee_academique": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 16
+                                                        },
+                                                        "libelle": {
+                                                            "type": "string",
+                                                            "example": "2026-2027"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "matieres": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "numero": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "matiere": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 21
+                                                                    },
+                                                                    "code": {
+                                                                        "type": "string",
+                                                                        "example": "MAT-IB-A1"
+                                                                    },
+                                                                    "libelle": {
+                                                                        "type": "string",
+                                                                        "example": "Introduction Biblique"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "coefficient": {
+                                                                "type": "number",
+                                                                "example": 2
+                                                            },
+                                                            "note": {
+                                                                "type": "number",
+                                                                "example": 15,
+                                                                "nullable": true
+                                                            },
+                                                            "note_validation": {
+                                                                "type": "number",
+                                                                "example": 10
+                                                            },
+                                                            "nombre_notes_validees": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "decision": {
+                                                                "type": "string",
+                                                                "example": "valide",
+                                                                "enum": [
+                                                                    "valide",
+                                                                    "ajourne",
+                                                                    "en_attente"
+                                                                ]
+                                                            },
+                                                            "decision_libelle": {
+                                                                "type": "string",
+                                                                "example": "Validé"
+                                                            },
+                                                            "enseignants": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "integer",
+                                                                            "example": 44
+                                                                        },
+                                                                        "nom": {
+                                                                            "type": "string",
+                                                                            "example": "KOUASSI"
+                                                                        },
+                                                                        "prenoms": {
+                                                                            "type": "string",
+                                                                            "example": "Ange"
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            },
+                                                            "annee": {
+                                                                "type": "string",
+                                                                "example": "2026-2027"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "moyenne_generale": {
+                                                    "type": "number",
+                                                    "example": 15,
+                                                    "nullable": true
+                                                },
+                                                "total_coefficients": {
+                                                    "type": "number",
+                                                    "example": 2
+                                                },
+                                                "nombre_matieres": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "matieres_validees": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "credits_valides": {
+                                                    "type": "number",
+                                                    "example": 2
+                                                },
+                                                "regle_credits": {
+                                                    "type": "string",
+                                                    "example": "somme_coefficients_matieres_validees"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role interdit ou compte inactif."
+                    },
+                    "404": {
+                        "description": "Etudiant ou inscription introuvable."
+                    },
+                    "422": {
+                        "description": "Promotion ou annee invalide/manquante."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/enseignant/cahier-de-texte": {
             "get": {
                 "tags": [
@@ -13114,6 +13377,230 @@
                 ]
             }
         },
+        "/administration/notes-matieres": {
+            "get": {
+                "tags": [
+                    "Tableau des notes par matiere"
+                ],
+                "summary": "Tableaux des etudiants, notes et decisions par matiere",
+                "description": "Uniquement les feuilles au statut validee_direction de la promotion et de l annee demandees. Les matieres sans note validee sont absentes. Tous les inscrits de l annee sont affiches ; note null et decision en_attente en absence de note validee. Moyenne des notes validees, ponderees par coefficient du cours ; poids 1 pour les notes directement rattachees a la matiere. Decision sur la moyenne non arrondie selon note_validation de la matiere (10 par defaut). Les corrections renvoyant une feuille au controle ne contribuent de nouveau qu apres revalidation. Pagination des matieres, pas des etudiants.",
+                "operationId": "20b055d27dfbfbe779f92db4552302ef",
+                "parameters": [
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 22
+                    },
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 16
+                    },
+                    {
+                        "name": "id_matiere",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 21
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 20,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tableaux par matiere.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "promotion": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "code": {
+                                                    "type": "string",
+                                                    "example": "PROMO-000001",
+                                                    "nullable": true
+                                                },
+                                                "num_promotion": {
+                                                    "type": "integer",
+                                                    "example": 17
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "annee_academique": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 16
+                                                },
+                                                "libelle": {
+                                                    "type": "string",
+                                                    "example": "2026-2027"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "matieres": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 21
+                                                    },
+                                                    "code": {
+                                                        "type": "string",
+                                                        "example": "MAT-IB-A1"
+                                                    },
+                                                    "libelle": {
+                                                        "type": "string",
+                                                        "example": "Introduction Biblique"
+                                                    },
+                                                    "note_validation": {
+                                                        "type": "number",
+                                                        "example": 10
+                                                    },
+                                                    "effectif": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "etudiants": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "numero": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 24
+                                                                },
+                                                                "nom": {
+                                                                    "type": "string",
+                                                                    "example": "ANGE"
+                                                                },
+                                                                "prenoms": {
+                                                                    "type": "string",
+                                                                    "example": "HERO"
+                                                                },
+                                                                "matricule": {
+                                                                    "type": "string",
+                                                                    "example": "EBAC-0016-2026"
+                                                                },
+                                                                "note": {
+                                                                    "type": "number",
+                                                                    "example": 15,
+                                                                    "nullable": true
+                                                                },
+                                                                "nombre_notes_validees": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "decision": {
+                                                                    "type": "string",
+                                                                    "example": "valide",
+                                                                    "enum": [
+                                                                        "valide",
+                                                                        "ajourne",
+                                                                        "en_attente"
+                                                                    ]
+                                                                },
+                                                                "decision_libelle": {
+                                                                    "type": "string",
+                                                                    "example": "Validé"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 20
+                                                },
+                                                "from": {
+                                                    "type": "integer",
+                                                    "example": 1,
+                                                    "nullable": true
+                                                },
+                                                "to": {
+                                                    "type": "integer",
+                                                    "example": 1,
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Role interdit ou compte inactif."
+                    },
+                    "422": {
+                        "description": "Promotion, annee, matiere ou pagination invalide."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/enseignant/transmissions-notes": {
             "get": {
                 "tags": [
@@ -17390,6 +17877,10 @@
             "description": "Connexion, double authentification, profil de session et gestion du mot de passe."
         },
         {
+            "name": "Bulletin de notes calcule",
+            "description": "Bulletin par etudiant pour le secretariat et la direction, calcule sur les notes definitivement validees. Accessible aux comptes actifs ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Ne cree ni ne publie de bulletin enregistre."
+        },
+        {
             "name": "Comptes",
             "description": "Gestion accessible à tous les rôles authentifiés ayant un compte actif, sauf ETUDIANT et ENSEIGNANT qui sont toujours interdits."
         },
@@ -17420,6 +17911,10 @@
         {
             "name": "Rôles",
             "description": "Gestion des rôles, droits et autorisations. Permission ROLE_GERER requise."
+        },
+        {
+            "name": "Tableau des notes par matiere",
+            "description": "Tableaux des notes definitivement validees, pour le secretariat et la direction. Mise a jour automatique a la lecture apres validation direction. Compte actif requis. Accessible a ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION."
         },
         {
             "name": "Églises",

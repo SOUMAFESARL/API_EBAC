@@ -498,3 +498,11 @@ Route::prefix('v1/administration')
             ->middleware('permission:ACTION_GERER');
         Route::apiResource('menus', MenuController::class)->middleware('permission:MENU_GERER');
     });
+
+Route::get('v1/administration/notes-matieres', [App\Http\Controllers\Api\V1\Administration\TableauNotesMatieresController::class, 'index'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
+    ->name('api.v1.administration.notes-matieres.index');
+
+Route::get('v1/administration/bulletins-notes/{id}', [App\Http\Controllers\Api\V1\Administration\BulletinNotesEtudiantController::class, 'show'])
+    ->whereNumber('id')->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
+    ->name('api.v1.administration.bulletins-notes.show');
