@@ -60,7 +60,7 @@ class CorrectionNoteController extends Controller
             'historique' => DB::table('traces_corrections_notes')->where('id_correction', $id)->orderBy('id')->get()]);
     }
 
-    private function presenterAdministration(Request $request, CorrectionNote $correction): array
+    protected function presenterAdministration(Request $request, CorrectionNote $correction): array
     {
         $feuille = $correction->note?->feuilleNotes;
         $role = $request->user()->role?->code;
@@ -76,10 +76,10 @@ class CorrectionNoteController extends Controller
                 'role' => $correction->demandeur->role?->only(['code', 'libelle']),
             ] : null,
             'statut_libelle' => match ($correction->statut) {
-                'en_attente', 'transmise_direction' => '? v?rifier',
-                'autorisee' => 'Autoris?e',
-                'appliquee' => 'Correction appliqu?e',
-                'rejetee' => 'Rejet?e',
+                'en_attente', 'transmise_direction' => 'À vérifier',
+                'autorisee' => 'Autorisée',
+                'appliquee' => 'Correction appliquée',
+                'rejetee' => 'Rejetée',
             },
             'note_actuelle' => $correction->note?->note,
             'evaluation' => $correction->note?->evaluation,

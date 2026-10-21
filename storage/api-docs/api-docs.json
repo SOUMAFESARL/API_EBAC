@@ -5869,6 +5869,333 @@
                 ]
             }
         },
+        "/administration/corrections-notes/groupes": {
+            "get": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Tableau secretariat : demandes regroupees par feuille et evaluation",
+                "description": "Une ligne par feuille et evaluation ayant des demandes. Inclut les notes actuelles, corrections, enseignant, promotion, compteurs et actions. Une demande active rend le groupe en_attente ; sinon appliquee, rejetee ou mixte. Les demandes historiques restent visibles. Pas de direction obligatoire.",
+                "operationId": "f72f52dc461e66b04bcfe888c6518c50",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Matiere, cours, promotion, enseignant ou evaluation.",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "en_attente",
+                                "appliquee",
+                                "rejetee",
+                                "mixte"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "id_promotion",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 20,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des groupes et pagination.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "feuilles_corrections": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/FeuilleCorrectionsGroupees"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer"
+                                                },
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "from": {
+                                                    "type": "integer",
+                                                    "nullable": true
+                                                },
+                                                "to": {
+                                                    "type": "integer",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Acces interdit."
+                    },
+                    "422": {
+                        "description": "Filtres invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/corrections-notes/groupes/{id}": {
+            "get": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Panneau secretariat : tous les etudiants et corrections de cette evaluation",
+                "operationId": "446c36644474a442e07602b70d4e587c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "id_feuille_notes retourne par la liste.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "evaluation",
+                        "in": "query",
+                        "description": "Valeur exacte de la liste. Pour null, envoyer evaluation=.",
+                        "required": true,
+                        "allowEmptyValue": true,
+                        "schema": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "example": "Participation"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail groupe.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "feuille_corrections": {
+                                            "$ref": "#/components/schemas/FeuilleCorrectionsGroupees"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Groupe introuvable."
+                    },
+                    "422": {
+                        "description": "Evaluation manquante ou invalide."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/corrections-notes/groupes/{id}/appliquer": {
+            "post": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Appliquer les corrections selectionnees de la feuille (secretariat, ADMIN)",
+                "description": "Envoyer evaluation et ids_corrections_applicables du GET dans ids_corrections. Maximum 100. Toutes les corrections doivent appartenir au groupe et etre applicables. Transaction atomique : une erreur annule tout, y compris traces et notes. Pas de decision de direction requise. Les corrections nouvellement arrivees ne sont pas incluses implicitement.",
+                "operationId": "c30a251b682dd9d417c84d128ea27df7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SelectionCorrectionsGroupees"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Notes mises a jour et groupe actualise.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Corrections appliquées."
+                                        },
+                                        "feuille_corrections": {
+                                            "$ref": "#/components/schemas/FeuilleCorrectionsGroupees"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Seuls ADMIN et le secretariat peuvent appliquer."
+                    },
+                    "422": {
+                        "description": "Selection, etat ou note initiale invalide."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/corrections-notes/groupes/{id}/rejeter": {
+            "post": {
+                "tags": [
+                    "Corrections des notes"
+                ],
+                "summary": "Rejeter les corrections selectionnees avec motif (secretariat, ADMIN)",
+                "description": "Envoyer evaluation, ids_corrections_rejetables du GET dans ids_corrections et motif. Rejet atomique, sans changer les notes.",
+                "operationId": "fcb9ff876e4cc2c9f8cd587e300c4ac3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/SelectionCorrectionsGroupees"
+                                    },
+                                    {
+                                        "required": [
+                                            "motif"
+                                        ],
+                                        "properties": {
+                                            "motif": {
+                                                "type": "string",
+                                                "example": "Copie non justifiée",
+                                                "maxLength": 5000,
+                                                "minLength": 1
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Rejets traces et groupe actualise.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Corrections rejetées."
+                                        },
+                                        "feuille_corrections": {
+                                            "$ref": "#/components/schemas/FeuilleCorrectionsGroupees"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Seuls ADMIN et le secretariat peuvent rejeter."
+                    },
+                    "422": {
+                        "description": "Motif, selection ou etat invalide."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/administration/corrections-notes": {
             "get": {
                 "tags": [
@@ -13373,6 +13700,339 @@
                         "type": "object"
                     }
                 ]
+            },
+            "CorrectionGroupeeLigne": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 12
+                    },
+                    "id_note": {
+                        "type": "integer",
+                        "example": 101
+                    },
+                    "note_initiale": {
+                        "type": "number",
+                        "example": 12
+                    },
+                    "note_proposee": {
+                        "type": "number",
+                        "example": 16
+                    },
+                    "note_actuelle": {
+                        "type": "number",
+                        "example": 12
+                    },
+                    "note_finale": {
+                        "type": "number",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "motif": {
+                        "type": "string",
+                        "example": "Erreur de report"
+                    },
+                    "statut": {
+                        "type": "string",
+                        "example": "en_attente"
+                    },
+                    "statut_libelle": {
+                        "type": "string",
+                        "example": "À vérifier"
+                    },
+                    "demandeur": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 5
+                            },
+                            "nom": {
+                                "type": "string",
+                                "example": "KOUASSI"
+                            },
+                            "prenoms": {
+                                "type": "string",
+                                "example": "Ange"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "actions": {
+                        "properties": {
+                            "peut_appliquer": {
+                                "type": "boolean",
+                                "example": true
+                            },
+                            "peut_rejeter": {
+                                "type": "boolean",
+                                "example": true
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "FeuilleCorrectionsGroupees": {
+                "properties": {
+                    "id_feuille_notes": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "id_seance": {
+                        "type": "integer",
+                        "example": 8,
+                        "nullable": true
+                    },
+                    "id_annee_academique": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "evaluation": {
+                        "type": "string",
+                        "example": "Participation",
+                        "nullable": true
+                    },
+                    "matiere": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "code": {
+                                "type": "string",
+                                "example": "DFC"
+                            },
+                            "libelle": {
+                                "type": "string",
+                                "example": "Doctrine de la Foi Chrétienne"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "cours": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "promotion": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 17
+                            },
+                            "num_promotion": {
+                                "type": "integer",
+                                "example": 17
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "enseignant": {
+                        "description": "Demandeur unique ; null si plusieurs demandeurs.",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 5
+                            },
+                            "nom": {
+                                "type": "string",
+                                "example": "KOUASSI"
+                            },
+                            "prenoms": {
+                                "type": "string",
+                                "example": "Ange"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "enseignants": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "date_demande": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "statut": {
+                        "type": "string",
+                        "example": "en_attente",
+                        "enum": [
+                            "en_attente",
+                            "appliquee",
+                            "rejetee",
+                            "mixte"
+                        ]
+                    },
+                    "statut_libelle": {
+                        "type": "string",
+                        "example": "À vérifier"
+                    },
+                    "nombre_corrections": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "corrections_en_attente": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "ids_corrections_applicables": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "example": [
+                            12,
+                            13
+                        ]
+                    },
+                    "ids_corrections_rejetables": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "example": [
+                            12,
+                            13
+                        ]
+                    },
+                    "notes_saisies": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "effectif": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "moyenne_cours": {
+                        "type": "number",
+                        "example": 13.67,
+                        "nullable": true
+                    },
+                    "notes": {
+                        "description": "Toutes les notes de cette evaluation, y compris les etudiants sans correction. Chaque note contient ses demandes de correction et leur historique de statuts.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 101
+                                },
+                                "id_etudiant": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "evaluation": {
+                                    "type": "string",
+                                    "example": "Participation",
+                                    "nullable": true
+                                },
+                                "note": {
+                                    "type": "number",
+                                    "example": 12
+                                },
+                                "etudiant": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "matricule": {
+                                            "type": "string",
+                                            "example": "EBAC-0016-2026"
+                                        },
+                                        "nom": {
+                                            "type": "string",
+                                            "example": "ANGE"
+                                        },
+                                        "prenoms": {
+                                            "type": "string",
+                                            "example": "HERO"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "nullable": true
+                                },
+                                "corrections": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CorrectionGroupeeLigne"
+                                    }
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "actions": {
+                        "properties": {
+                            "peut_appliquer": {
+                                "type": "boolean",
+                                "example": true
+                            },
+                            "peut_rejeter": {
+                                "type": "boolean",
+                                "example": true
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "historique": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id_correction": {
+                                    "type": "integer"
+                                },
+                                "id_acteur": {
+                                    "type": "integer"
+                                },
+                                "action": {
+                                    "type": "string"
+                                },
+                                "details": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "created_at": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "SelectionCorrectionsGroupees": {
+                "required": [
+                    "evaluation",
+                    "ids_corrections"
+                ],
+                "properties": {
+                    "evaluation": {
+                        "type": "string",
+                        "example": "Participation",
+                        "nullable": true
+                    },
+                    "ids_corrections": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "example": [
+                            12,
+                            13
+                        ],
+                        "maxItems": 100,
+                        "minItems": 1,
+                        "uniqueItems": true
+                    }
+                },
+                "type": "object"
             },
             "DemandeCorrectionNote": {
                 "required": [

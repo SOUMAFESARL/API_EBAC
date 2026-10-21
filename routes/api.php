@@ -118,6 +118,17 @@ Route::prefix('v1/administration/notes-transmises')
             ->whereNumber('id')->middleware('roles.autorises:ADMIN,DIRECTION')->name('rejeter-direction');
     });
 
+Route::prefix('v1/administration/corrections-notes/groupes')
+    ->name('api.v1.administration.corrections-notes.groupes.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
+    ->controller(App\Http\Controllers\Api\V1\Administration\CorrectionsGroupeesController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('{id}', 'show')->whereNumber('id')->name('show');
+        Route::post('{id}/appliquer', 'appliquer')->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE')->name('appliquer');
+        Route::post('{id}/rejeter', 'rejeter')->whereNumber('id')->middleware('roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE')->name('rejeter');
+    });
+
 Route::prefix('v1/administration/corrections-notes')
     ->name('api.v1.administration.corrections-notes.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
