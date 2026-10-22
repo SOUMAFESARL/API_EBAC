@@ -17,7 +17,7 @@ class BulletinController extends Controller
             'id_inscription' => ['sometimes', 'integer', 'exists:inscriptions,id'],
             'id_promotion' => ['sometimes', 'integer', 'exists:promotions,id'],
             'id_annee_academique' => ['sometimes', 'integer', 'exists:annees_academiques,id'],
-            'statut' => ['sometimes', Rule::in(['Brouillon', 'Publié'])],
+            'statut' => ['sometimes', Rule::in(['Brouillon', 'Généré', 'Publié'])],
             'periode' => ['sometimes', 'string', 'max:50'],
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'between:1,100'],
@@ -52,8 +52,8 @@ class BulletinController extends Controller
             if ($bulletin->statut === 'Publié' && $bulletin->date_publication !== null) {
                 return $bulletin;
             }
-            if ($bulletin->statut !== 'Brouillon') {
-                throw ValidationException::withMessages(['statut' => 'Seul un bulletin au statut Brouillon peut être publié.']);
+            if (! in_array($bulletin->statut, ['Brouillon', 'Généré'], true)) {
+                throw ValidationException::withMessages(['statut' => 'Seul un bulletin au statut Brouillon ou Généré peut être publié.']);
             }
             $bulletin->update([
                 'statut' => 'Publié',

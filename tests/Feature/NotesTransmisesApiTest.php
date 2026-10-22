@@ -42,6 +42,75 @@ class NotesTransmisesApiTest extends TestCase
         return '/api/v1/administration/notes-transmises/'.$feuille->id;
     }
 
+    public function test_validation_genere_un_bulletin_consultable_sans_publication(): void
+    {
+        [$users, $feuille, $note] = $this->contexte();
+        $note->etudiant->update(['user_id' => $users['ETUDIANT']->id]);
+        $inscription = \App\Models\Inscription::create(['id_etudiant' => $note->id_etudiant,
+            'id_promotion' => $feuille->id_promotion, 'id_annee_academique' => $feuille->id_annee_academique,
+            'date_inscription' => '2026-09-01']);
+        // A pending sheet must not contribute to the generated average.
+        $autreMatiere = Matiere::create(['code' => 'PENDING', 'libelle' => 'En saisie',
+            'id_niveau' => $feuille->matiere->id_niveau, 'coefficient' => 10]);
+        $autreFeuille = FeuilleNotes::create(['id_promotion' => $feuille->id_promotion,
+            'id_annee_academique' => $feuille->id_annee_academique,
+            'id_matiere' => $autreMatiere->id, 'statut' => 'transmise', 'updated_by' => $users['ENSEIGNANT']->id]);
+        $autreFeuille->notes()->create(['id_etudiant' => $note->id_etudiant, 'note' => 0]);
+        $base = '/api/v1/etudiant/bulletins';
+        Sanctum::actingAs($users['ETUDIANT']);
+        $this->getJson($base)->assertOk()->assertJsonCount(0, 'bulletins');
+        Sanctum::actingAs($users['SECRETARIAT']);
+        $this->postJson($this->url($feuille).'/valider-secretariat')->assertOk();
+        $bulletin = \App\Models\Bulletin::where('id_inscription', $inscription->id)->sole();
+        $this->assertNull($bulletin->date_publication);
+        Sanctum::actingAs($users['ETUDIANT']);
+        $this->getJson($base)->assertOk()->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('bulletins.0.id', $bulletin->id)->assertJsonPath('bulletins.0.statut', 'Généré');
+        $this->getJson($base.'/'.$bulletin->id)->assertOk()->assertJsonPath('bulletin.moyenne_generale', 14)
+            ->assertJsonCount(1, 'bulletin.matieres')->assertJsonPath('bulletin.matieres.0.note', 14);
+        // The same document is refreshed throughout the validation workflow.
+        Sanctum::actingAs($users['SECRETARIAT']);
+        $this->postJson($this->url($feuille).'/transmettre-direction')->assertOk();
+        Sanctum::actingAs($users['DIRECTION']);
+        $this->postJson($this->url($feuille).'/valider-direction')->assertOk();
+        $this->assertDatabaseCount('bulletins', 1);
+        $this->assertDatabaseHas('bulletins', ['id' => $bulletin->id, 'statut' => 'Généré', 'date_publication' => null]);
+        $this->postJson('/api/v1/administration/bulletins/'.$bulletin->id.'/publier')->assertOk()
+            ->assertJsonPath('bulletin.statut', 'Publié');
+        // Later validations do not overwrite the published document.
+        Sanctum::actingAs($users['SECRETARIAT']);
+        $this->postJson($this->url($autreFeuille).'/valider-secretariat')->assertOk();
+        $this->assertSame('14.00', $bulletin->fresh()->moyenne);
+        $this->assertSame(1, $bulletin->lignes()->count());
+        $note->etudiant->update(['user_id' => null]);
+        Etudiant::create(['user_id' => $users['ETUDIANT']->id, 'matricule' => 'OTHER',
+            'nom' => 'Autre', 'prenoms' => 'Etudiant', 'date_inscription' => '2026-09-01']);
+        Sanctum::actingAs($users['ETUDIANT']);
+        $this->getJson($base.'/'.$bulletin->id)->assertNotFound();
+    }
+
+    public function test_validation_direction_directe_et_rejet_retire_les_notes_non_validees(): void
+    {
+        [$users, $feuille, $note] = $this->contexte();
+        \App\Models\Inscription::create(['id_etudiant' => $note->id_etudiant,
+            'id_promotion' => $feuille->id_promotion, 'id_annee_academique' => $feuille->id_annee_academique,
+            'date_inscription' => '2026-09-01']);
+        Sanctum::actingAs($users['SECRETARIAT']);
+        $this->postJson($this->url($feuille).'/valider-secretariat')->assertOk();
+        $this->assertDatabaseCount('bulletins', 1);
+        $this->postJson($this->url($feuille).'/rejeter-secretariat', ['motif' => 'A corriger'])->assertOk();
+        $this->assertDatabaseCount('bulletins', 0);
+        $this->assertDatabaseCount('lignes_bulletins', 0);
+        // The workflow also permits transmission without a separate secretariat validation.
+        $feuille->refresh()->update(['statut' => 'transmise']);
+        $this->postJson($this->url($feuille).'/transmettre-direction')->assertOk();
+        $this->assertDatabaseCount('bulletins', 0);
+        Sanctum::actingAs($users['DIRECTION']);
+        $this->postJson($this->url($feuille).'/valider-direction')->assertOk();
+        $this->assertDatabaseHas('bulletins', ['statut' => 'Généré', 'date_publication' => null, 'moyenne' => 14]);
+        $this->assertDatabaseHas('lignes_bulletins', ['id_matiere' => $feuille->id_matiere, 'note' => 14]);
+    }
+
     public function test_contrat_supervision_pour_liste_detail_et_actions(): void
     {
         [$users, $feuille, $note] = $this->contexte();

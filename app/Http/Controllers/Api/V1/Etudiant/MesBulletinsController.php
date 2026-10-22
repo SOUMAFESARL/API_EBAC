@@ -18,7 +18,8 @@ class MesBulletinsController extends Controller
 
     private function bulletins(Etudiant $etudiant)
     {
-        return Bulletin::query()->whereNotNull('date_publication')->where('statut', 'Publié')
+        return Bulletin::query()->where(fn ($q) => $q->where('statut', 'Généré')
+            ->orWhere(fn ($publie) => $publie->where('statut', 'Publié')->whereNotNull('date_publication')))
             ->whereHas('inscription', fn ($q) => $q->where('id_etudiant', $etudiant->id))
             ->with(['inscription.anneeAcademique', 'inscription.promotion.niveau']);
     }

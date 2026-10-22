@@ -71,6 +71,7 @@ class FeuilleNotes extends Model
         $this->update(['statut' => $statut, 'updated_by' => $acteur]);
         $this->historique()->create(['id_acteur' => $acteur, 'action' => $action,
             'statut_avant' => $avant, 'statut_apres' => $statut, 'motif' => $motif, 'created_at' => now()]);
+        app(\App\Services\GenerationBulletinsService::class)->synchroniser($this, $acteur);
     }
 
     public function notes(): HasMany
