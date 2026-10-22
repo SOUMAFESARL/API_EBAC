@@ -8,7 +8,8 @@ on:
 
 concurrency:
   group: production-ebac
-  cancel-in-progress: true
+  # Laisser le transfert FTP en cours se terminer avant le prochain déploiement.
+  cancel-in-progress: false
 
 permissions:
   contents: read
