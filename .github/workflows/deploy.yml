@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   tests:
-    name: Tests Laravel
+    name: Tests 9011
     runs-on: ubuntu-latest
 
     steps:

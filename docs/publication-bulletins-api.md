@@ -59,6 +59,13 @@ Sans inscription ou sans notes admissibles, elle ne crée pas de bulletin.
 
 ## Téléchargement par l'étudiant
 
+Le détail `GET /api/v1/etudiant/bulletins/{id}` retourne aussi le profil complet
+dans `etudiant` : identité et URL signée de la photo, civilité, naissance,
+nationalité, coordonnées, situation familiale et professionnelle, statut,
+date d'inscription, `eglise` et `dossier`. Les dates JSON sont au format
+`YYYY-MM-DD` ; les relations absentes valent `null`. L'accès reste limité au
+propriétaire du bulletin.
+
 `GET /api/v1/etudiant/bulletins/{id}/telecharger`
 
 Authentification `Authorization: Bearer <token_etudiant>`, compte actif et rôle

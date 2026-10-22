@@ -74,20 +74,8 @@ class MesBulletinsController extends Controller
     public function telecharger(Request $request, int $id)
     {
         $donnees = $this->detail($request, $id);
-        $etudiant = $this->etudiant($request)->load(['civilite', 'eglise', 'dossier']);
-        $donnees['etudiant'] = [
-            ...$etudiant->only(['id', 'matricule', 'nom', 'prenoms', 'lieu_naissance', 'nationalite',
-                'email', 'telephone', 'adresse', 'statut_professionnel', 'situation_matrimonial',
-                'nombre_enfant', 'statut']),
-            'date_naissance' => $etudiant->date_naissance?->format('d/m/Y'),
-            'date_inscription' => $etudiant->date_inscription?->format('d/m/Y'),
-            'civilite' => $etudiant->civilite?->name,
-            'eglise' => $etudiant->eglise?->only(['nom', 'denomination', 'region', 'district', 'ville_commune']),
-            'dossier' => $etudiant->dossier ? [
-                ...$etudiant->dossier->only(['numero_dossier', 'statut']),
-                'date_ouverture' => $etudiant->dossier->date_ouverture?->format('d/m/Y'),
-            ] : null,
-        ];
+        $etudiant = $this->etudiant($request);
+        $donnees['etudiant'] = $this->presenterEtudiant($etudiant, 'd/m/Y');
         $donnees['photo_identite'] = null;
         // Embed the stored image so PDF generation does not depend on a signed HTTP URL.
         if ($etudiant->photo_identite && ! str_contains($etudiant->photo_identite, '..')
@@ -102,6 +90,25 @@ class MesBulletinsController extends Controller
         return Pdf::loadView('pdf.bulletin-etudiant', $donnees)
             ->setPaper('a4')->download('bulletin-'.$id.'.pdf')
             ->header('Cache-Control', 'private, no-store');
+    }
+
+    private function presenterEtudiant(Etudiant $etudiant, string $formatDate = 'Y-m-d'): array
+    {
+        $etudiant->loadMissing(['civilite', 'eglise', 'dossier']);
+
+        return [
+            ...$etudiant->only(['id', 'matricule', 'nom', 'prenoms', 'lieu_naissance', 'nationalite',
+                'email', 'telephone', 'adresse', 'statut_professionnel', 'situation_matrimonial',
+                'nombre_enfant', 'statut', 'civilite_id', 'eglise_id', 'photo_identite_url']),
+            'date_naissance' => $etudiant->date_naissance?->format($formatDate),
+            'date_inscription' => $etudiant->date_inscription?->format($formatDate),
+            'civilite' => $etudiant->civilite?->name,
+            'eglise' => $etudiant->eglise?->only(['id', 'code', 'nom', 'denomination', 'region', 'district', 'ville_commune']),
+            'dossier' => $etudiant->dossier ? [
+                ...$etudiant->dossier->only(['id', 'numero_dossier', 'statut']),
+                'date_ouverture' => $etudiant->dossier->date_ouverture?->format($formatDate),
+            ] : null,
+        ];
     }
 
     private function detail(Request $request, int $id): array
@@ -125,7 +132,7 @@ class MesBulletinsController extends Controller
             ->with(['matiere', 'cours', 'seance'])->orderBy('id')->get();
 
         return [
-            'etudiant' => $etudiant->only(['id', 'matricule', 'nom', 'prenoms', 'photo_identite_url']),
+            'etudiant' => $this->presenterEtudiant($etudiant),
             'bulletin' => [...$this->presenter($bulletin), 'matieres' => $lignes,
                 'recapitulatif_uv' => ['validees' => $lignes->where('statut', 'validee')->count(),
                     'non_validees' => $lignes->where('statut', 'non_validee')->count(), 'a_completer' => $lignes->where('statut', 'a_completer')->count()],

@@ -24,7 +24,11 @@ use OpenApi\Attributes as OA;
     description: 'Retourne les lignes enregistrees du bulletin, leur coefficient, note, appreciation et statut selon le seuil de validation. Les bulletins Généré sont synchronises lors des transitions du circuit de validation : validation secretariat ou direction, maintien des notes validees au secretariat pendant la transmission direction, retrait des notes rejetees ou retournees en correction. La publication reste distincte et fige le document. Les cours a faire sont limites a l etudiant et a l annee du bulletin. Le statut de l annee depend de sa date de fin. telechargement_pdf_url fournit le lien de telechargement authentifie. Versions et QR ne sont pas geres.',
     tags: ['Espace étudiant'], security: [['sanctum' => []]],
     parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
-    responses: [new OA\Response(response: 200, description: 'etudiant et bulletin avec matieres, recapitulatif_uv (validees, non_validees, a_completer) et cours_a_faire.'),
+    responses: [new OA\Response(response: 200, description: 'Profil personnel complet de l etudiant et bulletin avec matieres, recapitulatif_uv et cours_a_faire. Dates du profil au format YYYY-MM-DD. Relations absentes a null.',
+        content: new OA\JsonContent(properties: [
+            new OA\Property(property: 'etudiant', ref: '#/components/schemas/ProfilEtudiantBulletin'),
+            new OA\Property(property: 'bulletin', type: 'object', description: 'Bulletin avec annee_academique, promotion, niveau, matieres, moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire et telechargement_pdf_url.'),
+        ])),
         new OA\Response(response: 401, description: 'Authentification requise.'),
         new OA\Response(response: 403, description: 'Compte actif et role ETUDIANT requis.'),
         new OA\Response(response: 404, description: 'Bulletin inexistant, brouillon, retire ou appartenant a un autre etudiant.')]
@@ -40,4 +44,40 @@ use OpenApi\Attributes as OA;
         new OA\Response(response: 403, description: 'Compte actif et role ETUDIANT requis.'),
         new OA\Response(response: 404, description: 'Fiche etudiant ou bulletin introuvable, bulletin masque ou appartenant a un autre etudiant.')]
 )]
+#[OA\Schema(schema: 'ProfilEtudiantBulletin', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'integer'),
+    new OA\Property(property: 'matricule', type: 'string'),
+    new OA\Property(property: 'nom', type: 'string'),
+    new OA\Property(property: 'prenoms', type: 'string'),
+    new OA\Property(property: 'civilite_id', type: 'integer', nullable: true),
+    new OA\Property(property: 'civilite', type: 'string', nullable: true, example: 'Madame'),
+    new OA\Property(property: 'date_naissance', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'lieu_naissance', type: 'string', nullable: true),
+    new OA\Property(property: 'nationalite', type: 'string', nullable: true),
+    new OA\Property(property: 'email', type: 'string', format: 'email', nullable: true),
+    new OA\Property(property: 'telephone', type: 'string', nullable: true),
+    new OA\Property(property: 'adresse', type: 'string', nullable: true),
+    new OA\Property(property: 'statut_professionnel', type: 'string', nullable: true),
+    new OA\Property(property: 'situation_matrimonial', type: 'string', nullable: true),
+    new OA\Property(property: 'nombre_enfant', type: 'integer', nullable: true),
+    new OA\Property(property: 'statut', type: 'string'),
+    new OA\Property(property: 'date_inscription', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'photo_identite_url', description: 'URL signee temporaire de la photo.', type: 'string', nullable: true),
+    new OA\Property(property: 'eglise_id', type: 'integer', nullable: true),
+    new OA\Property(property: 'eglise', type: 'object', nullable: true, properties: [
+        new OA\Property(property: 'id', type: 'integer'),
+        new OA\Property(property: 'code', type: 'string'),
+        new OA\Property(property: 'nom', type: 'string'),
+        new OA\Property(property: 'denomination', type: 'string', nullable: true),
+        new OA\Property(property: 'region', type: 'string', nullable: true),
+        new OA\Property(property: 'district', type: 'string', nullable: true),
+        new OA\Property(property: 'ville_commune', type: 'string'),
+    ]),
+    new OA\Property(property: 'dossier', type: 'object', nullable: true, properties: [
+        new OA\Property(property: 'id', type: 'integer'),
+        new OA\Property(property: 'numero_dossier', type: 'string'),
+        new OA\Property(property: 'statut', type: 'string'),
+        new OA\Property(property: 'date_ouverture', type: 'string', format: 'date', nullable: true),
+    ]),
+])]
 final class MesBulletinsEtudiantDocumentation {}

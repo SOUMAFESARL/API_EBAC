@@ -8368,7 +8368,23 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "etudiant et bulletin avec matieres, recapitulatif_uv (validees, non_validees, a_completer) et cours_a_faire."
+                        "description": "Profil personnel complet de l etudiant et bulletin avec matieres, recapitulatif_uv et cours_a_faire. Dates du profil au format YYYY-MM-DD. Relations absentes a null.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "etudiant": {
+                                            "$ref": "#/components/schemas/ProfilEtudiantBulletin"
+                                        },
+                                        "bulletin": {
+                                            "description": "Bulletin avec annee_academique, promotion, niveau, matieres, moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire et telechargement_pdf_url.",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Authentification requise."
@@ -15831,6 +15847,137 @@
                             1,
                             2
                         ]
+                    }
+                },
+                "type": "object"
+            },
+            "ProfilEtudiantBulletin": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "matricule": {
+                        "type": "string"
+                    },
+                    "nom": {
+                        "type": "string"
+                    },
+                    "prenoms": {
+                        "type": "string"
+                    },
+                    "civilite_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "civilite": {
+                        "type": "string",
+                        "example": "Madame",
+                        "nullable": true
+                    },
+                    "date_naissance": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "lieu_naissance": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "nationalite": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "nullable": true
+                    },
+                    "telephone": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "adresse": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "statut_professionnel": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "situation_matrimonial": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "nombre_enfant": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "statut": {
+                        "type": "string"
+                    },
+                    "date_inscription": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "photo_identite_url": {
+                        "description": "URL signee temporaire de la photo.",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "eglise_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "eglise": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "code": {
+                                "type": "string"
+                            },
+                            "nom": {
+                                "type": "string"
+                            },
+                            "denomination": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "region": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "district": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "ville_commune": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "dossier": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "numero_dossier": {
+                                "type": "string"
+                            },
+                            "statut": {
+                                "type": "string"
+                            },
+                            "date_ouverture": {
+                                "type": "string",
+                                "format": "date",
+                                "nullable": true
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
                     }
                 },
                 "type": "object"

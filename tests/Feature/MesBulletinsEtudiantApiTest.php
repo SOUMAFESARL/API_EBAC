@@ -49,6 +49,9 @@ class MesBulletinsEtudiantApiTest extends TestCase
             ->assertJsonPath('bulletin.rang', 3)->assertJsonCount(3, 'bulletin.matieres')
             ->assertJsonPath('bulletin.recapitulatif_uv.validees', 1)->assertJsonPath('bulletin.recapitulatif_uv.non_validees', 1)
             ->assertJsonPath('bulletin.recapitulatif_uv.a_completer', 1)->assertJsonCount(0, 'bulletin.cours_a_faire');
+        $this->getJson($base.'/'.$publie->id)->assertOk()->assertJsonPath('etudiant.date_naissance', null)
+            ->assertJsonPath('etudiant.civilite', null)->assertJsonPath('etudiant.eglise', null)
+            ->assertJsonPath('etudiant.dossier', null);
         $pdfUrl = route('api.v1.etudiant.bulletins.telecharger', ['id' => $publie->id]);
         $this->getJson($base)->assertJsonPath('bulletins.0.telechargement_pdf_url', $pdfUrl);
         $pdf = $this->get($pdfUrl)->assertOk()->assertHeader('Content-Type', 'application/pdf')
@@ -102,6 +105,18 @@ class MesBulletinsEtudiantApiTest extends TestCase
             'statut_professionnel' => 'Enseignante', 'situation_matrimonial' => 'Mariée',
             'nombre_enfant' => 0, 'photo_identite' => $photo]);
         $etudiant->dossier()->create(['numero_dossier' => 'DOS-PDF-1', 'statut' => 'Complet', 'date_ouverture' => '2026-08-20']);
+        $profil = $this->getJson($base.'/'.$publie->id)->assertOk()
+            ->assertJsonPath('etudiant.civilite', 'Madame')->assertJsonPath('etudiant.civilite_id', $civilite->id)
+            ->assertJsonPath('etudiant.date_naissance', '1998-04-12')->assertJsonPath('etudiant.lieu_naissance', 'Bouaké')
+            ->assertJsonPath('etudiant.nationalite', 'Ivoirienne')->assertJsonPath('etudiant.email', 'anne@example.test')
+            ->assertJsonPath('etudiant.telephone', '0102030405')->assertJsonPath('etudiant.adresse', 'Rue des Écoles')
+            ->assertJsonPath('etudiant.statut_professionnel', 'Enseignante')->assertJsonPath('etudiant.situation_matrimonial', 'Mariée')
+            ->assertJsonPath('etudiant.nombre_enfant', 0)->assertJsonPath('etudiant.date_inscription', '2026-09-01')
+            ->assertJsonPath('etudiant.eglise.id', $eglise->id)->assertJsonPath('etudiant.eglise.nom', 'Église Alliance')
+            ->assertJsonPath('etudiant.dossier.numero_dossier', 'DOS-PDF-1')->assertJsonPath('etudiant.dossier.date_ouverture', '2026-08-20')
+            ->assertJsonMissingPath('etudiant.user')->assertJsonMissingPath('etudiant.created_by')
+            ->assertJsonMissingPath('etudiant.photo_identite');
+        $this->assertStringContainsString('/fichiers-preinscriptions/', $profil->json('etudiant.photo_identite_url'));
         // Render a real PDF with the embedded image and the complete personal profile.
         $this->get($pdfUrl)->assertOk()->assertDownload('bulletin-'.$publie->id.'.pdf');
         $document = \Mockery::mock(\Barryvdh\DomPDF\PDF::class);
