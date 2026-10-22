@@ -39,12 +39,33 @@ Les bulletins publiés ou retirés ne sont pas modifiés automatiquement.
 
 Les moyennes par matière utilisent les coefficients des cours ; la moyenne générale
 utilise ceux des matières, sans arrondi intermédiaire. Cette génération enregistre
-le bulletin en base ; elle ne crée pas de PDF. Aucun rang ni mention n'est inventé.
+le bulletin en base ; le PDF est produit à la demande au téléchargement. Aucun rang ni mention n'est inventé.
 Les routes étudiant restent `GET /api/v1/etudiant/bulletins` et
 `GET /api/v1/etudiant/bulletins/{id}`, avec le token du compte étudiant.
 
 La génération est déclenchée par les prochaines transitions de validation : les
 feuilles déjà validées avant cette modification ne sont pas reprises à la connexion.
+
+## Téléchargement par l'étudiant
+
+`GET /api/v1/etudiant/bulletins/{id}/telecharger`
+
+Authentification `Authorization: Bearer <token_etudiant>`, compte actif et rôle
+`ETUDIANT` requis. Un bulletin `Généré` est téléchargeable sans publication ; un
+bulletin `Publié` avec date de publication est également téléchargeable.
+Les brouillons, bulletins retirés et bulletins d'un autre étudiant retournent 404.
+
+La liste et le détail exposent `telechargement_pdf_url`. Cette URL requiert aussi
+le token : le frontend doit récupérer le fichier avec l'en-tête Authorization,
+puis télécharger le Blob reçu. La réponse est un fichier binaire `application/pdf`,
+avec `Content-Disposition: attachment; filename=bulletin-{id}.pdf` et
+`Cache-Control: private, no-store`, et non un objet JSON.
+
+Le PDF reprend les données du détail : identité, année, niveau, promotion,
+matières, notes, coefficients, appréciations, moyenne, rang, mention, UV et cours
+à faire. Les valeurs absentes sont affichées avec un tiret. Un bulletin généré
+porte la mention « non publié ». Aucun QR, signature ou historique de versions
+n'est ajouté.
 
 Réponse 200 : `{"message":"Bulletin publié.","bulletin":{...}}`.
 Erreurs : 401 sans authentification, 403 si rôle interdit ou compte inactif,

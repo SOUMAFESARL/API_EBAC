@@ -220,6 +220,7 @@ Route::prefix('v1/etudiant/bulletins')
     ->controller(MesBulletinsController::class)
     ->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::get('{id}/telecharger', 'telecharger')->whereNumber('id')->name('telecharger');
         Route::get('{id}', 'show')->whereNumber('id')->name('show');
     });
 Route::get('v1/etudiant/cours-a-faire', MesCoursAFaireController::class)

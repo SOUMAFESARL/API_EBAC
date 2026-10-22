@@ -8295,8 +8295,8 @@
                 "tags": [
                     "Espace étudiant"
                 ],
-                "summary": "Lister les bulletins publies de l etudiant connecte",
-                "description": "Authentification Sanctum, compte actif et role ETUDIANT requis. Seuls les bulletins au statut Publié avec date_publication sont visibles, tries par annee academique decroissante. Aucun identifiant etudiant n est accepte. Aucun brouillon ni bulletin provisoire calcule n est expose.",
+                "summary": "Lister mes bulletins generes ou publies",
+                "description": "Authentification Sanctum, compte actif et role ETUDIANT requis. Les bulletins Généré sont consultables sans publication. Les bulletins Publié restent visibles avec date_publication. Tri par annee academique decroissante. Aucun identifiant etudiant accepte. Les brouillons restent masques.",
                 "operationId": "listerMesBulletins",
                 "parameters": [
                     {
@@ -8326,7 +8326,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "etudiant, bulletins avec annee/promotion/niveau/moyenne/rang/mention et meta de pagination. Liste vide si aucun bulletin publie."
+                        "description": "etudiant, bulletins avec annee/promotion/niveau/moyenne/rang/mention et meta de pagination. Liste vide si aucun bulletin genere ou publie."
                     },
                     "401": {
                         "description": "Authentification requise."
@@ -8353,8 +8353,8 @@
                 "tags": [
                     "Espace étudiant"
                 ],
-                "summary": "Afficher le detail de mon bulletin publie",
-                "description": "Retourne les lignes enregistrees du bulletin et leur coefficient, note, appreciation et statut selon le seuil de validation de la matiere. La moyenne, le rang et la mention proviennent du bulletin publie et ne sont pas recalcules depuis les notes en saisie. Les cours a faire sont limites a l etudiant et a l annee du bulletin. Le statut de l annee est determine depuis sa date de fin. Versions, QR et telechargement PDF ne sont pas geres par ces routes.",
+                "summary": "Afficher mon bulletin genere ou publie",
+                "description": "Retourne les lignes enregistrees du bulletin, leur coefficient, note, appreciation et statut selon le seuil de validation. Les bulletins Généré sont synchronises lors des transitions du circuit de validation : validation secretariat ou direction, maintien des notes validees au secretariat pendant la transmission direction, retrait des notes rejetees ou retournees en correction. La publication reste distincte et fige le document. Les cours a faire sont limites a l etudiant et a l annee du bulletin. Le statut de l annee depend de sa date de fin. telechargement_pdf_url fournit le lien de telechargement authentifie. Versions et QR ne sont pas geres.",
                 "operationId": "afficherMonBulletin",
                 "parameters": [
                     {
@@ -8377,7 +8377,54 @@
                         "description": "Compte actif et role ETUDIANT requis."
                     },
                     "404": {
-                        "description": "Bulletin inexistant, non publie ou appartenant a un autre etudiant."
+                        "description": "Bulletin inexistant, brouillon, retire ou appartenant a un autre etudiant."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/etudiant/bulletins/{id}/telecharger": {
+            "get": {
+                "tags": [
+                    "Espace étudiant"
+                ],
+                "summary": "Telecharger mon bulletin en PDF",
+                "description": "Compte actif et role ETUDIANT requis. Memes droits que le detail : bulletin Généré sans publication ou Publié avec date_publication, appartenant a l etudiant connecte. PDF A4 produit depuis les lignes enregistrees, avec identite, matieres, notes, coefficients, moyenne et recapitulatif UV. Les bulletins generes portent une indication non publie. Reponse binaire avec Content-Disposition attachment et Cache-Control private, no-store.",
+                "operationId": "telechargerMonBulletinPdf",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier bulletin-{id}.pdf",
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Compte actif et role ETUDIANT requis."
+                    },
+                    "404": {
+                        "description": "Fiche etudiant ou bulletin introuvable, bulletin masque ou appartenant a un autre etudiant."
                     }
                 },
                 "security": [
@@ -11285,6 +11332,7 @@
                             "type": "string",
                             "enum": [
                                 "Brouillon",
+                                "Généré",
                                 "Publié"
                             ]
                         }
@@ -11372,7 +11420,7 @@
                     "Publication des bulletins"
                 ],
                 "summary": "Publier un bulletin existant",
-                "description": "ADMIN, DIRECTION, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Aucun corps requis. Passe un Brouillon à Publié avec date_publication et updated_by. Un bulletin déjà publié conserve sa date et son auteur. Ne génère pas de bulletin et ne recalcule pas les notes.",
+                "description": "ADMIN, DIRECTION, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Aucun corps requis. Passe un Brouillon ou Généré à Publié avec date_publication et updated_by. Un bulletin déjà publié conserve sa date et son auteur. Ne génère pas de bulletin et ne recalcule pas les notes.",
                 "operationId": "b055691dda2a20f3431941810cab7674",
                 "parameters": [
                     {

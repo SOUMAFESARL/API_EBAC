@@ -49,9 +49,17 @@ class MesBulletinsEtudiantApiTest extends TestCase
             ->assertJsonPath('bulletin.rang', 3)->assertJsonCount(3, 'bulletin.matieres')
             ->assertJsonPath('bulletin.recapitulatif_uv.validees', 1)->assertJsonPath('bulletin.recapitulatif_uv.non_validees', 1)
             ->assertJsonPath('bulletin.recapitulatif_uv.a_completer', 1)->assertJsonCount(0, 'bulletin.cours_a_faire');
+        $pdfUrl = route('api.v1.etudiant.bulletins.telecharger', ['id' => $publie->id]);
+        $this->getJson($base)->assertJsonPath('bulletins.0.telechargement_pdf_url', $pdfUrl);
+        $pdf = $this->get($pdfUrl)->assertOk()->assertHeader('Content-Type', 'application/pdf')
+            ->assertDownload('bulletin-'.$publie->id.'.pdf');
+        $this->assertStringStartsWith('%PDF-', $pdf->getContent());
+        $this->assertStringContainsString('no-store', $pdf->headers->get('Cache-Control'));
         foreach ([$brouillon, $retire, $etranger] as $bulletin) {
             $this->getJson($base.'/'.$bulletin->id)->assertNotFound();
+            $this->getJson($base.'/'.$bulletin->id.'/telecharger')->assertNotFound();
         }
+        $this->getJson($base.'/999999/telecharger')->assertNotFound();
         $this->getJson($base.'?per_page=101')->assertUnprocessable();
         $this->getJson($base.'?id_annee_academique='.$annee->id)->assertOk()->assertJsonPath('meta.total', 1);
         $this->getJson($base.'?page=2&per_page=1')->assertOk()->assertJsonCount(0, 'bulletins');
@@ -79,23 +87,30 @@ class MesBulletinsEtudiantApiTest extends TestCase
         }
         $this->getJson($base.'/'.$publie->id)->assertOk()->assertJsonCount(1, 'bulletin.cours_a_faire');
         $this->getJson($base.'/'.$ancienBulletin->id)->assertOk()->assertJsonCount(1, 'bulletin.cours_a_faire');
+        $genere = Bulletin::create(['id_inscription' => $inscription->id, 'periode' => 'Provisoire', 'statut' => 'Généré']);
+        $this->get($base.'/'.$genere->id.'/telecharger')->assertOk()->assertHeader('Content-Type', 'application/pdf')
+            ->assertDownload('bulletin-'.$genere->id.'.pdf');
     }
 
     public function test_authentification_role_fiche_et_liste_vide(): void
     {
         $base = '/api/v1/etudiant/bulletins';
         $this->getJson($base)->assertUnauthorized();
+        $this->getJson($base.'/1/telecharger')->assertUnauthorized();
         $role = Role::create(['code' => 'ENSEIGNANT', 'libelle' => 'Enseignant']);
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
         $this->getJson($base)->assertForbidden();
+        $this->getJson($base.'/1/telecharger')->assertForbidden();
         $role = Role::create(['code' => 'ETUDIANT', 'libelle' => 'Etudiant']);
         $user = User::factory()->create(['id_role' => $role->id]);
         Sanctum::actingAs($user);
         $this->getJson($base)->assertNotFound();
+        $this->getJson($base.'/1/telecharger')->assertNotFound();
         Etudiant::create(['user_id' => $user->id, 'matricule' => 'ETU-1', 'nom' => 'Koffi', 'prenoms' => 'Anne', 'date_inscription' => '2026-09-01']);
         $this->getJson($base)->assertOk()->assertJsonCount(0, 'bulletins');
         $user->update(['is_active' => false]);
         $this->getJson($base)->assertForbidden();
         $this->getJson($base.'/1')->assertForbidden();
+        $this->getJson($base.'/1/telecharger')->assertForbidden();
     }
 }

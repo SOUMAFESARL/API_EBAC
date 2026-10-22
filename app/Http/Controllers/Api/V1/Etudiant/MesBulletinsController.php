@@ -7,6 +7,7 @@ use App\Models\Bulletin;
 use App\Models\CoursAFaire;
 use App\Models\Etudiant;
 use App\Models\Inscription;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class MesBulletinsController extends Controller
@@ -32,6 +33,7 @@ class MesBulletinsController extends Controller
         return [
             ...$bulletin->only(['id', 'periode', 'mention', 'rang', 'decision', 'statut', 'date_publication']),
             'moyenne_generale' => $bulletin->moyenne !== null ? (float) $bulletin->moyenne : null,
+            'telechargement_pdf_url' => route('api.v1.etudiant.bulletins.telecharger', ['id' => $bulletin->id]),
             'annee_academique' => $annee ? [...$annee->only(['id', 'libelle', 'date_debut', 'date_fin']),
                 'statut' => $annee->date_fin->lt(today()) ? 'cloturee' : 'en_cours'] : null,
             'promotion' => $inscription->promotion?->only(['id', 'code', 'num_promotion']),
@@ -65,6 +67,18 @@ class MesBulletinsController extends Controller
 
     public function show(Request $request, int $id)
     {
+        return response()->json($this->detail($request, $id));
+    }
+
+    public function telecharger(Request $request, int $id)
+    {
+        return Pdf::loadView('pdf.bulletin-etudiant', $this->detail($request, $id))
+            ->setPaper('a4')->download('bulletin-'.$id.'.pdf')
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    private function detail(Request $request, int $id): array
+    {
         $etudiant = $this->etudiant($request);
         $bulletin = $this->bulletins($etudiant)->with('lignes.matiere')->findOrFail($id);
         $lignes = $bulletin->lignes->map(function ($ligne) {
@@ -83,7 +97,7 @@ class MesBulletinsController extends Controller
             ->whereHas('seance.moduleCalendrier.calendrier', fn ($q) => $q->where('id_annee_academique', $bulletin->inscription->id_annee_academique))
             ->with(['matiere', 'cours', 'seance'])->orderBy('id')->get();
 
-        return response()->json([
+        return [
             'etudiant' => $etudiant->only(['id', 'matricule', 'nom', 'prenoms', 'photo_identite_url']),
             'bulletin' => [...$this->presenter($bulletin), 'matieres' => $lignes,
                 'recapitulatif_uv' => ['validees' => $lignes->where('statut', 'validee')->count(),
@@ -95,6 +109,6 @@ class MesBulletinsController extends Controller
                     'date_seance_manquee' => $r->seance?->date_prevue,
                 ]),
             ],
-        ]);
+        ];
     }
 }
