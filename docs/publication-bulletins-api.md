@@ -46,6 +46,17 @@ Les routes étudiant restent `GET /api/v1/etudiant/bulletins` et
 La génération est déclenchée par les prochaines transitions de validation : les
 feuilles déjà validées avant cette modification ne sont pas reprises à la connexion.
 
+Pour reprendre les anciennes validations d'un étudiant, exécuter sur le serveur :
+
+```sh
+php artisan bulletins:generer --etudiant=26
+```
+
+La commande se limite à cet étudiant et à ses inscriptions, utilise les mêmes règles
+de validation que la génération automatique et peut être relancée sans doublon.
+Elle ne publie aucun bulletin et conserve les documents déjà publiés ou retirés.
+Sans inscription ou sans notes admissibles, elle ne crée pas de bulletin.
+
 ## Téléchargement par l'étudiant
 
 `GET /api/v1/etudiant/bulletins/{id}/telecharger`

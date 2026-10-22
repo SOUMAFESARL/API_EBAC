@@ -42,6 +42,31 @@ class NotesTransmisesApiTest extends TestCase
         return '/api/v1/administration/notes-transmises/'.$feuille->id;
     }
 
+    public function test_reprise_des_notes_deja_validees_pour_un_seul_etudiant(): void
+    {
+        [$users, $feuille, $note] = $this->contexte();
+        $inscription = \App\Models\Inscription::create(['id_etudiant' => $note->id_etudiant,
+            'id_promotion' => $feuille->id_promotion, 'id_annee_academique' => $feuille->id_annee_academique,
+            'date_inscription' => '2026-09-01']);
+        $autre = Etudiant::create(['matricule' => 'REPRISE-2', 'nom' => 'Autre', 'prenoms' => 'Test', 'date_inscription' => '2026-09-01']);
+        \App\Models\Inscription::create(['id_etudiant' => $autre->id,
+            'id_promotion' => $feuille->id_promotion, 'id_annee_academique' => $feuille->id_annee_academique,
+            'date_inscription' => '2026-09-01']);
+        $feuille->notes()->create(['id_etudiant' => $autre->id, 'note' => 18]);
+        $this->artisan('bulletins:generer', ['--etudiant' => $note->id_etudiant])->assertSuccessful();
+        $this->assertDatabaseCount('bulletins', 0);
+        // Simulate validation before automatic generation was installed.
+        $feuille->update(['statut' => 'validee_direction']);
+        foreach ([1, 2] as $execution) {
+            $this->artisan('bulletins:generer', ['--etudiant' => $note->id_etudiant])->assertSuccessful();
+            $this->assertDatabaseCount('bulletins', 1);
+            $this->assertDatabaseCount('lignes_bulletins', 1);
+            $this->assertDatabaseHas('bulletins', ['id_inscription' => $inscription->id,
+                'statut' => 'Généré', 'moyenne' => 14, 'date_publication' => null]);
+        }
+        $this->artisan('bulletins:generer', ['--etudiant' => 999999])->assertFailed();
+    }
+
     public function test_validation_genere_un_bulletin_consultable_sans_publication(): void
     {
         [$users, $feuille, $note] = $this->contexte();

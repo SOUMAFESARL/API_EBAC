@@ -10,12 +10,13 @@ use Illuminate\Support\Facades\DB;
 
 class GenerationBulletinsService
 {
-    public function synchroniser(FeuilleNotes $feuille, int $acteur): void
+    public function synchroniser(FeuilleNotes $feuille, int $acteur, ?int $etudiant = null): void
     {
-        DB::transaction(function () use ($feuille, $acteur) {
+        DB::transaction(function () use ($feuille, $acteur, $etudiant) {
             // Lock inscriptions in a stable order, including when two sheets are validated together.
             $inscriptions = Inscription::where('id_promotion', $feuille->id_promotion)
                 ->where('id_annee_academique', $feuille->id_annee_academique)
+                ->when($etudiant !== null, fn ($q) => $q->where('id_etudiant', $etudiant))
                 ->orderBy('id')->lockForUpdate()->get();
             $resultats = app(NotesValideesService::class)->moyennes(
                 $feuille->id_promotion, $feuille->id_annee_academique,
