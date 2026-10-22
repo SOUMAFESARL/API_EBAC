@@ -90,6 +90,41 @@ class MesBulletinsEtudiantApiTest extends TestCase
         $genere = Bulletin::create(['id_inscription' => $inscription->id, 'periode' => 'Provisoire', 'statut' => 'Généré']);
         $this->get($base.'/'.$genere->id.'/telecharger')->assertOk()->assertHeader('Content-Type', 'application/pdf')
             ->assertDownload('bulletin-'.$genere->id.'.pdf');
+
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $photo = \Illuminate\Http\UploadedFile::fake()->image('identite.png', 65, 80)->store('etudiants/photos-identite', 'public');
+        $civilite = \App\Models\Civilite::create(['code' => 'MME', 'name' => 'Madame']);
+        $eglise = \App\Models\Eglise::create(['code' => 'EGL-PDF', 'nom' => 'Église Alliance',
+            'denomination' => 'Alliance Chrétienne', 'region' => 'Région Sud', 'district' => 'District Centre', 'ville_commune' => 'Abidjan']);
+        $etudiant->update(['civilite_id' => $civilite->id, 'eglise_id' => $eglise->id,
+            'date_naissance' => '1998-04-12', 'lieu_naissance' => 'Bouaké', 'nationalite' => 'Ivoirienne',
+            'email' => 'anne@example.test', 'telephone' => '0102030405', 'adresse' => 'Rue des Écoles',
+            'statut_professionnel' => 'Enseignante', 'situation_matrimonial' => 'Mariée',
+            'nombre_enfant' => 0, 'photo_identite' => $photo]);
+        $etudiant->dossier()->create(['numero_dossier' => 'DOS-PDF-1', 'statut' => 'Complet', 'date_ouverture' => '2026-08-20']);
+        // Render a real PDF with the embedded image and the complete personal profile.
+        $this->get($pdfUrl)->assertOk()->assertDownload('bulletin-'.$publie->id.'.pdf');
+        $document = \Mockery::mock(\Barryvdh\DomPDF\PDF::class);
+        $document->shouldReceive('setPaper')->once()->with('a4')->andReturnSelf();
+        $document->shouldReceive('download')->once()->with('bulletin-'.$publie->id.'.pdf')
+            ->andReturn(response('%PDF-test', 200, ['Content-Type' => 'application/pdf']));
+        \Barryvdh\DomPDF\Facade\Pdf::shouldReceive('loadView')->once()
+            ->withArgs(function ($vue, $donnees) {
+                $this->assertSame('pdf.bulletin-etudiant', $vue);
+                $this->assertStringStartsWith('data:image/png;base64,', $donnees['photo_identite']);
+                $html = view($vue, $donnees)->render();
+                foreach (['Madame', '12/04/1998', 'Bouaké', 'Ivoirienne', 'anne@example.test',
+                    '0102030405', 'Rue des Écoles', 'Enseignante', 'Mariée', '01/09/2026',
+                    'DOS-PDF-1', 'Complet', '20/08/2026', 'Église Alliance', 'Alliance Chrétienne',
+                    'Région Sud', 'District Centre', 'Abidjan'] as $valeur) {
+                    $this->assertStringContainsString($valeur, $html);
+                }
+                $this->assertSame(0, $donnees['etudiant']['nombre_enfant']);
+                $this->assertArrayNotHasKey('user', $donnees['etudiant']);
+
+                return true;
+            })->andReturn($document);
+        $this->get($pdfUrl)->assertOk();
     }
 
     public function test_authentification_role_fiche_et_liste_vide(): void

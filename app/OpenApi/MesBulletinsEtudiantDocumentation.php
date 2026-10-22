@@ -31,7 +31,7 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Get(path: '/etudiant/bulletins/{id}/telecharger', operationId: 'telechargerMonBulletinPdf',
     summary: 'Telecharger mon bulletin en PDF',
-    description: 'Compte actif et role ETUDIANT requis. Memes droits que le detail : bulletin Généré sans publication ou Publié avec date_publication, appartenant a l etudiant connecte. PDF A4 produit depuis les lignes enregistrees, avec identite, matieres, notes, coefficients, moyenne et recapitulatif UV. Les bulletins generes portent une indication non publie. Reponse binaire avec Content-Disposition attachment et Cache-Control private, no-store.',
+    description: 'Compte actif et role ETUDIANT requis. Memes droits que le detail : bulletin Généré sans publication ou Publié avec date_publication, appartenant a l etudiant connecte. PDF A4 avec photo integree depuis le stockage, etat civil, naissance, nationalite, coordonnees, situation familiale et professionnelle, inscription, dossier et eglise de rattachement, puis matieres, notes, coefficients, moyenne et recapitulatif UV. Les informations absentes sont affichees avec un tiret. Les bulletins generes portent une indication non publie. Reponse binaire avec Content-Disposition attachment et Cache-Control private, no-store.',
     tags: ['Espace étudiant'], security: [['sanctum' => []]],
     parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
     responses: [new OA\Response(response: 200, description: 'Fichier bulletin-{id}.pdf',

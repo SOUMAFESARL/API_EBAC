@@ -20,6 +20,8 @@
         tr { page-break-inside: avoid; }
         thead { display: table-header-group; }
         .footer { margin-top: 24px; color: #526778; font-size: 9px; }
+        .photo { width: 65px; height: 80px; object-fit: contain; }
+        .personal td { width: 50%; vertical-align: top; overflow-wrap: break-word; }
     </style>
 </head>
 <body>
@@ -30,12 +32,31 @@
     @endif
     <table>
         <tr>
+            <td style="width: 75px;">@if ($photo_identite)<img class="photo" src="{{ $photo_identite }}" alt="Photo d’identité">@else Photo non renseignée @endif</td>
             <td><b>Étudiant</b><br>{{ $etudiant['nom'] }} {{ $etudiant['prenoms'] }}</td>
             <td><b>Matricule</b><br>{{ $etudiant['matricule'] }}</td>
             <td><b>Promotion</b><br>{{ $bulletin['promotion']['num_promotion'] ?? '—' }}</td>
             <td><b>Niveau</b><br>{{ $bulletin['niveau']['libelle'] ?? '—' }}</td>
         </tr>
     </table>
+    <h2>Informations personnelles</h2>
+    <table class="personal">
+        <tr><td><b>Civilité :</b> {{ $etudiant['civilite'] ?? '—' }}</td><td><b>Date de naissance :</b> {{ $etudiant['date_naissance'] ?? '—' }}</td></tr>
+        <tr><td><b>Lieu de naissance :</b> {{ $etudiant['lieu_naissance'] ?? '—' }}</td><td><b>Nationalité :</b> {{ $etudiant['nationalite'] ?? '—' }}</td></tr>
+        <tr><td><b>E-mail :</b> {{ $etudiant['email'] ?? '—' }}</td><td><b>Téléphone :</b> {{ $etudiant['telephone'] ?? '—' }}</td></tr>
+        <tr><td colspan="2"><b>Adresse :</b> {{ $etudiant['adresse'] ?? '—' }}</td></tr>
+        <tr><td><b>Statut professionnel :</b> {{ $etudiant['statut_professionnel'] ?? '—' }}</td><td><b>Situation matrimoniale :</b> {{ $etudiant['situation_matrimonial'] ?? '—' }}</td></tr>
+        <tr><td><b>Nombre d’enfants :</b> {{ $etudiant['nombre_enfant'] ?? '—' }}</td><td><b>Statut étudiant :</b> {{ $etudiant['statut'] ?? '—' }}</td></tr>
+        <tr><td><b>Date d’inscription :</b> {{ $etudiant['date_inscription'] ?? '—' }}</td><td><b>Numéro de dossier :</b> {{ $etudiant['dossier']['numero_dossier'] ?? '—' }}</td></tr>
+        <tr><td><b>Statut du dossier :</b> {{ $etudiant['dossier']['statut'] ?? '—' }}</td><td><b>Ouverture du dossier :</b> {{ $etudiant['dossier']['date_ouverture'] ?? '—' }}</td></tr>
+    </table>
+    <h2>Église de rattachement</h2>
+    <table class="personal">
+        <tr><td><b>Église :</b> {{ $etudiant['eglise']['nom'] ?? '—' }}</td><td><b>Dénomination :</b> {{ $etudiant['eglise']['denomination'] ?? '—' }}</td></tr>
+        <tr><td><b>Région :</b> {{ $etudiant['eglise']['region'] ?? '—' }}</td><td><b>District :</b> {{ $etudiant['eglise']['district'] ?? '—' }}</td></tr>
+        <tr><td colspan="2"><b>Ville / commune :</b> {{ $etudiant['eglise']['ville_commune'] ?? '—' }}</td></tr>
+    </table>
+    <h2>Résultats académiques</h2>
     <table>
         <thead><tr><th>Code</th><th>Matière</th><th class="number">Coeff.</th><th class="number">Note /20</th><th>Statut</th><th>Appréciation</th></tr></thead>
         <tbody>

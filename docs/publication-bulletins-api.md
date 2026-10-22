@@ -72,7 +72,14 @@ puis télécharger le Blob reçu. La réponse est un fichier binaire `applicatio
 avec `Content-Disposition: attachment; filename=bulletin-{id}.pdf` et
 `Cache-Control: private, no-store`, et non un objet JSON.
 
-Le PDF reprend les données du détail : identité, année, niveau, promotion,
+Le PDF inclut les informations personnelles de l'étudiant : photo d'identité
+intégrée depuis le stockage, civilité, nom, prénoms, matricule, date et lieu de
+naissance, nationalité, e-mail, téléphone, adresse, situation professionnelle et
+matrimoniale, nombre d'enfants, statut et date d'inscription. Il présente aussi le
+numéro, le statut et la date d'ouverture du dossier, ainsi que l'église de
+rattachement (nom, dénomination, région, district, ville/commune).
+
+Le PDF reprend également les données du détail : année, niveau, promotion,
 matières, notes, coefficients, appréciations, moyenne, rang, mention, UV et cours
 à faire. Les valeurs absentes sont affichées avec un tiret. Un bulletin généré
 porte la mention « non publié ». Aucun QR, signature ou historique de versions
