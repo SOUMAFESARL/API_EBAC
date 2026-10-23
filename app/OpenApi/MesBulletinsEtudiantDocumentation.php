@@ -21,13 +21,19 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Get(path: '/etudiant/bulletins/{id}', operationId: 'afficherMonBulletin',
     summary: 'Afficher mon bulletin genere ou publie',
-    description: 'Retourne les lignes enregistrees du bulletin, leur coefficient, note, appreciation et statut selon le seuil de validation. Les bulletins Généré sont synchronises lors des transitions du circuit de validation : validation secretariat ou direction, maintien des notes validees au secretariat pendant la transmission direction, retrait des notes rejetees ou retournees en correction. La publication reste distincte et fige le document. Les cours a faire sont limites a l etudiant et a l annee du bulletin. Le statut de l annee depend de sa date de fin. telechargement_pdf_url fournit le lien de telechargement authentifie. Versions et QR ne sont pas geres.',
+    description: 'Retourne les lignes enregistrees du bulletin, leur coefficient, note, appreciation et statut selon le seuil de validation. Les bulletins Généré sont synchronises lors des transitions du circuit de validation : validation secretariat ou direction, maintien des notes validees au secretariat pendant la transmission direction, retrait des notes rejetees ou retournees en correction. La publication reste distincte et fige le document. Les cours a faire sont limites a l etudiant et a l annee du bulletin. Le statut de l annee depend de sa date de fin. telechargement_pdf_url fournit le lien de telechargement authentifie. La mention est calculee si absente. qr_code contient verification_url et image_data_url (PNG base64). Le PDF inclut le QR. Le versionnement documentaire n est pas gere.',
     tags: ['Espace étudiant'], security: [['sanctum' => []]],
     parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
     responses: [new OA\Response(response: 200, description: 'Profil personnel complet de l etudiant et bulletin avec matieres, recapitulatif_uv et cours_a_faire. Dates du profil au format YYYY-MM-DD. Relations absentes a null.',
         content: new OA\JsonContent(properties: [
             new OA\Property(property: 'etudiant', ref: '#/components/schemas/ProfilEtudiantBulletin'),
-            new OA\Property(property: 'bulletin', type: 'object', description: 'Bulletin avec annee_academique, promotion, niveau, matieres, moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire et telechargement_pdf_url.'),
+            new OA\Property(property: 'bulletin', type: 'object', description: 'Bulletin avec annee_academique, promotion, niveau, matieres (avec mention par matiere), moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire et telechargement_pdf_url.', properties: [
+                new OA\Property(property: 'mention', description: 'Mention enregistree ou calculee : <10 Insuffisant, >=10 Passable, >=12 Assez bien, >=14 Bien, >=16 Tres bien. null sans moyenne.', type: 'string', nullable: true, example: 'Bien'),
+                new OA\Property(property: 'qr_code', type: 'object', properties: [
+                    new OA\Property(property: 'verification_url', description: 'URL signee permanente de verification. A utiliser integralement, sans token.', type: 'string'),
+                    new OA\Property(property: 'image_data_url', description: 'Image PNG base64 affichable directement dans une balise img.', type: 'string', example: 'data:image/png;base64,...'),
+                ]),
+            ]),
         ])),
         new OA\Response(response: 401, description: 'Authentification requise.'),
         new OA\Response(response: 403, description: 'Compte actif et role ETUDIANT requis.'),
@@ -44,6 +50,17 @@ use OpenApi\Attributes as OA;
         new OA\Response(response: 403, description: 'Compte actif et role ETUDIANT requis.'),
         new OA\Response(response: 404, description: 'Fiche etudiant ou bulletin introuvable, bulletin masque ou appartenant a un autre etudiant.')]
 )]
+#[OA\Get(path: '/bulletins/{id}/verification', operationId: 'verifierBulletinQrCode',
+    summary: 'Vérifier un bulletin depuis son QR code', tags: ['Espace étudiant'],
+    description: 'URL signee sans expiration et empreinte des resultats. Sans Bearer. Retourne uniquement les informations du bulletin, aucun profil personnel. Un bulletin Genere reste non publie. QR inclus dans le PDF et dans le detail JSON.',
+    parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        new OA\Parameter(name: 'empreinte', in: 'query', required: true, schema: new OA\Schema(type: 'string')),
+        new OA\Parameter(name: 'signature', in: 'query', required: true, schema: new OA\Schema(type: 'string'))],
+    responses: [new OA\Response(response: 200, description: 'valide: true et bulletin (id, periode, statut, date_publication, annee_academique, moyenne_generale, mention).'),
+        new OA\Response(response: 403, description: 'Signature absente ou invalide'),
+        new OA\Response(response: 404, description: 'Bulletin introuvable ou retiré'),
+        new OA\Response(response: 410, description: 'Résultats modifiés : télécharger le bulletin actuel'),
+        new OA\Response(response: 429, description: 'Trop de requêtes')])]
 #[OA\Schema(schema: 'ProfilEtudiantBulletin', type: 'object', properties: [
     new OA\Property(property: 'id', type: 'integer'),
     new OA\Property(property: 'matricule', type: 'string'),

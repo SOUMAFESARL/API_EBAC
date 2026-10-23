@@ -65,9 +65,10 @@ class GenerationBulletinsService
                     ]);
                 }
                 $bulletin->lignes()->whereNotIn('id_matiere', $notes->pluck('id_matiere'))->delete();
-                $bulletin->update(['statut' => 'Généré', 'mention' => null, 'rang' => null,
+                $moyenneGenerale = $coefficients > 0 ? round($somme / $coefficients, 2) : null;
+                $bulletin->update(['statut' => 'Généré', 'mention' => MentionBulletinService::calculer($moyenneGenerale), 'rang' => null,
                     'decision' => null, 'fichier_chemin' => null,
-                    'moyenne' => $coefficients > 0 ? round($somme / $coefficients, 2) : null,
+                    'moyenne' => $moyenneGenerale,
                     'updated_by' => $acteur]);
             }
         });

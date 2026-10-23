@@ -53,6 +53,21 @@ class MesBulletinsEtudiantApiTest extends TestCase
             ->assertJsonPath('etudiant.civilite', null)->assertJsonPath('etudiant.eglise', null)
             ->assertJsonPath('etudiant.dossier', null);
         $pdfUrl = route('api.v1.etudiant.bulletins.telecharger', ['id' => $publie->id]);
+        $detail = $this->getJson($base.'/'.$publie->id)->assertOk()
+            ->assertJsonPath('bulletin.mention', 'Bien')->assertJsonPath('bulletin.matieres.0.mention', 'Bien');
+        $qr = $detail->json('bulletin.qr_code');
+        $this->assertStringStartsWith('data:image/png;base64,', $qr['image_data_url']);
+        $png = base64_decode(substr($qr['image_data_url'], strlen('data:image/png;base64,')), true);
+        $this->assertSame('image/png', getimagesizefromstring($png)['mime']);
+        $this->getJson($qr['verification_url'])->assertOk()->assertJsonPath('valide', true)
+            ->assertJsonPath('bulletin.mention', 'Bien')->assertJsonPath('bulletin.moyenne_generale', 14.1)
+            ->assertJsonMissingPath('etudiant')->assertJsonMissingPath('bulletin.matieres');
+        $this->getJson('/api/v1/bulletins/'.$publie->id.'/verification')->assertForbidden();
+        $this->getJson($qr['verification_url'].'&empreinte=falsifiee')->assertForbidden();
+        $ligneModifiee = $publie->lignes()->orderBy('id')->first();
+        $ligneModifiee->update(['note' => 15]);
+        $this->getJson($qr['verification_url'])->assertStatus(410);
+        $ligneModifiee->update(['note' => 14]);
         $this->getJson($base)->assertJsonPath('bulletins.0.telechargement_pdf_url', $pdfUrl);
         $pdf = $this->get($pdfUrl)->assertOk()->assertHeader('Content-Type', 'application/pdf')
             ->assertDownload('bulletin-'.$publie->id.'.pdf');
@@ -91,8 +106,12 @@ class MesBulletinsEtudiantApiTest extends TestCase
         $this->getJson($base.'/'.$publie->id)->assertOk()->assertJsonCount(1, 'bulletin.cours_a_faire');
         $this->getJson($base.'/'.$ancienBulletin->id)->assertOk()->assertJsonCount(1, 'bulletin.cours_a_faire');
         $genere = Bulletin::create(['id_inscription' => $inscription->id, 'periode' => 'Provisoire', 'statut' => 'Généré']);
+        $qrGenere = $this->getJson($base.'/'.$genere->id)->assertOk()->json('bulletin.qr_code.verification_url');
+        $this->getJson($qrGenere)->assertOk()->assertJsonPath('bulletin.statut', 'Généré');
         $this->get($base.'/'.$genere->id.'/telecharger')->assertOk()->assertHeader('Content-Type', 'application/pdf')
             ->assertDownload('bulletin-'.$genere->id.'.pdf');
+        $genere->update(['statut' => 'Annulé']);
+        $this->getJson($qrGenere)->assertNotFound();
 
         \Illuminate\Support\Facades\Storage::fake('public');
         $photo = \Illuminate\Http\UploadedFile::fake()->image('identite.png', 65, 80)->store('etudiants/photos-identite', 'public');

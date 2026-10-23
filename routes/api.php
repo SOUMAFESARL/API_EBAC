@@ -48,6 +48,17 @@ use App\Http\Controllers\Api\V1\Parametre\SalleController;
 use App\Http\Controllers\Api\V1\ProgrammePublieController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('v1/bulletins/{id}/verification', App\Http\Controllers\Api\V1\VerificationBulletinController::class)
+    ->whereNumber('id')->middleware(['signed', 'throttle:60,1'])->name('api.v1.bulletins.verifier');
+
+Route::get('v1/parametres/ecole', [App\Http\Controllers\Api\V1\Parametre\ConfigurationEcoleController::class, 'show'])
+    ->middleware(['auth:sanctum', 'compte.actif'])->name('api.v1.parametres.ecole.show');
+Route::match(['post', 'put', 'patch'], 'v1/parametres/ecole', [App\Http\Controllers\Api\V1\Parametre\ConfigurationEcoleController::class, 'update'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,DIRECTION'])->name('api.v1.parametres.ecole.update');
+Route::get('v1/parametres/ecole/fichiers/{type}', [App\Http\Controllers\Api\V1\Parametre\ConfigurationEcoleController::class, 'fichier'])
+    ->whereIn('type', ['logo', 'favicon', 'signature', 'signature_directeur'])
+    ->middleware('signed')->name('api.v1.parametres.ecole.fichier');
+
 Route::prefix('v1/administration/rattrapages')->name('api.v1.administration.rattrapages.')
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,SECRETARIAT,SECRETAIRE_ACADEMIQUE,DIRECTION'])
     ->controller(App\Http\Controllers\Api\V1\Administration\RattrapageController::class)

@@ -39,7 +39,8 @@ Les bulletins publiés ou retirés ne sont pas modifiés automatiquement.
 
 Les moyennes par matière utilisent les coefficients des cours ; la moyenne générale
 utilise ceux des matières, sans arrondi intermédiaire. Cette génération enregistre
-le bulletin en base ; le PDF est produit à la demande au téléchargement. Aucun rang ni mention n'est inventé.
+le bulletin en base ; le PDF est produit à la demande au téléchargement. Le rang reste absent sans classement.
+La mention est calculée selon le barème décrit ci-dessous.
 Les routes étudiant restent `GET /api/v1/etudiant/bulletins` et
 `GET /api/v1/etudiant/bulletins/{id}`, avec le token du compte étudiant.
 
@@ -89,8 +90,37 @@ rattachement (nom, dénomination, région, district, ville/commune).
 Le PDF reprend également les données du détail : année, niveau, promotion,
 matières, notes, coefficients, appréciations, moyenne, rang, mention, UV et cours
 à faire. Les valeurs absentes sont affichées avec un tiret. Un bulletin généré
-porte la mention « non publié ». Aucun QR, signature ou historique de versions
-n'est ajouté.
+porte la mention « non publié ». Aucune signature ou historique de versions n'est ajouté.
+
+## Mentions et QR code
+
+La mention générale et les mentions par matière suivent le barème : moins de 10
+`Insuffisant`, de 10 à moins de 12 `Passable`, de 12 à moins de 14 `Assez bien`,
+de 14 à moins de 16 `Bien`, à partir de 16 `Très bien`. Sans note : `null`.
+Une mention générale déjà enregistrée est conservée ; si elle est absente,
+la réponse la calcule depuis la moyenne enregistrée, y compris pour les anciens
+bulletins. Les prochaines générations enregistrent également cette mention.
+
+Le détail retourne `bulletin.qr_code` :
+
+```json
+{
+  "verification_url": "https://votre-serveur/api/v1/bulletins/1/verification?empreinte=...&signature=...",
+  "image_data_url": "data:image/png;base64,..."
+}
+```
+
+Le frontend peut afficher directement `image_data_url` dans une image. Le PDF
+inclut ce QR et un lien cliquable. Aucun service QR externe n'est utilisé.
+GD, déjà utilisé pour les images, est nécessaire à sa génération.
+
+La vérification `GET /api/v1/bulletins/{id}/verification` utilise l'URL signée
+complète, sans token étudiant et sans expiration pour les documents imprimés.
+Elle retourne `valide: true` et uniquement l'identifiant du bulletin, sa période,
+son statut, sa date de publication, son année, sa moyenne et sa mention. Aucun
+profil étudiant n'est exposé. Un bulletin `Généré` reste identifié comme non publié.
+Signature absente ou falsifiée : 403 ; bulletin supprimé ou retiré : 404 ;
+résultats modifiés depuis l'émission du QR : 410 (retélécharger le bulletin).
 
 Réponse 200 : `{"message":"Bulletin publié.","bulletin":{...}}`.
 Erreurs : 401 sans authentification, 403 si rôle interdit ou compte inactif,

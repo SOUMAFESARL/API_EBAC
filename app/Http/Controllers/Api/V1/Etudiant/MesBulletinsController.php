@@ -7,6 +7,8 @@ use App\Models\Bulletin;
 use App\Models\CoursAFaire;
 use App\Models\Etudiant;
 use App\Models\Inscription;
+use App\Services\BulletinQrCodeService;
+use App\Services\MentionBulletinService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -33,6 +35,7 @@ class MesBulletinsController extends Controller
 
         return [
             ...$bulletin->only(['id', 'periode', 'mention', 'rang', 'decision', 'statut', 'date_publication']),
+            'mention' => $bulletin->mention ?? MentionBulletinService::calculer($bulletin->moyenne !== null ? (float) $bulletin->moyenne : null),
             'moyenne_generale' => $bulletin->moyenne !== null ? (float) $bulletin->moyenne : null,
             'telechargement_pdf_url' => route('api.v1.etudiant.bulletins.telecharger', ['id' => $bulletin->id]),
             'annee_academique' => $annee ? [...$annee->only(['id', 'libelle', 'date_debut', 'date_fin']),
@@ -122,6 +125,7 @@ class MesBulletinsController extends Controller
                 'id' => $ligne->id,
                 'matiere' => $ligne->matiere?->only(['id', 'code', 'libelle', 'type']),
                 'coefficient' => (float) $ligne->coefficient, 'note' => $note,
+                'mention' => MentionBulletinService::calculer($note),
                 'moyenne_ponderee' => $ligne->moyenne_ponderee !== null ? (float) $ligne->moyenne_ponderee : null,
                 'appreciation' => $ligne->appreciation,
                 'statut' => $note === null ? 'a_completer' : ($ligne->matiere && $note >= (float) $ligne->matiere->note_validation ? 'validee' : 'non_validee'),
@@ -134,6 +138,7 @@ class MesBulletinsController extends Controller
         return [
             'etudiant' => $this->presenterEtudiant($etudiant),
             'bulletin' => [...$this->presenter($bulletin), 'matieres' => $lignes,
+                'qr_code' => app(BulletinQrCodeService::class)->presenter($bulletin),
                 'recapitulatif_uv' => ['validees' => $lignes->where('statut', 'validee')->count(),
                     'non_validees' => $lignes->where('statut', 'non_validee')->count(), 'a_completer' => $lignes->where('statut', 'a_completer')->count()],
                 'cours_a_faire' => $rattrapages->map(fn ($r) => [
