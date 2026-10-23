@@ -35,7 +35,7 @@ class MesBulletinsController extends Controller
 
         return [
             ...$bulletin->only(['id', 'periode', 'mention', 'rang', 'decision', 'statut', 'date_publication']),
-            'mention' => $bulletin->mention ?? MentionBulletinService::calculer($bulletin->moyenne !== null ? (float) $bulletin->moyenne : null),
+            'mention' => MentionBulletinService::afficher($bulletin->mention, $bulletin->moyenne !== null ? (float) $bulletin->moyenne : null),
             'moyenne_generale' => $bulletin->moyenne !== null ? (float) $bulletin->moyenne : null,
             'telechargement_pdf_url' => route('api.v1.etudiant.bulletins.telecharger', ['id' => $bulletin->id]),
             'annee_academique' => $annee ? [...$annee->only(['id', 'libelle', 'date_debut', 'date_fin']),

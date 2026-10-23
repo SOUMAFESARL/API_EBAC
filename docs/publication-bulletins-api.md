@@ -95,8 +95,8 @@ porte la mention « non publié ». Aucune signature ou historique de versions n
 ## Mentions et QR code
 
 La mention générale et les mentions par matière suivent le barème : moins de 10
-`Insuffisant`, de 10 à moins de 12 `Passable`, de 12 à moins de 14 `Assez bien`,
-de 14 à moins de 16 `Bien`, à partir de 16 `Très bien`. Sans note : `null`.
+`À REPRENDRE`, de 10 à moins de 12 `Passable`, de 12 à moins de 14 `Assez bien`,
+de 14 à moins de 16 `Bien`, à partir de 16 `Très bien`. Sans note : `À REPRENDRE`.
 Une mention générale déjà enregistrée est conservée ; si elle est absente,
 la réponse la calcule depuis la moyenne enregistrée, y compris pour les anciens
 bulletins. Les prochaines générations enregistrent également cette mention.

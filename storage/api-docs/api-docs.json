@@ -8644,10 +8644,9 @@
                                             "description": "Bulletin avec annee_academique, promotion, niveau, matieres (avec mention par matiere), moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire et telechargement_pdf_url.",
                                             "properties": {
                                                 "mention": {
-                                                    "description": "Mention enregistree ou calculee : <10 Insuffisant, >=10 Passable, >=12 Assez bien, >=14 Bien, >=16 Tres bien. null sans moyenne.",
+                                                    "description": "Mention enregistree ou calculee : sans note ou <10 À REPRENDRE, >=10 Passable, >=12 Assez bien, >=14 Bien, >=16 Tres bien.",
                                                     "type": "string",
-                                                    "example": "Bien",
-                                                    "nullable": true
+                                                    "example": "Bien"
                                                 },
                                                 "qr_code": {
                                                     "properties": {

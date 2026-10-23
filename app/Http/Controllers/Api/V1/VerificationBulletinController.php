@@ -21,7 +21,7 @@ class VerificationBulletinController extends Controller
             ...$bulletin->only(['id', 'periode', 'statut', 'date_publication']),
             'annee_academique' => $bulletin->inscription->anneeAcademique?->libelle,
             'moyenne_generale' => $bulletin->moyenne !== null ? (float) $bulletin->moyenne : null,
-            'mention' => $bulletin->mention ?? MentionBulletinService::calculer($bulletin->moyenne !== null ? (float) $bulletin->moyenne : null),
+            'mention' => MentionBulletinService::afficher($bulletin->mention, $bulletin->moyenne !== null ? (float) $bulletin->moyenne : null),
         ]])->header('Cache-Control', 'private, no-store');
     }
 }

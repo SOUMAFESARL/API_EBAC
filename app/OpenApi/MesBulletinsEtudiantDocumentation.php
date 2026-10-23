@@ -28,7 +28,7 @@ use OpenApi\Attributes as OA;
         content: new OA\JsonContent(properties: [
             new OA\Property(property: 'etudiant', ref: '#/components/schemas/ProfilEtudiantBulletin'),
             new OA\Property(property: 'bulletin', type: 'object', description: 'Bulletin avec annee_academique, promotion, niveau, matieres (avec mention par matiere), moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire et telechargement_pdf_url.', properties: [
-                new OA\Property(property: 'mention', description: 'Mention enregistree ou calculee : <10 Insuffisant, >=10 Passable, >=12 Assez bien, >=14 Bien, >=16 Tres bien. null sans moyenne.', type: 'string', nullable: true, example: 'Bien'),
+                new OA\Property(property: 'mention', description: 'Mention enregistree ou calculee : sans note ou <10 À REPRENDRE, >=10 Passable, >=12 Assez bien, >=14 Bien, >=16 Tres bien.', type: 'string', example: 'Bien'),
                 new OA\Property(property: 'qr_code', type: 'object', properties: [
                     new OA\Property(property: 'verification_url', description: 'URL signee permanente de verification. A utiliser integralement, sans token.', type: 'string'),
                     new OA\Property(property: 'image_data_url', description: 'Image PNG base64 affichable directement dans une balise img.', type: 'string', example: 'data:image/png;base64,...'),
