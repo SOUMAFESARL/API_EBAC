@@ -6353,7 +6353,8 @@
                                 "logo",
                                 "favicon",
                                 "signature",
-                                "signature_directeur"
+                                "signature_directeur",
+                                "signature_directeur_academique"
                             ]
                         }
                     },
@@ -14592,6 +14593,67 @@
             },
             "ConfigurationEcoleInformations": {
                 "properties": {
+                    "sigle": {
+                        "description": "Sigle de l’institution, distinct du code_ecole existant.",
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 50
+                    },
+                    "nom_plateforme": {
+                        "type": "string",
+                        "example": "EBAC SIG",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
+                    "arrete": {
+                        "description": "Référence légale de l’établissement.",
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
+                    "boite_postale": {
+                        "type": "string",
+                        "example": "BP 31 Toumodi",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
+                    "site_web": {
+                        "description": "URL HTTP ou HTTPS.",
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true,
+                        "maxLength": 500
+                    },
+                    "directeur_civilite_id": {
+                        "description": "ID dans civilite, non supprimée.",
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "directeur_nom": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
+                    "directeur_prenoms": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
+                    "directeur_academique_civilite_id": {
+                        "description": "ID dans civilite, non supprimée.",
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "directeur_academique_nom": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
+                    "directeur_academique_prenoms": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 255
+                    },
                     "nom_ecole": {
                         "type": "string",
                         "maxLength": 180
@@ -14690,6 +14752,12 @@
                                 "type": "string",
                                 "format": "binary",
                                 "nullable": true
+                            },
+                            "signature_directeur_academique": {
+                                "description": "Signature du directeur académique : PNG, JPEG ou WebP, 2 Mo maximum. null pour supprimer.",
+                                "type": "string",
+                                "format": "binary",
+                                "nullable": true
                             }
                         },
                         "type": "object"
@@ -14720,6 +14788,10 @@
                                 "nullable": true
                             },
                             "signature_directeur_url": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "signature_directeur_academique_url": {
                                 "type": "string",
                                 "nullable": true
                             },

@@ -12,13 +12,16 @@ use Illuminate\Support\Facades\URL;
 
 class ConfigurationEcoleController extends Controller
 {
-    private const FICHIERS = ['logo', 'favicon', 'signature', 'signature_directeur'];
+    private const FICHIERS = ['logo', 'favicon', 'signature', 'signature_directeur', 'signature_directeur_academique'];
 
     private function presenter(ConfigurationEcole $ecole): array
     {
         $donnees = $ecole->only(['id', 'nom_ecole', 'code_ecole', 'slogan', 'adresse', 'fondateur',
             'directeur_actuel', 'situation_geographique', 'ville', 'region', 'email', 'telephone',
-            'cellulaire', 'biographie', 'created_at', 'updated_at']);
+            'cellulaire', 'biographie', 'created_at', 'updated_at',
+            'sigle', 'nom_plateforme', 'arrete', 'boite_postale', 'site_web',
+            'directeur_civilite_id', 'directeur_nom', 'directeur_prenoms',
+            'directeur_academique_civilite_id', 'directeur_academique_nom', 'directeur_academique_prenoms']);
         foreach (self::FICHIERS as $type) {
             $donnees[$type.'_url'] = $ecole->$type ? URL::temporarySignedRoute(
                 'api.v1.parametres.ecole.fichier', now()->addMinutes(15), ['type' => $type]

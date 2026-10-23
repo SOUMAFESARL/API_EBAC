@@ -56,7 +56,7 @@ Route::get('v1/parametres/ecole', [App\Http\Controllers\Api\V1\Parametre\Configu
 Route::match(['post', 'put', 'patch'], 'v1/parametres/ecole', [App\Http\Controllers\Api\V1\Parametre\ConfigurationEcoleController::class, 'update'])
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ADMIN,DIRECTION'])->name('api.v1.parametres.ecole.update');
 Route::get('v1/parametres/ecole/fichiers/{type}', [App\Http\Controllers\Api\V1\Parametre\ConfigurationEcoleController::class, 'fichier'])
-    ->whereIn('type', ['logo', 'favicon', 'signature', 'signature_directeur'])
+    ->whereIn('type', ['logo', 'favicon', 'signature', 'signature_directeur', 'signature_directeur_academique'])
     ->middleware('signed')->name('api.v1.parametres.ecole.fichier');
 
 Route::prefix('v1/administration/rattrapages')->name('api.v1.administration.rattrapages.')

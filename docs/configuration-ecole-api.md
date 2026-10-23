@@ -1,5 +1,31 @@
 # Configuration de l’école
 
+## Champs complémentaires des formulaires
+
+Les champs suivants sont facultatifs et s'ajoutent aux champs existants :
+
+| Formulaire | Champs JSON |
+| --- | --- |
+| Établissement | `sigle` (50 caractères), `nom_plateforme`, `arrete` (255) |
+| Coordonnées | `boite_postale` (255), `site_web` (URL HTTP/HTTPS, 500) |
+| Directeur académique | `directeur_academique_civilite_id`, `directeur_academique_nom`, `directeur_academique_prenoms` |
+| Directeur / Directrice | `directeur_civilite_id`, `directeur_nom`, `directeur_prenoms` |
+
+Les noms et prénoms acceptent 255 caractères. Les civilités sont des identifiants
+existants non supprimés, disponibles via `GET /api/v1/parametres/civilites`.
+Le fichier `signature_directeur_academique` s'envoie en POST multipart/form-data
+(PNG, JPEG, WebP, 2 Mo) et produit `signature_directeur_academique_url`.
+Remplacement et suppression par `null` suivent les règles des signatures existantes.
+
+`nom_ecole` reste le nom de l'institution. `code_ecole` et `directeur_actuel`
+conservent leurs valeurs et leur sens ; ils ne sont pas renommés ou synchronisés
+automatiquement avec `sigle` ou les nouveaux noms. Tous les champs omis sont
+conservés. Les formats des fichiers existants restent inchangés.
+
+Une migration complémentaire ajoute uniquement des colonnes facultatives :
+`php artisan migrate --force` après déploiement. Les configurations existantes
+reçoivent `null` pour ces nouveaux champs.
+
 Une configuration unique, sans identifiant dans l'URL.
 
 | Méthode | URL | Accès |

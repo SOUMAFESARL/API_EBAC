@@ -94,4 +94,45 @@ class ConfigurationEcoleApiTest extends TestCase
         $this->getJson(self::URL)->assertForbidden();
         $this->postJson(self::URL, ['slogan' => 'Test'])->assertForbidden();
     }
+
+    public function test_champs_complementaires_preservent_la_configuration_existante(): void
+    {
+        Storage::fake('local');
+        $this->connecter('ADMIN');
+        $this->post(self::URL, ['nom_ecole' => 'École existante', 'code_ecole' => 'CODE-INITIAL',
+            'directeur_actuel' => 'Nom historique', 'slogan' => 'Slogan initial',
+            'signature_directeur' => UploadedFile::fake()->image('signature.png')])->assertCreated();
+        $signatureInitiale = ConfigurationEcole::findOrFail(1)->signature_directeur;
+        $civilite = \App\Models\Civilite::create(['code' => 'M', 'name' => 'Monsieur']);
+        $ajouts = ['sigle' => 'EBAC', 'nom_plateforme' => 'EBAC SIG',
+            'arrete' => 'N°1287/SE/INT/AG du 30 octobre 1965', 'boite_postale' => 'BP 31 Toumodi',
+            'site_web' => 'https://www.ebac-edu.org', 'directeur_civilite_id' => $civilite->id,
+            'directeur_nom' => 'Kouamé', 'directeur_prenoms' => 'Jean',
+            'directeur_academique_civilite_id' => $civilite->id,
+            'directeur_academique_nom' => 'Koné', 'directeur_academique_prenoms' => 'Paul'];
+        $this->patchJson(self::URL, $ajouts)->assertOk();
+        $reponse = $this->getJson(self::URL)->assertOk()
+            ->assertJsonPath('ecole.code_ecole', 'CODE-INITIAL')->assertJsonPath('ecole.nom_ecole', 'École existante')
+            ->assertJsonPath('ecole.directeur_actuel', 'Nom historique')->assertJsonPath('ecole.slogan', 'Slogan initial');
+        foreach ($ajouts as $champ => $valeur) {
+            $reponse->assertJsonPath('ecole.'.$champ, $valeur);
+        }
+        $reponse = $this->post(self::URL, ['signature_directeur_academique' => UploadedFile::fake()->image('academique.png')])
+            ->assertOk()->assertJsonMissingPath('ecole.signature_directeur_academique');
+        $url = $reponse->json('ecole.signature_directeur_academique_url');
+        $this->get($url)->assertOk()->assertHeader('Content-Type', 'image/png');
+        $ancien = ConfigurationEcole::findOrFail(1)->signature_directeur_academique;
+        $this->post(self::URL, ['signature_directeur_academique' => UploadedFile::fake()->image('remplacement.png')])->assertOk();
+        Storage::disk('local')->assertMissing($ancien);
+        $nouveau = ConfigurationEcole::findOrFail(1)->signature_directeur_academique;
+        $this->patchJson(self::URL, ['signature_directeur_academique' => null, 'boite_postale' => null])->assertOk()
+            ->assertJsonPath('ecole.signature_directeur_academique_url', null)->assertJsonPath('ecole.boite_postale', null);
+        Storage::disk('local')->assertMissing($nouveau);
+        Storage::disk('local')->assertExists($signatureInitiale);
+        $this->assertSame($signatureInitiale, ConfigurationEcole::findOrFail(1)->signature_directeur);
+        $this->patchJson(self::URL, ['site_web' => 'javascript:alert(1)', 'directeur_civilite_id' => 999999,
+            'directeur_academique_civilite_id' => 999999])->assertUnprocessable()
+            ->assertJsonValidationErrors(['site_web', 'directeur_civilite_id', 'directeur_academique_civilite_id']);
+        $this->assertDatabaseCount('configuration_ecoles', 1);
+    }
 }
