@@ -27,7 +27,7 @@ class BulletinQrCodeService
         $url = URL::signedRoute('api.v1.bulletins.verifier', [
             'id' => $bulletin->id, 'empreinte' => $this->empreinte($bulletin),
         ]);
-        $png = (new Writer(new GDLibRenderer(360, 4)))->writeString($url);
+        $png = (new Writer(new GDLibRenderer(720, 4)))->writeString($url);
 
         return ['verification_url' => $url, 'image_data_url' => 'data:image/png;base64,'.base64_encode($png)];
     }

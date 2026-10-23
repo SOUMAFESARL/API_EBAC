@@ -106,7 +106,7 @@
     @endif
     <p class="footer">Bulletin n° {{ $bulletin['id'] }} · Statut : {{ $bulletin['statut'] }}</p>
     <div style="page-break-inside: avoid; text-align: center;">
-        <img src="{{ $bulletin['qr_code']['image_data_url'] }}" alt="QR de vérification du bulletin" style="width: 130px; height: 130px;">
+        <img src="{{ $bulletin['qr_code']['image_data_url'] }}" alt="QR de vérification du bulletin" style="width: 26mm; height: 26mm;">
         <p><a href="{{ $bulletin['qr_code']['verification_url'] }}">Vérifier ce bulletin</a></p>
         @if ($bulletin['statut'] === 'Généré')<p>Bulletin non publié — résultats susceptibles d’évoluer.</p>@endif
     </div>
