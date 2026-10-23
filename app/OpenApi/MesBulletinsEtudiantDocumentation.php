@@ -32,6 +32,15 @@ use OpenApi\Attributes as OA;
                 new OA\Property(property: 'qr_code', type: 'object', properties: [
                     new OA\Property(property: 'verification_url', description: 'URL signee permanente de verification. A utiliser integralement, sans token.', type: 'string'),
                     new OA\Property(property: 'image_data_url', description: 'Image PNG base64 affichable directement dans une balise img.', type: 'string', example: 'data:image/png;base64,...'),
+                    new OA\Property(property: 'contenu', description: 'JSON directement encode dans le QR, lisible au scan. La decision provient du bulletin, sinon de decision_passage de l inscription. Site configure, sinon https://www.ebac-edu.org.', type: 'object', properties: [
+                        new OA\Property(property: 'matricule', type: 'string', nullable: true),
+                        new OA\Property(property: 'niveau', type: 'string', nullable: true),
+                        new OA\Property(property: 'promotion', type: 'integer', nullable: true),
+                        new OA\Property(property: 'decision_fin_annee', type: 'string', nullable: true),
+                        new OA\Property(property: 'moyenne_generale', type: 'number', nullable: true),
+                        new OA\Property(property: 'site_web', type: 'string'),
+                        new OA\Property(property: 'verification_url', type: 'string'),
+                    ]),
                 ]),
             ]),
         ])),

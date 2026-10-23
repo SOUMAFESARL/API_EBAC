@@ -114,6 +114,15 @@ Le frontend peut afficher directement `image_data_url` dans une image. Le PDF
 inclut ce QR et un lien cliquable. Aucun service QR externe n'est utilisé.
 GD, déjà utilisé pour les images, est nécessaire à sa génération.
 
+Le QR encode désormais un objet JSON contenant `matricule`, `niveau`,
+`promotion` (numéro), `decision_fin_annee`, `moyenne_generale`, `site_web` et
+`verification_url`. Cet objet est également retourné dans `qr_code.contenu`.
+La décision est celle du bulletin, à défaut `decision_passage` de l'inscription,
+sinon `null`. Le site est celui configuré pour l'école, à défaut
+`https://www.ebac-edu.org`. Le scan affiche ces informations ; le lien de
+vérification reste accessible dans ce contenu et sous le QR du PDF.
+La taille d'impression reste 26 × 26 mm, avec une image source de 720 × 720 px.
+
 La vérification `GET /api/v1/bulletins/{id}/verification` utilise l'URL signée
 complète, sans token étudiant et sans expiration pour les documents imprimés.
 Elle retourne `valide: true` et uniquement l'identifiant du bulletin, sa période,

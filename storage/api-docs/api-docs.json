@@ -8659,6 +8659,38 @@
                                                             "description": "Image PNG base64 affichable directement dans une balise img.",
                                                             "type": "string",
                                                             "example": "data:image/png;base64,..."
+                                                        },
+                                                        "contenu": {
+                                                            "description": "JSON directement encode dans le QR, lisible au scan. La decision provient du bulletin, sinon de decision_passage de l inscription. Site configure, sinon https://www.ebac-edu.org.",
+                                                            "properties": {
+                                                                "matricule": {
+                                                                    "type": "string",
+                                                                    "nullable": true
+                                                                },
+                                                                "niveau": {
+                                                                    "type": "string",
+                                                                    "nullable": true
+                                                                },
+                                                                "promotion": {
+                                                                    "type": "integer",
+                                                                    "nullable": true
+                                                                },
+                                                                "decision_fin_annee": {
+                                                                    "type": "string",
+                                                                    "nullable": true
+                                                                },
+                                                                "moyenne_generale": {
+                                                                    "type": "number",
+                                                                    "nullable": true
+                                                                },
+                                                                "site_web": {
+                                                                    "type": "string"
+                                                                },
+                                                                "verification_url": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "type": "object"
                                                         }
                                                     },
                                                     "type": "object"

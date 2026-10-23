@@ -56,6 +56,13 @@ class MesBulletinsEtudiantApiTest extends TestCase
         $detail = $this->getJson($base.'/'.$publie->id)->assertOk()
             ->assertJsonPath('bulletin.mention', 'Bien')->assertJsonPath('bulletin.matieres.0.mention', 'Bien');
         $qr = $detail->json('bulletin.qr_code');
+        $this->assertSame('ETU-1', $qr['contenu']['matricule']);
+        $this->assertSame('Premiere annee', $qr['contenu']['niveau']);
+        $this->assertSame(4, $qr['contenu']['promotion']);
+        $this->assertNull($qr['contenu']['decision_fin_annee']);
+        $this->assertSame(14.1, $qr['contenu']['moyenne_generale']);
+        $this->assertSame('https://www.ebac-edu.org', $qr['contenu']['site_web']);
+        $this->assertSame($qr['verification_url'], $qr['contenu']['verification_url']);
         $this->assertStringStartsWith('data:image/png;base64,', $qr['image_data_url']);
         $png = base64_decode(substr($qr['image_data_url'], strlen('data:image/png;base64,')), true);
         $this->assertSame('image/png', getimagesizefromstring($png)['mime']);
