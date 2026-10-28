@@ -14,6 +14,33 @@ class MatiereApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_rattachement_unite_enseignement_creation_modification_et_validation(): void
+    {
+        $role = Role::create(['code' => 'ADMIN', 'libelle' => 'Admin']);
+        Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        $niveau = Niveau::create(['code' => 'N1', 'libelle' => 'Niveau 1', 'rang' => 1]);
+        $ue = \App\Models\UniteEnseignement::create(['code' => 'BIB', 'libelle' => 'Bible', 'statut' => 'Actif']);
+        $base = ['code' => 'MAT-UE', 'libelle' => 'Introduction', 'id_niveau' => $niveau->id, 'unite_ensigne_id' => \App\Models\UniteEnseignement::firstOrCreate(['code' => 'UE-TEST'], ['libelle' => 'UE test', 'statut' => 'Actif'])->id];
+        $url = '/api/v1/parametres/matieres';
+        $this->postJson($url, [...$base, 'unite_ensigne_id' => 999999])
+            ->assertUnprocessable()->assertJsonValidationErrors('unite_ensigne_id');
+        $sansUe = $base;
+        unset($sansUe['unite_ensigne_id']);
+        $this->postJson($url, $sansUe)->assertUnprocessable()->assertJsonValidationErrors('unite_ensigne_id');
+        $this->postJson($url, [...$base, 'unite_ensigne_id' => null])->assertUnprocessable()->assertJsonValidationErrors('unite_ensigne_id');
+        $id = $this->postJson($url, [...$base, 'unite_ensigne_id' => (string) $ue->id])
+            ->assertCreated()->assertJsonPath('matiere.unite_ensigne_id', $ue->id)
+            ->assertJsonPath('matiere.unite_enseignement.id', $ue->id)->json('matiere.id');
+        $this->getJson($url)->assertOk()->assertJsonPath('matieres.0.unite_ensigne_id', $ue->id);
+        $this->getJson("{$url}/{$id}")->assertOk()->assertJsonPath('matiere.unite_enseignement.code', 'BIB');
+        $this->patchJson("{$url}/{$id}", ['libelle' => 'Nouveau'])->assertOk()->assertJsonPath('matiere.unite_ensigne_id', $ue->id);
+        $this->patchJson("{$url}/{$id}", ['unite_ensigne_id' => null])->assertUnprocessable()->assertJsonValidationErrors('unite_ensigne_id');
+        $this->putJson("{$url}/{$id}", ['unite_ensigne_id' => $ue->id])->assertOk()->assertJsonPath('matiere.unite_ensigne_id', $ue->id);
+        $ue->delete();
+        $this->patchJson("{$url}/{$id}", ['unite_ensigne_id' => $ue->id])->assertUnprocessable()->assertJsonValidationErrors('unite_ensigne_id');
+        $this->postJson($url, [...$base, 'code' => 'MAT-UE2', 'unite_ensigne_id' => $ue->id])->assertUnprocessable()->assertJsonValidationErrors('unite_ensigne_id');
+    }
+
     public function test_enseignant_synchronise_sans_annee_et_changements_historises(): void
     {
         $role = Role::create(['code' => 'ADMIN', 'libelle' => 'Admin']);
@@ -24,7 +51,7 @@ class MatiereApiTest extends TestCase
         $suivant = User::factory()->create(['id_role' => $role->id]);
         $niveau = Niveau::create(['code' => 'N1', 'libelle' => 'Niveau 1', 'rang' => 1]);
         $id = $this->postJson('/api/v1/parametres/matieres', ['code' => 'MAT-SYNC', 'libelle' => 'Matière',
-            'id_niveau' => $niveau->id, 'enseignant_id' => $enseignant->id])->assertCreated()->json('matiere.id');
+            'id_niveau' => $niveau->id, 'unite_ensigne_id' => \App\Models\UniteEnseignement::firstOrCreate(['code' => 'UE-TEST'], ['libelle' => 'UE test', 'statut' => 'Actif'])->id, 'enseignant_id' => $enseignant->id])->assertCreated()->json('matiere.id');
         $url = '/api/v1/parametres/matieres/'.$id;
         $this->assertDatabaseCount('annees_academiques', 0);
         $this->assertDatabaseHas('affectations_enseignants', ['id_matiere' => $id, 'enseignant_id' => $enseignant->id,
@@ -60,7 +87,7 @@ class MatiereApiTest extends TestCase
         $enseignant = User::factory()->create(['id_role' => $role->id, 'is_active' => false]);
         $niveau = Niveau::create(['code' => 'N1', 'libelle' => 'Niveau 1', 'rang' => 1]);
         $this->postJson('/api/v1/parametres/matieres', ['code' => 'MAT-INACTIVE', 'libelle' => 'Matière',
-            'id_niveau' => $niveau->id, 'enseignant_id' => $enseignant->id])->assertUnprocessable()->assertJsonValidationErrors('enseignant_id');
+            'id_niveau' => $niveau->id, 'unite_ensigne_id' => \App\Models\UniteEnseignement::firstOrCreate(['code' => 'UE-TEST'], ['libelle' => 'UE test', 'statut' => 'Actif'])->id, 'enseignant_id' => $enseignant->id])->assertUnprocessable()->assertJsonValidationErrors('enseignant_id');
         $this->assertDatabaseCount('matieres', 0);
         $this->assertDatabaseCount('affectations_enseignants', 0);
     }
@@ -77,7 +104,7 @@ class MatiereApiTest extends TestCase
         $id = $this->postJson('/api/v1/parametres/matieres', [
             'code' => 'MAT-BIB-001',
             'libelle' => 'Introduction biblique',
-            'id_niveau' => $niveau->id,
+            'id_niveau' => $niveau->id, 'unite_ensigne_id' => \App\Models\UniteEnseignement::firstOrCreate(['code' => 'UE-TEST'], ['libelle' => 'UE test', 'statut' => 'Actif'])->id,
             'enseignant_id' => $enseignant->id,
             'coefficient' => 2.5,
             'volume_horaire' => 30,
@@ -130,21 +157,21 @@ class MatiereApiTest extends TestCase
         $id = $this->postJson('/api/v1/parametres/matieres', [
             'code' => 'MAT-CHRISTO-001',
             'libelle' => 'Doctrine chrétienne',
-            'id_niveau' => $niveau->id,
+            'id_niveau' => $niveau->id, 'unite_ensigne_id' => \App\Models\UniteEnseignement::firstOrCreate(['code' => 'UE-TEST'], ['libelle' => 'UE test', 'statut' => 'Actif'])->id,
             'volume_horaire' => 45,
             'modules' => [
                 [
                     'libelle' => 'Théologie',
                     'cours' => [
-                        ['libelle' => 'La Trinité', 'coefficient' => 1],
-                        ['libelle' => 'La révélation', 'coefficient' => 2],
+                        ['libelle' => 'La Trinité'],
+                        ['libelle' => 'La révélation'],
                     ],
                 ],
                 [
                     'libelle' => 'Christologie',
                     'cours' => [
-                        ['libelle' => 'La personne du Christ', 'coefficient' => 1.5],
-                        ['libelle' => 'L’œuvre du Christ', 'coefficient' => 1],
+                        ['libelle' => 'La personne du Christ'],
+                        ['libelle' => 'L’œuvre du Christ'],
                     ],
                 ],
             ],
@@ -156,7 +183,7 @@ class MatiereApiTest extends TestCase
             ->assertJsonPath('matiere.modules.1.libelle', 'Christologie')
             ->assertJsonPath('matiere.modules.0.ordre', 1)
             ->assertJsonPath('matiere.modules.1.ordre', 2)
-            ->assertJsonPath('matiere.modules.1.cours.0.coefficient', '1.50')
+            ->assertJsonMissingPath('matiere.modules.1.cours.0.coefficient')
             ->assertJsonPath('matiere.nombre_modules', 2)
             ->json('matiere.id');
 
@@ -192,7 +219,7 @@ class MatiereApiTest extends TestCase
         $this->postJson('/api/v1/parametres/matieres', [
             'code' => 'MAT-INVALIDE',
             'libelle' => 'Matière invalide',
-            'id_niveau' => $niveau->id,
+            'id_niveau' => $niveau->id, 'unite_ensigne_id' => \App\Models\UniteEnseignement::firstOrCreate(['code' => 'UE-TEST'], ['libelle' => 'UE test', 'statut' => 'Actif'])->id,
             'modules' => [['libelle' => 'Module sans cours', 'cours' => []]],
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['modules.0.cours']);
@@ -211,7 +238,7 @@ class MatiereApiTest extends TestCase
         $module2 = $calendrier->modules()->create(['libelle' => 'Module 2', 'ordre' => 2, 'date_debut' => '2027-01-01', 'date_fin' => '2027-03-31']);
 
         $id = $this->postJson('/api/v1/parametres/matieres', [
-            'code' => 'MAT-CAL', 'libelle' => 'Matière planifiée', 'id_niveau' => $niveau->id,
+            'code' => 'MAT-CAL', 'libelle' => 'Matière planifiée', 'id_niveau' => $niveau->id, 'unite_ensigne_id' => \App\Models\UniteEnseignement::firstOrCreate(['code' => 'UE-TEST'], ['libelle' => 'UE test', 'statut' => 'Actif'])->id,
             'module_calendrier_id' => [$module1->id, $module2->id],
         ])->assertCreated()->assertJsonPath('matiere.module_calendrier_id', [$module1->id, $module2->id])
             ->assertJsonCount(2, 'matiere.modules_calendrier')->json('matiere.id');
@@ -231,7 +258,7 @@ class MatiereApiTest extends TestCase
         $role = Role::create(['code' => 'ADMIN', 'libelle' => 'Administrateur']);
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
         $niveau = Niveau::create(['libelle' => 'Première année', 'code' => 'A1', 'rang' => 1]);
-        $base = ['code' => 'MAT-CAL', 'libelle' => 'Matière planifiée', 'id_niveau' => $niveau->id];
+        $base = ['code' => 'MAT-CAL', 'libelle' => 'Matière planifiée', 'id_niveau' => $niveau->id, 'unite_ensigne_id' => \App\Models\UniteEnseignement::firstOrCreate(['code' => 'UE-TEST'], ['libelle' => 'UE test', 'statut' => 'Actif'])->id];
         $this->postJson('/api/v1/parametres/matieres', [...$base, 'module_calendrier_id' => [999]])
             ->assertUnprocessable()->assertJsonValidationErrors('module_calendrier_id.0');
         $this->postJson('/api/v1/parametres/matieres', [...$base, 'module_calendrier_id' => [1, 1]])

@@ -8,7 +8,7 @@ Authentification Bearer, compte actif. Rôles : ADMIN, SECRETARIAT, SECRETAIRE_A
 
 La réponse contient `bulletin` avec étudiant, matricule, photo_identite_url, promotion, année académique, niveau, matières et récapitulatif. Chaque matière contient numéro, code/libellé, coefficient, note, seuil de validation, décision, enseignants et année.
 
-Les notes sont calculées avec le même service que le tableau des notes par matière. Seules les feuilles `validee_direction` contribuent. Les notes des évaluations sont pondérées par les coefficients des cours ; poids 1 pour une note directement liée à une matière. La moyenne générale est la somme des notes de matière multipliées par leurs coefficients, divisée par la somme de ces coefficients positifs, sans arrondi intermédiaire. Les valeurs affichées sont arrondies à deux décimales.
+Les notes sont calculées avec le même service que le tableau des notes par matière. Seules les feuilles `validee_direction` contribuent. Les notes des evaluations ont le meme poids dans la moyenne de matiere. La moyenne générale est la somme des notes de matière multipliées par leurs coefficients, divisée par la somme de ces coefficients positifs, sans arrondi intermédiaire. Les valeurs affichées sont arrondies à deux décimales.
 
 Les enseignants sont les auteurs de transmission des feuilles, à défaut les enseignants des séances, sans doublons. Si aucune identité n’est disponible, le tableau est vide.
 

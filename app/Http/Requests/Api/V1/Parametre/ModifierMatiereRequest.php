@@ -19,6 +19,7 @@ class ModifierMatiereRequest extends FormRequest
             'code' => ['sometimes', 'required', 'string', 'max:50', Rule::unique('matieres', 'code')->ignore($this->route('id'))],
             'libelle' => ['sometimes', 'required', 'string', 'max:180'],
             'id_niveau' => ['sometimes', 'required', 'integer', 'exists:niveaux,id'],
+            'unite_ensigne_id' => ['sometimes', 'required', 'integer', \Illuminate\Validation\Rule::exists('unites_enseignement', 'id')->whereNull('deleted_at')],
             'enseignant_id' => ['sometimes', 'nullable', 'integer', new UtilisateurEstEnseignant],
             'coefficient' => ['sometimes', 'numeric', 'gt:0', 'max:999.99'],
             'volume_horaire' => ['sometimes', 'numeric', 'min:0', 'max:9999.99'],
@@ -45,7 +46,6 @@ class ModifierMatiereRequest extends FormRequest
             'modules.*.cours.*.code' => ['nullable', 'string', 'max:50'],
             'modules.*.cours.*.libelle' => ['required_with:modules.*.cours', 'string', 'max:180'],
             'modules.*.cours.*.volume_horaire' => ['sometimes', 'numeric', 'min:0', 'max:9999.99'],
-            'modules.*.cours.*.coefficient' => ['sometimes', 'numeric', 'gt:0', 'max:999.99'],
             'modules.*.cours.*.ordre' => ['sometimes', 'integer', 'min:1', 'max:65535'],
             'modules.*.cours.*.actif' => ['sometimes', 'boolean'],
         ];

@@ -13,13 +13,12 @@ class Cours extends Model
 
     protected $table = 'cours';
 
-    protected $fillable = ['id_module', 'code', 'libelle', 'volume_horaire', 'coefficient', 'ordre', 'actif', 'user_id', 'created_by', 'updated_by', 'deleted_by'];
+    protected $fillable = ['id_module', 'code', 'libelle', 'volume_horaire', 'ordre', 'actif', 'user_id', 'created_by', 'updated_by', 'deleted_by'];
 
     protected function casts(): array
     {
         return [
             'volume_horaire' => 'decimal:2',
-            'coefficient' => 'decimal:2',
             'ordre' => 'integer',
             'actif' => 'boolean',
         ];

@@ -10,7 +10,7 @@ La réponse contient `promotion`, `annee_academique`, `matieres` et `meta`. Chaq
 
 Seules les notes des feuilles **validées par la direction** contribuent au tableau. La validation secrétariat seule ne constitue pas la validation finale. Le GET calcule les tableaux à partir des notes existantes : dès la validation finale, les notes sont visibles automatiquement. Aucune migration ou copie des notes n’est nécessaire.
 
-La note de matière correspond à la moyenne des notes validées, pondérées par le coefficient du cours pour les feuilles par cours. Une note directement rattachée à une matière a un poids de 1. Les notes des cours sont rattachées à leur matière par le module. La moyenne est affichée sur deux décimales ; la décision compare la moyenne non arrondie au seuil de validation de la matière (10 si non renseigné).
+La note de matière correspond à la moyenne arithmetique des notes validees, avec le meme poids pour chaque note. Les notes des cours sont rattachées à leur matière par le module. La moyenne est affichée sur deux décimales ; la décision compare la moyenne non arrondie au seuil de validation de la matière (10 si non renseigné).
 
 Décisions : `valide` / « Validé », `ajourne` / « Ajourné », `en_attente` / « En attente ». Tous les étudiants inscrits dans cette promotion pour cette année sont affichés. Un étudiant sans note validée a `note: null`. Les matières sans aucune note validée ne sont pas retournées.
 

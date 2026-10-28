@@ -37,7 +37,7 @@ Une nouvelle validation le recrée. Un brouillon annuel existant est remplacé p
 les lignes issues des notes validées lorsqu'elles deviennent disponibles.
 Les bulletins publiés ou retirés ne sont pas modifiés automatiquement.
 
-Les moyennes par matière utilisent les coefficients des cours ; la moyenne générale
+Les moyennes par matiere donnent le meme poids a chaque note ; la moyenne générale
 utilise ceux des matières, sans arrondi intermédiaire. Cette génération enregistre
 le bulletin en base ; le PDF est produit à la demande au téléchargement. Le rang reste absent sans classement.
 La mention est calculée selon le barème décrit ci-dessous.

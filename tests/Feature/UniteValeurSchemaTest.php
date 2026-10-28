@@ -28,7 +28,7 @@ class UniteValeurSchemaTest extends TestCase
         ]));
 
         $this->assertTrue(Schema::hasColumns('cours', [
-            'id', 'id_module', 'libelle', 'volume_horaire', 'coefficient',
+            'id', 'id_module', 'libelle', 'volume_horaire',
             'ordre', 'created_at', 'updated_at',
         ]));
     }

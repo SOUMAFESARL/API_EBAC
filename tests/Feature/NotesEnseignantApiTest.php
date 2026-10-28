@@ -836,7 +836,7 @@ class NotesEnseignantApiTest extends TestCase
     {
         $data = $this->contexte();
         $this->presences($data);
-        $autreCours = Cours::create(['id_module' => $data['cours']->id_module, 'libelle' => 'Autre cours', 'ordre' => 2, 'coefficient' => 3]);
+        $autreCours = Cours::create(['id_module' => $data['cours']->id_module, 'libelle' => 'Autre cours', 'ordre' => 2]);
         $feuille = FeuilleNotes::create(['id_annee_academique' => $data['annee']->id,
             'id_promotion' => $data['promotion']->id, 'id_cours' => $autreCours->id, 'updated_by' => $data['enseignant']->id]);
         $feuille->notes()->create(['id_etudiant' => $data['etudiants'][0]->id, 'note' => 10]);

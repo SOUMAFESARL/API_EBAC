@@ -15,7 +15,7 @@ final readonly class CoursDTO
                 $donnees[$champ] = (int) $donnees[$champ];
             }
         }
-        foreach (['volume_horaire', 'coefficient'] as $champ) {
+        foreach (['volume_horaire'] as $champ) {
             if (array_key_exists($champ, $donnees)) {
                 $donnees[$champ] = (float) $donnees[$champ];
             }

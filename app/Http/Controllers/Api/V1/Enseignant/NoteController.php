@@ -67,7 +67,7 @@ class NoteController extends Controller
                         'promotion' => $creneau->promotion->only(['id', 'code', 'num_promotion']),
                         'matiere' => $item->module->matiere->only(['id', 'code', 'libelle']),
                         'module' => $item->module->only(['id', 'libelle']),
-                        'cours' => $item->only(['id', 'libelle', 'coefficient']),
+                        'cours' => $item->only(['id', 'libelle']),
                     ]);
                 }
             }
@@ -141,7 +141,7 @@ class NoteController extends Controller
             ->join('cours as c', 'c.id', '=', 'f.id_cours')->join('modules as m', 'm.id', '=', 'c.id_module')
             ->where('f.id_promotion', $promotion->id)->where('f.id_annee_academique', $cle['id_annee_academique'])
             ->where('m.id_matiere', $cours->module->id_matiere)->whereNull('c.deleted_at')->whereNull('m.deleted_at')
-            ->selectRaw('n.id_etudiant, SUM(n.note * c.coefficient) / NULLIF(SUM(c.coefficient), 0) as moyenne')
+            ->selectRaw('n.id_etudiant, AVG(n.note) as moyenne')
             ->groupBy('n.id_etudiant')->pluck('moyenne', 'id_etudiant');
         $lignes = $etudiants->map(function ($etudiant) use ($validees, $ouverte, $notes, $notesParEtudiant, $moyennes) {
             $present = $ouverte && $validees->every(fn ($s) => $s->feuillePresence->presences
@@ -163,7 +163,7 @@ class NoteController extends Controller
                 'statut_moyenne' => isset($moyennes[$etudiant->id]) ? 'validee' : 'en_attente'];
         });
 
-        return ['id_seance' => $cle['id_seance'], 'cours' => $parMatiere ? null : $cours->only(['id', 'libelle', 'coefficient']),
+        return ['id_seance' => $cle['id_seance'], 'cours' => $parMatiere ? null : $cours->only(['id', 'libelle']),
             'module' => $parMatiere ? null : $cours->module->only(['id', 'libelle']), 'matiere' => $matiere->only(['id', 'libelle']),
             'promotion' => $promotion->only(['id', 'code', 'num_promotion']), 'id_annee_academique' => $cle['id_annee_academique'],
             'statut' => ! $feuille || $feuille->statut === 'brouillon' ? 'non_transmise' : $feuille->statutPourRole('ENSEIGNANT'),

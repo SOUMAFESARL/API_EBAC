@@ -32,7 +32,7 @@ DOC)]
     new OA\Property(property: 'statut_moyenne', type: 'string', enum: ['en_attente', 'validee']),
 ])]
 #[OA\Schema(schema: 'FeuilleNotesDetail', type: 'object', properties: [
-    new OA\Property(property: 'cours', type: 'object', example: ['id' => 41, 'libelle' => 'La Trinité', 'coefficient' => '1.00']),
+    new OA\Property(property: 'cours', type: 'object', example: ['id' => 41, 'libelle' => 'La Trinité']),
     new OA\Property(property: 'module', type: 'object', example: ['id' => 37, 'libelle' => 'Doctrine de Dieu']),
     new OA\Property(property: 'matiere', type: 'object', example: ['id' => 13, 'libelle' => 'Théologie systématique']),
     new OA\Property(property: 'promotion', type: 'object', example: ['id' => 3, 'code' => 'PROMO-2026', 'num_promotion' => 17]),

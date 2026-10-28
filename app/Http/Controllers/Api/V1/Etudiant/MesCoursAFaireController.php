@@ -31,7 +31,7 @@ class MesCoursAFaireController extends Controller
                 ...$item->only(['id', 'id_cours', 'id_matiere', 'id_seance', 'statut', 'motif']),
                 'rattrapage' => $item->rattrapage,
                 'matiere' => $item->matiere?->only(['id', 'code', 'libelle']),
-                'cours' => $item->cours?->only(['id', 'code', 'libelle', 'volume_horaire', 'coefficient']),
+                'cours' => $item->cours?->only(['id', 'code', 'libelle', 'volume_horaire']),
                 'module' => $item->cours?->module?->only(['id', 'code', 'libelle']),
                 'seance' => $item->seance->only(['id', 'date_prevue', 'heure_debut_prevue', 'heure_fin_prevue', 'date_effective', 'theme_traite', 'supports_pedagogiques']),
                 'enseignant' => $item->seance->enseignant?->only(['id', 'nom', 'prenoms']),

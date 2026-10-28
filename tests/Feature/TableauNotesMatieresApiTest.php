@@ -64,14 +64,14 @@ class TableauNotesMatieresApiTest extends TestCase
             $isolee->notes()->create(['id_etudiant' => $etudiants[0]->id, 'note' => 0]);
         }
         $this->getJson($url)->assertOk()->assertJsonPath('matieres.0.etudiants.0.note', 14);
-        // Courses resolve their matter through the module and use their coefficients.
+        // Courses resolve their matter through the module and carry equal weight.
         $module = Module::create(['code' => 'M1', 'libelle' => 'Module', 'id_matiere' => $matiere->id]);
-        $cours = Cours::create(['code' => 'C1', 'libelle' => 'Cours', 'id_module' => $module->id, 'coefficient' => 3]);
+        $cours = Cours::create(['code' => 'C1', 'libelle' => 'Cours', 'id_module' => $module->id]);
         $coursFeuille = $feuille->replicate()->fill(['id_matiere' => null, 'id_cours' => $cours->id]);
         $coursFeuille->save();
         $coursFeuille->notes()->create(['id_etudiant' => $etudiants[0]->id, 'note' => 10]);
-        $this->getJson($url)->assertOk()->assertJsonPath('matieres.0.etudiants.0.note', 11)
-            ->assertJsonPath('matieres.0.etudiants.0.decision', 'ajourne');
+        $this->getJson($url)->assertOk()->assertJsonPath('matieres.0.etudiants.0.note', 12)
+            ->assertJsonPath('matieres.0.etudiants.0.decision', 'valide');
         $enseignantRole = Role::create(['code' => 'ENSEIGNANT', 'libelle' => 'Enseignant']);
         Sanctum::actingAs(User::factory()->create(['id_role' => $enseignantRole->id]));
         $this->getJson($url)->assertForbidden();

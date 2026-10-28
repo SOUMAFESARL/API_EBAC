@@ -29,10 +29,10 @@ class CoursApiTest extends TestCase
             'code' => 'CRS-001',
             'libelle' => 'Contexte biblique',
             'volume_horaire' => 12.5,
-            'coefficient' => 2,
             'ordre' => 1,
             'actif' => true,
         ])->assertCreated()
+            ->assertJsonMissingPath('cours.coefficient')
             ->assertJsonPath('cours.module.id', $module->id)
             ->assertJsonPath('cours.module.matiere.id', $matiere->id)
             ->assertJsonPath('cours.module.matiere.niveau.id', $niveau->id)
@@ -41,7 +41,7 @@ class CoursApiTest extends TestCase
         $this->getJson("/api/v1/parametres/cours?module={$module->id}&matiere={$matiere->id}&niveau={$niveau->id}&actif=1&ordre=1&q=Contexte")
             ->assertOk()->assertJsonCount(1, 'cours');
         $this->getJson("/api/v1/parametres/cours/{$id}")->assertOk();
-        $this->patchJson("/api/v1/parametres/cours/{$id}", ['coefficient' => 3, 'actif' => false])
+        $this->patchJson("/api/v1/parametres/cours/{$id}", ['actif' => false])
             ->assertOk()->assertJsonPath('cours.actif', false);
         $this->deleteJson("/api/v1/parametres/cours/{$id}")->assertOk();
         $this->assertSoftDeleted('cours', ['id' => $id, 'deleted_by' => $utilisateur->id]);

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['code', 'libelle', 'id_niveau', 'enseignant_id', 'coefficient', 'volume_horaire', 'type', 'description', 'objectifs', 'prerequis', 'note_validation', 'obligatoire', 'active', 'version', 'user_id', 'created_by', 'updated_by', 'deleted_by'])]
+#[Fillable(['code', 'libelle', 'id_niveau', 'unite_ensigne_id', 'enseignant_id', 'coefficient', 'volume_horaire', 'type', 'description', 'objectifs', 'prerequis', 'note_validation', 'obligatoire', 'active', 'version', 'user_id', 'created_by', 'updated_by', 'deleted_by'])]
 class Matiere extends Model
 {
     use SoftDeletes;
@@ -32,6 +32,11 @@ class Matiere extends Model
     public function niveau(): BelongsTo
     {
         return $this->belongsTo(Niveau::class, 'id_niveau');
+    }
+
+    public function uniteEnseignement(): BelongsTo
+    {
+        return $this->belongsTo(UniteEnseignement::class, 'unite_ensigne_id');
     }
 
     public function enseignant(): BelongsTo

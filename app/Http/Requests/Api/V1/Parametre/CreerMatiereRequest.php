@@ -18,6 +18,7 @@ class CreerMatiereRequest extends FormRequest
             'code' => ['required', 'string', 'max:50', 'unique:matieres,code'],
             'libelle' => ['required', 'string', 'max:180'],
             'id_niveau' => ['required', 'integer', 'exists:niveaux,id'],
+            'unite_ensigne_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('unites_enseignement', 'id')->whereNull('deleted_at')],
             'enseignant_id' => ['nullable', 'integer', new UtilisateurEstEnseignant],
             'coefficient' => ['sometimes', 'numeric', 'gt:0', 'max:999.99'],
             'volume_horaire' => ['sometimes', 'numeric', 'min:0', 'max:9999.99'],
@@ -40,7 +41,6 @@ class CreerMatiereRequest extends FormRequest
             'modules.*.cours.*.code' => ['nullable', 'string', 'max:50'],
             'modules.*.cours.*.libelle' => ['required', 'string', 'max:180'],
             'modules.*.cours.*.volume_horaire' => ['sometimes', 'numeric', 'min:0', 'max:9999.99'],
-            'modules.*.cours.*.coefficient' => ['sometimes', 'numeric', 'gt:0', 'max:999.99'],
             'modules.*.cours.*.ordre' => ['sometimes', 'integer', 'min:1', 'max:65535'],
             'modules.*.cours.*.actif' => ['sometimes', 'boolean'],
         ];

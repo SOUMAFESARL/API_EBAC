@@ -13817,7 +13817,7 @@
                     "Tableau des notes par matiere"
                 ],
                 "summary": "Tableaux des etudiants, notes et decisions par matiere",
-                "description": "Uniquement les feuilles au statut validee_direction de la promotion et de l annee demandees. Les matieres sans note validee sont absentes. Tous les inscrits de l annee sont affiches ; note null et decision en_attente en absence de note validee. Moyenne des notes validees, ponderees par coefficient du cours ; poids 1 pour les notes directement rattachees a la matiere. Decision sur la moyenne non arrondie selon note_validation de la matiere (10 par defaut). Les corrections renvoyant une feuille au controle ne contribuent de nouveau qu apres revalidation. Pagination des matieres, pas des etudiants.",
+                "description": "Uniquement les feuilles au statut validee_direction de la promotion et de l annee demandees. Les matieres sans note validee sont absentes. Tous les inscrits de l annee sont affiches ; note null et decision en_attente en absence de note validee. Moyenne arithmetique des notes validees. Le coefficient appartient a la matiere et intervient dans la moyenne generale. Decision sur la moyenne non arrondie selon note_validation de la matiere (10 par defaut). Les corrections renvoyant une feuille au controle ne contribuent de nouveau qu apres revalidation. Pagination des matieres, pas des etudiants.",
                 "operationId": "20b055d27dfbfbe779f92db4552302ef",
                 "parameters": [
                     {
@@ -17031,8 +17031,7 @@
                         "type": "object",
                         "example": {
                             "id": 41,
-                            "libelle": "La Trinité",
-                            "coefficient": "1.00"
+                            "libelle": "La Trinité"
                         }
                     },
                     "module": {
@@ -17689,12 +17688,6 @@
                         "default": 0,
                         "minimum": 0
                     },
-                    "coefficient": {
-                        "type": "number",
-                        "format": "float",
-                        "default": 1,
-                        "minimum": 0
-                    },
                     "ordre": {
                         "type": "integer",
                         "minimum": 1
@@ -17742,7 +17735,8 @@
                 "required": [
                     "code",
                     "libelle",
-                    "id_niveau"
+                    "id_niveau",
+                    "unite_ensigne_id"
                 ],
                 "properties": {
                     "code": {
@@ -17754,6 +17748,10 @@
                         "example": "Introduction biblique"
                     },
                     "id_niveau": {
+                        "type": "integer"
+                    },
+                    "unite_ensigne_id": {
+                        "description": "UE non supprimee. Obligatoire a la creation ; null interdit en modification.",
                         "type": "integer"
                     },
                     "enseignant_id": {
@@ -17907,11 +17905,6 @@
                         "type": "number",
                         "format": "float",
                         "default": 0
-                    },
-                    "coefficient": {
-                        "type": "number",
-                        "format": "float",
-                        "default": 1
                     },
                     "ordre": {
                         "type": "integer",

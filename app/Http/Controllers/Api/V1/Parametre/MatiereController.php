@@ -258,6 +258,7 @@ class MatiereController extends Controller
     {
         return [
             'niveau:id,code,libelle,rang,statut',
+            'uniteEnseignement:id,code,libelle,statut',
             'enseignant:id,code,nom,prenoms,email,id_role',
             'enseignant.role:id,code,libelle',
             'modulesCalendrier' => fn ($query) => $query->orderBy('ordre')->orderBy('id'),

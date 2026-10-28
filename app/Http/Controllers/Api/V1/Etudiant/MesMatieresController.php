@@ -61,7 +61,6 @@ class MesMatieresController extends Controller
             ...$module->only(['id', 'code', 'libelle', 'ordre']),
             'cours' => $module->cours->map(fn ($cours) => [
                 ...$cours->only(['id', 'code', 'libelle', 'ordre']),
-                'coefficient' => (float) $cours->coefficient,
                 'volume_horaire' => (float) $cours->volume_horaire,
                 'evaluation' => null, 'note' => null,
             ])->values(),

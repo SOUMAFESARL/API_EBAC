@@ -106,7 +106,7 @@ class MesCoursController extends Controller
             }
 
             return [...$module->only(['id', 'code', 'libelle']), 'nombre_cours' => $items->count(), 'cours' => $items->map(fn ($item) => [
-                ...$item->only(['id', 'code', 'libelle', 'ordre']), 'coefficient' => (float) $item->coefficient, 'volume_horaire' => (float) $item->volume_horaire,
+                ...$item->only(['id', 'code', 'libelle', 'ordre']), 'volume_horaire' => (float) $item->volume_horaire,
                 'nombre_etudiants' => $creneaux->where('id_cours', $item->id)->pluck('promotion')->filter()->flatMap->inscriptions->where('id_annee_academique', $annee?->id)->unique('id_etudiant')->count(),
                 ...$this->progression($creneaux->filter(fn ($c) => $c->id_cours === null || $c->id_cours === $item->id), $affectations, $annee),
             ])->all()];

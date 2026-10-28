@@ -20,7 +20,7 @@ class NotesValideesService
     {
         return $this->notes($promotion, $annee, $statuts)
             ->selectRaw('COALESCE(m.id_matiere, f.id_matiere) as id_matiere, n.id_etudiant')
-            ->selectRaw('SUM(n.note * CASE WHEN f.id_cours IS NULL THEN 1 ELSE c.coefficient END) / NULLIF(SUM(CASE WHEN f.id_cours IS NULL THEN 1 ELSE c.coefficient END), 0) as moyenne')
+            ->selectRaw('AVG(n.note) as moyenne')
             ->selectRaw('COUNT(*) as nombre_notes')
             ->groupByRaw('COALESCE(m.id_matiere, f.id_matiere), n.id_etudiant');
     }
