@@ -437,6 +437,10 @@ Route::prefix('v1/parametres')
             ->parameters(['promotions' => 'id']);
         Route::apiResource('matieres', MatiereController::class)
             ->parameters(['matieres' => 'id']);
+        Route::apiResource('unites-enseignement', App\Http\Controllers\Api\V1\Parametre\UniteEnseignementController::class)
+            ->parameters(['unites-enseignement' => 'id'])
+            ->whereNumber('id')
+            ->middleware('roles.autorises:ADMIN,SECRETAIRE_ACADEMIQUE,SECRETARIAT,DIRECTION');
         Route::apiResource('modules', ModuleController::class)
             ->parameters(['modules' => 'id']);
         Route::apiResource('cours', CoursController::class)

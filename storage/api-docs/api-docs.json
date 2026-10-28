@@ -14203,6 +14203,231 @@
                     }
                 ]
             }
+        },
+        "/parametres/unites-enseignement": {
+            "get": {
+                "tags": [
+                    "Unités enseignement"
+                ],
+                "operationId": "listerUnitesEnseignement",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "statut",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Actif",
+                                "Archive"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste dans unites_enseignement"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Unités enseignement"
+                ],
+                "operationId": "creerUniteEnseignement",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UniteEnseignementPayload"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "UE créée dans unite_enseignement"
+                    },
+                    "422": {
+                        "description": "Validation invalide ou code déjà utilisé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/parametres/unites-enseignement/{id}": {
+            "get": {
+                "tags": [
+                    "Unités enseignement"
+                ],
+                "operationId": "afficherUniteEnseignement",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "UE dans unite_enseignement"
+                    },
+                    "404": {
+                        "description": "UE introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Unités enseignement"
+                ],
+                "operationId": "mettreAJourUniteEnseignement",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UniteEnseignementModification"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "UE modifiée, champs omis conservés"
+                    },
+                    "404": {
+                        "description": "UE introuvable"
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Unités enseignement"
+                ],
+                "operationId": "supprimerUniteEnseignement",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "UE supprimée logiquement"
+                    },
+                    "404": {
+                        "description": "UE introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Unités enseignement"
+                ],
+                "operationId": "modifierUniteEnseignement",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UniteEnseignementModification"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "UE modifiée"
+                    },
+                    "404": {
+                        "description": "UE introuvable"
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -18645,6 +18870,61 @@
                     }
                 },
                 "type": "object"
+            },
+            "UniteEnseignementPayload": {
+                "required": [
+                    "libelle",
+                    "code",
+                    "statut"
+                ],
+                "properties": {
+                    "libelle": {
+                        "type": "string",
+                        "example": "Connaissance de la Bible",
+                        "maxLength": 180
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "BIB",
+                        "maxLength": 50
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "statut": {
+                        "type": "string",
+                        "enum": [
+                            "Actif",
+                            "Archive"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "UniteEnseignementModification": {
+                "properties": {
+                    "libelle": {
+                        "type": "string",
+                        "maxLength": 180
+                    },
+                    "code": {
+                        "type": "string",
+                        "maxLength": 50
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "statut": {
+                        "type": "string",
+                        "enum": [
+                            "Actif",
+                            "Archive"
+                        ]
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -18708,6 +18988,10 @@
         {
             "name": "Tableau des notes par matiere",
             "description": "Tableaux des notes definitivement validees, pour le secretariat et la direction. Mise a jour automatique a la lecture apres validation direction. Compte actif requis. Accessible a ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION."
+        },
+        {
+            "name": "Unités enseignement",
+            "description": "CRUD des UE. Compte actif, rôles ADMIN, SECRETAIRE_ACADEMIQUE, SECRETARIAT ou DIRECTION."
         },
         {
             "name": "Églises",
