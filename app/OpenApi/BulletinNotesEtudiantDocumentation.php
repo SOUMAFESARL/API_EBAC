@@ -4,7 +4,7 @@ namespace App\OpenApi;
 
 use OpenApi\Attributes as OA;
 
-#[OA\Tag(name: 'Bulletin de notes calcule', description: 'Bulletin par etudiant pour le secretariat et la direction, calcule sur les notes definitivement validees. Accessible aux comptes actifs ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Ne cree ni ne publie de bulletin enregistre.')]
+#[OA\Tag(name: 'Bulletin de notes calcule', description: 'Bulletin par etudiant pour le secretariat et la direction, calcule sur les notes definitivement validees. Compte actif ; un de ces droits requis : notes.supervision-notes.consulter ou notes.validation-notes.consulter ou notes.corrections.consulter. ADMIN passe toujours. Ne cree ni ne publie de bulletin enregistre.')]
 #[OA\Get(path: '/administration/bulletins-notes/{id}', tags: ['Bulletin de notes calcule'], security: [['sanctum' => []]],
     summary: 'Bulletin etudiant : matieres, coefficients, notes, decisions, enseignants et moyenne',
     description: 'id est l identifiant etudiant. Inscription requise dans la promotion et l annee demandees. Seules les feuilles validee_direction contribuent. Meme calcul de notes que /administration/notes-matieres ; moyenne generale ponderee par les coefficients des matieres, sans arrondi intermediaire. Les matieres sans note validee pour cet etudiant sont absentes. Bulletin partiel si toutes les evaluations ne sont pas encore validees. credits_valides est la somme des coefficients des matieres validees. Une correction renvoyee au controle ne contribue de nouveau qu apres revalidation.',

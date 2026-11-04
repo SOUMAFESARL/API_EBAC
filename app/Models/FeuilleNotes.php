@@ -11,15 +11,40 @@ class FeuilleNotes extends Model
 {
     public const STATUTS_TRANSMIS = ['transmise', 'validee_secretariat', 'rejetee_secretariat', 'transmise_direction', 'validee_direction', 'rejetee_direction'];
 
-    public static function statutsPourRole(string $role): array
+    /**
+     * Vue du circuit qu'adopte le compte : elle ne sert qu'au libellé
+     * historique `statut` (le front lit `statut_workflow`). Elle se déduit
+     * des droits cochés, plus du code du rôle — un rôle personnalisé doté
+     * de la supervision lit comme le secrétariat. Qui tient les deux
+     * étapes (l'Administrateur) lit le statut brut, comme avant.
+     */
+    public static function vueDe(?User $utilisateur): ?string
     {
-        return collect(self::STATUTS_TRANSMIS)->mapWithKeys(fn ($statut) => [$statut => match ($role) {
-            'ENSEIGNANT' => 'transmise',
-            'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE' => match ($statut) {
+        if (! $utilisateur) {
+            return null;
+        }
+        if ($utilisateur->role?->code === 'ENSEIGNANT') {
+            return 'enseignant';
+        }
+        $supervision = $utilisateur->detientUnDroit('notes.supervision-notes.consulter');
+        $validation = $utilisateur->detientUnDroit('notes.validation-notes.consulter');
+
+        return match (true) {
+            $supervision && ! $validation => 'secretariat',
+            $validation && ! $supervision => 'direction',
+            default => null,
+        };
+    }
+
+    public static function statutsPourVue(?string $vue): array
+    {
+        return collect(self::STATUTS_TRANSMIS)->mapWithKeys(fn ($statut) => [$statut => match ($vue) {
+            'enseignant' => 'transmise',
+            'secretariat' => match ($statut) {
                 'transmise' => 'a_verifier',
                 default => $statut,
             },
-            'DIRECTION' => match ($statut) {
+            'direction' => match ($statut) {
                 'transmise_direction' => 'en_attente',
                 'validee_direction' => 'validee',
                 'rejetee_direction' => 'rejetee',
@@ -29,9 +54,9 @@ class FeuilleNotes extends Model
         }])->all();
     }
 
-    public function statutPourRole(string $role): string
+    public function statutPourVue(?string $vue): string
     {
-        return self::statutsPourRole($role)[$this->statut] ?? $this->statut;
+        return self::statutsPourVue($vue)[$this->statut] ?? $this->statut;
     }
 
     protected $table = 'feuilles_notes';

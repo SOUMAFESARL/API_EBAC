@@ -16,7 +16,7 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'description', type: 'string', nullable: true),
     new OA\Property(property: 'statut', type: 'string', enum: ['Actif', 'Archive']),
 ])]
-#[OA\Tag(name: 'Unités enseignement', description: 'CRUD des UE. Compte actif, rôles ADMIN, SECRETAIRE_ACADEMIQUE, SECRETARIAT ou DIRECTION.')]
+#[OA\Tag(name: 'Unités enseignement', description: 'CRUD des UE. Compte actif. Lecture : programme.domaines.consulter ou programme.matieres.consulter (et les roles SECRETAIRE_ACADEMIQUE, SECRETARIAT, DIRECTION, lecteurs d avant la matrice). Ecritures : programme.domaines.creer, modifier ou supprimer. ADMIN passe toujours.')]
 #[OA\Get(path: '/parametres/unites-enseignement', operationId: 'listerUnitesEnseignement', tags: ['Unités enseignement'], security: [['sanctum' => []]], parameters: [
     new OA\Parameter(name: 'q', in: 'query', schema: new OA\Schema(type: 'string')),
     new OA\Parameter(name: 'recherche', in: 'query', schema: new OA\Schema(type: 'string')),

@@ -108,21 +108,21 @@ use OpenApi\Attributes as OA;
         new OA\Parameter(name: 'evaluation', in: 'query', required: true, allowEmptyValue: true, description: 'Valeur exacte de la liste. Pour null, envoyer evaluation=.', schema: new OA\Schema(type: 'string', nullable: true), example: 'Participation')],
     responses: [new OA\Response(response: 200, description: 'Detail groupe.', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'feuille_corrections', ref: '#/components/schemas/FeuilleCorrectionsGroupees')])), new OA\Response(response: 404, description: 'Groupe introuvable.'), new OA\Response(response: 422, description: 'Evaluation manquante ou invalide.')])]
 #[OA\Post(path: '/administration/corrections-notes/groupes/{id}/appliquer', tags: ['Corrections des notes'], security: [['sanctum' => []]],
-    summary: 'Appliquer les corrections selectionnees de la feuille (secretariat, ADMIN)',
+    summary: 'Appliquer les corrections selectionnees de la feuille (droit notes.corrections.autoriser)',
     description: 'Envoyer evaluation et ids_corrections_applicables du GET dans ids_corrections. Maximum 100. Toutes les corrections doivent appartenir au groupe et etre applicables. Transaction atomique : une erreur annule tout, y compris traces et notes. Pas de decision de direction requise. Les corrections nouvellement arrivees ne sont pas incluses implicitement.',
     parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
     requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SelectionCorrectionsGroupees')),
     responses: [new OA\Response(response: 200, description: 'Notes mises a jour et groupe actualise.', content: new OA\JsonContent(type: 'object', properties: [
         new OA\Property(property: 'message', type: 'string', example: 'Corrections appliquées.'),
         new OA\Property(property: 'feuille_corrections', ref: '#/components/schemas/FeuilleCorrectionsGroupees'),
-    ])), new OA\Response(response: 403, description: 'Seuls ADMIN et le secretariat peuvent appliquer.'), new OA\Response(response: 422, description: 'Selection, etat ou note initiale invalide.')])]
+    ])), new OA\Response(response: 403, description: 'Droit requis : notes.corrections.autoriser. ADMIN passe toujours.'), new OA\Response(response: 422, description: 'Selection, etat ou note initiale invalide.')])]
 #[OA\Post(path: '/administration/corrections-notes/groupes/{id}/rejeter', tags: ['Corrections des notes'], security: [['sanctum' => []]],
-    summary: 'Rejeter les corrections selectionnees avec motif (secretariat, ADMIN)',
+    summary: 'Rejeter les corrections selectionnees avec motif (droit notes.corrections.refuser)',
     description: 'Envoyer evaluation, ids_corrections_rejetables du GET dans ids_corrections et motif. Rejet atomique, sans changer les notes.',
     parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
     requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/SelectionCorrectionsGroupees'), new OA\Schema(type: 'object', required: ['motif'], properties: [new OA\Property(property: 'motif', type: 'string', minLength: 1, maxLength: 5000, example: 'Copie non justifiée')])])),
     responses: [new OA\Response(response: 200, description: 'Rejets traces et groupe actualise.', content: new OA\JsonContent(type: 'object', properties: [
         new OA\Property(property: 'message', type: 'string', example: 'Corrections rejetées.'),
         new OA\Property(property: 'feuille_corrections', ref: '#/components/schemas/FeuilleCorrectionsGroupees'),
-    ])), new OA\Response(response: 403, description: 'Seuls ADMIN et le secretariat peuvent rejeter.'), new OA\Response(response: 422, description: 'Motif, selection ou etat invalide.')])]
+    ])), new OA\Response(response: 403, description: 'Droit requis : notes.corrections.refuser. ADMIN passe toujours.'), new OA\Response(response: 422, description: 'Motif, selection ou etat invalide.')])]
 final class CorrectionsGroupeesDocumentation {}

@@ -112,6 +112,24 @@ class User extends Authenticatable
             ->all();
     }
 
+    /**
+     * Le compte détient-il **au moins un** de ces droits ? Même règle que
+     * le middleware `permission` (ADMIN : tous ; rôle inactif : aucun).
+     * C'est ce qui décide des gestes offerts dans une réponse, jamais le
+     * code du rôle : un rôle personnalisé doté du droit doit obtenir la
+     * même chose que le rôle d'origine.
+     */
+    public function detientUnDroit(string ...$codes): bool
+    {
+        $role = $this->role;
+
+        if ($role?->code === 'ADMIN') {
+            return true;
+        }
+
+        return array_intersect($codes, $this->codesPermissions()) !== [];
+    }
+
     public function civilite(): BelongsTo
     {
         return $this->belongsTo(Civilite::class, 'civilite_id');

@@ -44,7 +44,7 @@ use OpenApi\Attributes as OA;
             new OA\Property(property: 'programmes', type: 'array', items: new OA\Items(ref: '#/components/schemas/EtatPublicationCalendrier')),
         ])),
         new OA\Response(response: 401, description: 'Authentification requise.'),
-        new OA\Response(response: 403, description: 'Rôle ADMIN requis.'),
+        new OA\Response(response: 403, description: 'Droit requis : planification.publication-programme.consulter. ADMIN passe toujours.'),
         new OA\Response(response: 422, description: 'Filtres invalides.'),
     ]
 )]
@@ -60,7 +60,7 @@ use OpenApi\Attributes as OA;
             new OA\Property(property: 'programme', ref: '#/components/schemas/EtatPublicationCalendrier'),
         ])),
         new OA\Response(response: 401, description: 'Authentification requise.'),
-        new OA\Response(response: 403, description: 'Rôle ADMIN requis.'),
+        new OA\Response(response: 403, description: 'Droit requis : planification.publication-programme.publier. ADMIN passe toujours.'),
         new OA\Response(response: 404, description: 'Calendrier introuvable ou année supprimée.'),
         new OA\Response(response: 422, description: 'Calendrier sans module ou paramètres invalides.'),
     ]
@@ -77,7 +77,7 @@ use OpenApi\Attributes as OA;
             new OA\Property(property: 'programme', ref: '#/components/schemas/EtatPublicationCalendrier'),
         ])),
         new OA\Response(response: 401, description: 'Authentification requise.'),
-        new OA\Response(response: 403, description: 'Rôle ADMIN requis.'),
+        new OA\Response(response: 403, description: 'Droit requis : planification.publication-programme.publier. ADMIN passe toujours.'),
         new OA\Response(response: 404, description: 'Calendrier introuvable ou année supprimée.'),
         new OA\Response(response: 422, description: 'Calendrier non publié.'),
     ]

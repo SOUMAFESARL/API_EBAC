@@ -4,7 +4,7 @@ namespace App\OpenApi;
 
 use OpenApi\Attributes as OA;
 
-#[OA\Tag(name: 'Tableau des notes par matiere', description: 'Tableaux des notes definitivement validees, pour le secretariat et la direction. Mise a jour automatique a la lecture apres validation direction. Compte actif requis. Accessible a ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION.')]
+#[OA\Tag(name: 'Tableau des notes par matiere', description: 'Tableaux des notes definitivement validees, pour le secretariat et la direction. Mise a jour automatique a la lecture apres validation direction. Compte actif requis. Un de ces droits requis : notes.supervision-notes.consulter ou notes.validation-notes.consulter ou notes.corrections.consulter. ADMIN passe toujours.')]
 #[OA\Get(path: '/administration/notes-matieres', tags: ['Tableau des notes par matiere'], security: [['sanctum' => []]],
     summary: 'Tableaux des etudiants, notes et decisions par matiere',
     description: 'Uniquement les feuilles au statut validee_direction de la promotion et de l annee demandees. Les matieres sans note validee sont absentes. Tous les inscrits de l annee sont affiches ; note null et decision en_attente en absence de note validee. Moyenne arithmetique des notes validees. Le coefficient appartient a la matiere et intervient dans la moyenne generale. Decision sur la moyenne non arrondie selon note_validation de la matiere (10 par defaut). Les corrections renvoyant une feuille au controle ne contribuent de nouveau qu apres revalidation. Pagination des matieres, pas des etudiants.',

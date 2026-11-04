@@ -356,8 +356,10 @@ class NotesEnseignantApiTest extends TestCase
             $this->postJson($base.'/'.$id.'/valider')->assertUnprocessable();
             $this->postJson($base.'/'.$id.'/rejeter', ['motif' => 'Autre décision'])->assertUnprocessable();
             $this->getJson($base.'/'.$id)->assertOk()->assertJsonPath('correction.actions.peut_valider', false)
-                ->assertJsonPath('correction.actions.peut_appliquer', $code !== 'DIRECTION');
-            // La Direction détient notes.corrections.autoriser : elle applique elle-même.
+                // Le geste suit le droit, plus le rôle : la Direction détient
+                // notes.corrections.autoriser, elle applique elle-même — et
+                // la réponse le lui offre, comme au secrétariat.
+                ->assertJsonPath('correction.actions.peut_appliquer', true);
             $this->postJson($base.'/'.$id.'/appliquer')->assertOk()
                 ->assertJsonPath('correction.note_finale', fn ($valeur) => (float) $valeur === (float) $payload['note_proposee']);
         }

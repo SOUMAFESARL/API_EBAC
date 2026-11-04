@@ -21,7 +21,7 @@ use OpenApi\Attributes as OA;
     responses: [new OA\Response(response: 200, description: 'absence.'), new OA\Response(response: 401, description: 'Authentification requise.'),
         new OA\Response(response: 403, description: 'Accès refusé.'), new OA\Response(response: 404, description: 'Absence inaccessible.')])]
 #[OA\Post(path: '/administration/autorisations-evaluations/{id}/autoriser', summary: 'Autoriser un étudiant absent à être évalué',
-    description: 'ADMIN, DIRECTION, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Absence sur séance réalisée avec présence validée requise. Auteur, date et motif conservés. Toutes les absences concernées doivent être autorisées pour la saisie par cours ou matière. Ne rouvre pas une feuille transmise et ne modifie pas les présences.',
+    description: 'Droit requis : notes.corrections.autoriser. ADMIN passe toujours. Absence sur séance réalisée avec présence validée requise. Auteur, date et motif conservés. Toutes les absences concernées doivent être autorisées pour la saisie par cours ou matière. Ne rouvre pas une feuille transmise et ne modifie pas les présences.',
     tags: ['Autorisations des évaluations'], security: [['sanctum' => []]],
     parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifiant de la ligne presences.', schema: new OA\Schema(type: 'integer'))],
     requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['motif'], properties: [

@@ -63,11 +63,9 @@ class CorrectionNoteController extends Controller
     protected function presenterAdministration(Request $request, CorrectionNote $correction): array
     {
         $feuille = $correction->note?->feuilleNotes;
-        $role = $request->user()->role?->code;
-        $secretariat = in_array($role, ['SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true);
-        $direction = in_array($role, ['ADMIN', 'DIRECTION'], true);
-        $decideur = ($secretariat && in_array($correction->statut, ['en_attente', 'transmise_direction'], true))
-            || ($direction && in_array($correction->statut, ['en_attente', 'transmise_direction'], true));
+        // Les gestes suivent les droits cochés, pas le code du rôle.
+        $utilisateur = $request->user();
+        $decidable = in_array($correction->statut, ['en_attente', 'transmise_direction'], true);
 
         return [
             ...$correction->toArray(),
@@ -94,10 +92,10 @@ class CorrectionNoteController extends Controller
                 ] : null,
             ] : null,
             'actions' => [
-                'peut_valider' => $decideur,
-                'peut_rejeter' => $decideur,
+                'peut_valider' => $decidable && $utilisateur->detientUnDroit('notes.corrections.autoriser'),
+                'peut_rejeter' => $decidable && $utilisateur->detientUnDroit('notes.corrections.refuser'),
                 'peut_transmettre_direction' => false,
-                'peut_appliquer' => in_array($role, ['ADMIN', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true) && in_array($correction->statut, ['en_attente', 'transmise_direction', 'autorisee'], true),
+                'peut_appliquer' => $this->appliqueDirectement($request) && in_array($correction->statut, ['en_attente', 'transmise_direction', 'autorisee'], true),
             ],
         ];
     }
@@ -163,15 +161,14 @@ class CorrectionNoteController extends Controller
     {
         $correction = DB::transaction(function () use ($request, $id, $statut) {
             $correction = $this->corrections($request)->whereKey($id)->lockForUpdate()->firstOrFail();
-            $role = $request->user()->role?->code;
             $attendus = match ($statut) {
-                'appliquee' => in_array($role, ['ADMIN', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true)
+                'appliquee' => $this->appliqueDirectement($request)
                     ? ['en_attente', 'transmise_direction', 'autorisee'] : ['autorisee'],
                 'transmise_direction' => ['en_attente'],
                 default => ['en_attente', 'transmise_direction'],
             };
             if ($statut === 'autorisee') {
-                abort_unless(in_array($role, ['ADMIN', 'DIRECTION', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true), 403);
+                abort_unless($this->appliqueDirectement($request), 403);
             }
             if (! in_array($correction->statut, $attendus, true)) {
                 throw ValidationException::withMessages(['statut' => 'Cette transition est impossible depuis le statut actuel.']);
@@ -204,7 +201,7 @@ class CorrectionNoteController extends Controller
         });
 
         return response()->json(['message' => 'Correction '.$statut.'.', 'correction' =>
-            in_array($request->user()->role?->code, ['ADMIN', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE', 'DIRECTION'], true)
+            $this->litCorrections($request)
                 ? $this->presenterAdministration($request, $this->corrections($request)->findOrFail($id)) : $correction]);
     }
 
@@ -216,6 +213,25 @@ class CorrectionNoteController extends Controller
         }
 
         return $feuille;
+    }
+
+    /**
+     * Qui détient `notes.corrections.autoriser` tranche et applique d'un
+     * même geste (« Autoriser la correction » applique les notes), quel
+     * que soit son rôle. L'enseignant ne le détient pas : il n'applique
+     * qu'une correction déjà autorisée.
+     */
+    protected function appliqueDirectement(Request $request): bool
+    {
+        return $request->user()->role?->code !== 'ENSEIGNANT'
+            && $request->user()->detientUnDroit('notes.corrections.autoriser');
+    }
+
+    /** Le compte lit-il le registre administratif des corrections ? */
+    protected function litCorrections(Request $request): bool
+    {
+        return $request->user()->role?->code !== 'ENSEIGNANT'
+            && $request->user()->detientUnDroit('notes.supervision-notes.consulter', 'notes.validation-notes.consulter', 'notes.corrections.consulter');
     }
 
     protected function tracer(CorrectionNote $correction, Request $request, string $action, ?string $details): void

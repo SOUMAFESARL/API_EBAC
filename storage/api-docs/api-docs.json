@@ -631,7 +631,7 @@
                         "description": "Dossier, informations personnelles, pièces, finances, parcours et bulletins"
                     },
                     "403": {
-                        "description": "Réservé à ADMIN et SECRETARIAT"
+                        "description": "Droit requis : gestion-academique.etudiants.consulter. ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Étudiant introuvable"
@@ -666,7 +666,7 @@
                         "description": "Dossier, informations personnelles, pièces, finances, parcours et bulletins"
                     },
                     "403": {
-                        "description": "Réservé à ADMIN et SECRETARIAT"
+                        "description": "Un de ces droits requis : gestion-academique.etudiants.consulter ou gestion-academique.preinscriptions.consulter. ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Étudiant introuvable"
@@ -1821,7 +1821,7 @@
                         "description": "Statistiques et liste paginée du registre"
                     },
                     "403": {
-                        "description": "Réservé à ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Droit requis : gestion-academique.etudiants.consulter. ADMIN passe toujours."
                     },
                     "422": {
                         "description": "Filtres invalides"
@@ -1891,7 +1891,7 @@
                         "description": "Affectation mise à jour"
                     },
                     "403": {
-                        "description": "Réservé à ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Droit requis : gestion-academique.etudiants.modifier. ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Étudiant ou inscription introuvable"
@@ -1962,7 +1962,7 @@
                 "operationId": "listerAnneesAcademiques",
                 "responses": {
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Un de ces droits requis : planification.calendrier-academique.consulter ou planification.repartition-horaire.consulter. Lecture ouverte aussi aux roles SECRETAIRE_ACADEMIQUE, DIRECTION, GESTIONNAIRE (lecteurs d avant la matrice). ADMIN passe toujours."
                     },
                     "200": {
                         "description": "Liste des années académiques"
@@ -1991,7 +1991,7 @@
                 },
                 "responses": {
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Droit requis : planification.calendrier-academique.creer. ADMIN passe toujours."
                     },
                     "201": {
                         "description": "Année créée"
@@ -2025,7 +2025,7 @@
                 ],
                 "responses": {
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Un de ces droits requis : planification.calendrier-academique.consulter ou planification.repartition-horaire.consulter. Lecture ouverte aussi aux roles SECRETAIRE_ACADEMIQUE, DIRECTION, GESTIONNAIRE (lecteurs d avant la matrice). ADMIN passe toujours."
                     },
                     "200": {
                         "description": "Année trouvée"
@@ -2067,7 +2067,7 @@
                 },
                 "responses": {
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Un de ces droits requis : planification.calendrier-academique.modifier ou planification.calendrier-academique.activer-annee. ADMIN passe toujours."
                     },
                     "200": {
                         "description": "Année modifiée"
@@ -2099,7 +2099,7 @@
                 ],
                 "responses": {
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Droit requis : planification.calendrier-academique.modifier. ADMIN passe toujours."
                     },
                     "200": {
                         "description": "Année supprimée"
@@ -2141,7 +2141,7 @@
                 },
                 "responses": {
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Un de ces droits requis : planification.calendrier-academique.modifier ou planification.calendrier-academique.activer-annee. ADMIN passe toujours."
                     },
                     "200": {
                         "description": "Année modifiée"
@@ -2178,7 +2178,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Un de ces droits requis : planification.calendrier-academique.consulter ou planification.repartition-horaire.consulter. Lecture ouverte aussi aux roles SECRETAIRE_ACADEMIQUE, DIRECTION, GESTIONNAIRE (lecteurs d avant la matrice). ADMIN passe toujours."
                     },
                     "200": {
                         "description": "Année et calendrier complet",
@@ -2238,7 +2238,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Un de ces droits requis : planification.calendrier-academique.creer ou planification.calendrier-academique.modifier. ADMIN passe toujours."
                     },
                     "200": {
                         "description": "Calendrier remplacé intégralement",
@@ -2305,7 +2305,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Un de ces droits requis : planification.calendrier-academique.creer ou planification.calendrier-academique.modifier. ADMIN passe toujours."
                     },
                     "201": {
                         "description": "Calendrier créé",
@@ -2359,7 +2359,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Un de ces droits requis : planification.calendrier-academique.creer ou planification.calendrier-academique.modifier. ADMIN passe toujours."
                     },
                     "200": {
                         "description": "Calendrier et périodes supprimés",
@@ -5207,7 +5207,7 @@
                     "Autorisations des évaluations"
                 ],
                 "summary": "Autoriser un étudiant absent à être évalué",
-                "description": "ADMIN, DIRECTION, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Absence sur séance réalisée avec présence validée requise. Auteur, date et motif conservés. Toutes les absences concernées doivent être autorisées pour la saisie par cours ou matière. Ne rouvre pas une feuille transmise et ne modifie pas les présences.",
+                "description": "Droit requis : notes.corrections.autoriser. ADMIN passe toujours. Absence sur séance réalisée avec présence validée requise. Auteur, date et motif conservés. Toutes les absences concernées doivent être autorisées pour la saisie par cours ou matière. Ne rouvre pas une feuille transmise et ne modifie pas les présences.",
                 "operationId": "3ccfea6c36e9fbe79829d48ed45860d0",
                 "parameters": [
                     {
@@ -6179,7 +6179,7 @@
                     "Configuration école"
                 ],
                 "summary": "Enregistrer les informations de l’école en JSON",
-                "description": "Alias de PATCH : mise a jour partielle, champs omis conserves. ADMIN ou DIRECTION. Pour les fichiers utiliser POST multipart/form-data.",
+                "description": "Alias de PATCH : mise a jour partielle, champs omis conserves. Droit requis : parametres.parametrage-systeme.modifier. ADMIN passe toujours. Pour les fichiers utiliser POST multipart/form-data.",
                 "operationId": "mettreAJourConfigurationEcole",
                 "requestBody": {
                     "required": true,
@@ -6226,7 +6226,7 @@
                     "Configuration école"
                 ],
                 "summary": "Créer ou modifier la configuration et ses images",
-                "description": "ADMIN ou DIRECTION, compte actif. Configuration unique, sans ID. nom_ecole et code_ecole obligatoires au premier enregistrement. Les champs omis sont conserves. Pour supprimer une image, envoyer son champ a null en JSON. POST multipart/form-data pour les fichiers. biographie correspond a l historique de l ecole.",
+                "description": "Droit requis : parametres.parametrage-systeme.modifier. ADMIN passe toujours. Configuration unique, sans ID. nom_ecole et code_ecole obligatoires au premier enregistrement. Les champs omis sont conserves. Pour supprimer une image, envoyer son champ a null en JSON. POST multipart/form-data pour les fichiers. biographie correspond a l historique de l ecole.",
                 "operationId": "enregistrerConfigurationEcole",
                 "requestBody": {
                     "required": true,
@@ -6291,7 +6291,7 @@
                     "Configuration école"
                 ],
                 "summary": "Modifier les informations de l’école en JSON",
-                "description": "ADMIN ou DIRECTION. Memes regles que POST. Champs omis conserves. Champs facultatifs effacables avec null. Images a envoyer avec POST multipart/form-data.",
+                "description": "Droit requis : parametres.parametrage-systeme.modifier. ADMIN passe toujours. Memes regles que POST. Champs omis conserves. Champs facultatifs effacables avec null. Images a envoyer avec POST multipart/form-data.",
                 "operationId": "modifierConfigurationEcole",
                 "requestBody": {
                     "required": true,
@@ -6586,7 +6586,7 @@
                 "tags": [
                     "Corrections des notes"
                 ],
-                "summary": "Appliquer les corrections selectionnees de la feuille (secretariat, ADMIN)",
+                "summary": "Appliquer les corrections selectionnees de la feuille (droit notes.corrections.autoriser)",
                 "description": "Envoyer evaluation et ids_corrections_applicables du GET dans ids_corrections. Maximum 100. Toutes les corrections doivent appartenir au groupe et etre applicables. Transaction atomique : une erreur annule tout, y compris traces et notes. Pas de decision de direction requise. Les corrections nouvellement arrivees ne sont pas incluses implicitement.",
                 "operationId": "c30a251b682dd9d417c84d128ea27df7",
                 "parameters": [
@@ -6630,7 +6630,7 @@
                         }
                     },
                     "403": {
-                        "description": "Seuls ADMIN et le secretariat peuvent appliquer."
+                        "description": "Droit requis : notes.corrections.autoriser. ADMIN passe toujours."
                     },
                     "422": {
                         "description": "Selection, etat ou note initiale invalide."
@@ -6648,7 +6648,7 @@
                 "tags": [
                     "Corrections des notes"
                 ],
-                "summary": "Rejeter les corrections selectionnees avec motif (secretariat, ADMIN)",
+                "summary": "Rejeter les corrections selectionnees avec motif (droit notes.corrections.refuser)",
                 "description": "Envoyer evaluation, ids_corrections_rejetables du GET dans ids_corrections et motif. Rejet atomique, sans changer les notes.",
                 "operationId": "fcb9ff876e4cc2c9f8cd587e300c4ac3",
                 "parameters": [
@@ -6710,7 +6710,7 @@
                         }
                     },
                     "403": {
-                        "description": "Seuls ADMIN et le secretariat peuvent rejeter."
+                        "description": "Droit requis : notes.corrections.refuser. ADMIN passe toujours."
                     },
                     "422": {
                         "description": "Motif, selection ou etat invalide."
@@ -6796,7 +6796,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Pagination Laravel : data, current_page, total et liens. Chaque correction inclut demandeur (id, nom, prenoms, role), etudiant, evaluation, feuille_notes (matiere, cours, promotion et niveau), actions (peut_valider, peut_rejeter, peut_transmettre_direction, peut_appliquer). peut_appliquer est vrai pour le secretariat et ADMIN des en_attente ; peut_transmettre_direction est faux. Une ligne par note corrigee."
+                        "description": "Pagination Laravel : data, current_page, total et liens. Chaque correction inclut demandeur (id, nom, prenoms, role), etudiant, evaluation, feuille_notes (matiere, cours, promotion et niveau), actions (peut_valider, peut_rejeter, peut_transmettre_direction, peut_appliquer). peut_appliquer est vrai, des en_attente, pour qui detient notes.corrections.autoriser ; peut_transmettre_direction est faux. Une ligne par note corrigee."
                     },
                     "401": {
                         "description": "Non authentifié."
@@ -6921,7 +6921,7 @@
                     "Corrections des notes"
                 ],
                 "summary": "Autoriser une demande de correction",
-                "description": "Alias de /autoriser. ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE ou DIRECTION : en_attente ou transmise_direction vers autorisee. Etape facultative : le secretariat peut directement appeler /appliquer.",
+                "description": "Alias de /autoriser. Droit requis : notes.corrections.autoriser. ADMIN passe toujours. en_attente ou transmise_direction vers autorisee. Etape facultative : qui detient ce droit peut directement appeler /appliquer.",
                 "operationId": "a818e4301e865adaca1fc9c5e73f8f74",
                 "parameters": [
                     {
@@ -7020,8 +7020,8 @@
                 "tags": [
                     "Corrections des notes"
                 ],
-                "summary": "Verifier et appliquer directement une correction (ADMIN, secretariat)",
-                "description": "Sans corps. ADMIN, SECRETARIAT et SECRETAIRE_ACADEMIQUE peuvent appliquer directement une demande en_attente, autorisee ou dans l ancien statut transmise_direction. Aucune autorisation de direction requise. Verifie la note initiale, autorise si necessaire puis met a jour la note dans une transaction. Trace acteur et dates. La reponse contient correction : note_initiale, note_proposee, note_actuelle, note_finale, statut appliquee, autorisee_par, appliquee_par, dates, etudiant, demandeur, evaluation, feuille_notes et actions actualisees. Refuse une seconde application ou une note modifiee depuis la demande.",
+                "summary": "Verifier et appliquer directement une correction (droit notes.corrections.autoriser)",
+                "description": "Sans corps. Droit requis : notes.corrections.autoriser. ADMIN passe toujours. Qui detient ce droit peut appliquer directement une demande en_attente, autorisee ou dans l ancien statut transmise_direction. Aucune autorisation de direction requise. Verifie la note initiale, autorise si necessaire puis met a jour la note dans une transaction. Trace acteur et dates. La reponse contient correction : note_initiale, note_proposee, note_actuelle, note_finale, statut appliquee, autorisee_par, appliquee_par, dates, etudiant, demandeur, evaluation, feuille_notes et actions actualisees. Refuse une seconde application ou une note modifiee depuis la demande.",
                 "operationId": "71f792d0a09f3b35a78aa6e52f117d0b",
                 "parameters": [
                     {
@@ -7414,7 +7414,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Droit requis : planification.repartition-horaire.consulter. Lecture ouverte aussi aux roles SECRETAIRE_ACADEMIQUE, DIRECTION (lecteurs d avant la matrice). ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Ressource introuvable"
@@ -7472,7 +7472,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Accès réservé aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Droit requis : planification.repartition-horaire.modifier. ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Ressource introuvable"
@@ -7590,7 +7590,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Droit requis : planification.repartition-horaire.consulter. Lecture ouverte aussi aux roles SECRETAIRE_ACADEMIQUE, DIRECTION (lecteurs d avant la matrice). ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Ressource introuvable"
@@ -7650,7 +7650,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Accès r?servé aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Droit requis : planification.repartition-horaire.consulter. Lecture ouverte aussi aux roles SECRETAIRE_ACADEMIQUE, DIRECTION (lecteurs d avant la matrice). ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Ressource introuvable"
@@ -7718,7 +7718,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Accès réservé aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Droit requis : planification.repartition-horaire.modifier. ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Ressource introuvable"
@@ -7776,7 +7776,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Droit requis : planification.repartition-horaire.modifier. ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Ressource introuvable"
@@ -7844,7 +7844,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Accès réservé aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Droit requis : planification.repartition-horaire.modifier. ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Ressource introuvable"
@@ -10474,7 +10474,7 @@
                     "Administration des notes"
                 ],
                 "summary": "Consulter les feuilles de notes transmises par les enseignants",
-                "description": "Accessible aux roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Circuit : transmise → validee_secretariat → transmise_direction → validee_direction. Un refus du secretariat (rejetee_secretariat) rouvre la saisie enseignant et exige une nouvelle transmission. Un rejet du secretariat ou de la direction rouvre la saisie de la seule feuille rejetee pour correction et nouvelle transmission. Les brouillons sont exclus. Ces validations ne publient pas les notes aux etudiants.",
+                "description": "Un de ces droits requis : notes.supervision-notes.consulter ou notes.validation-notes.consulter ou notes.corrections.consulter. ADMIN passe toujours. Circuit : transmise → validee_secretariat → transmise_direction → validee_direction. Un refus du secretariat (rejetee_secretariat) rouvre la saisie enseignant et exige une nouvelle transmission. Un rejet du secretariat ou de la direction rouvre la saisie de la seule feuille rejetee pour correction et nouvelle transmission. Les brouillons sont exclus. Ces validations ne publient pas les notes aux etudiants.",
                 "operationId": "listerNotesTransmisesAdministration",
                 "parameters": [
                     {
@@ -10618,7 +10618,7 @@
                         "description": "Authentification requise."
                     },
                     "403": {
-                        "description": "Acces reserve a l administration."
+                        "description": "Un de ces droits requis : notes.supervision-notes.consulter ou notes.validation-notes.consulter ou notes.corrections.consulter. ADMIN passe toujours."
                     },
                     "422": {
                         "description": "Filtres invalides."
@@ -10668,7 +10668,7 @@
                         "description": "Authentification requise."
                     },
                     "403": {
-                        "description": "Acces reserve a l administration."
+                        "description": "Un de ces droits requis : notes.supervision-notes.consulter ou notes.validation-notes.consulter ou notes.corrections.consulter. ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Feuille inexistante ou non transmise."
@@ -10687,7 +10687,7 @@
                     "Administration des notes"
                 ],
                 "summary": "Valider une feuille au secretariat academique (ancien circuit)",
-                "description": "ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Accepte les statuts transmise et rejetee_direction et passe a validee_secretariat. Une correction en cours bloque la transition.",
+                "description": "Droit requis : notes.supervision-notes.transmettre. ADMIN passe toujours. Accepte les statuts transmise et rejetee_direction et passe a validee_secretariat. Une correction en cours bloque la transition.",
                 "operationId": "validerNotesSecretariat",
                 "parameters": [
                     {
@@ -10730,7 +10730,7 @@
                     "Administration des notes"
                 ],
                 "summary": "Refuser une feuille et la renvoyer a l enseignant",
-                "description": "ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Accepte transmise, validee_secretariat ou rejetee_direction. Passe a rejetee_secretariat et rouvre la saisie enseignant. Motif obligatoire conserve dans l historique.",
+                "description": "Droit requis : notes.supervision-notes.rejeter. ADMIN passe toujours. Accepte transmise, validee_secretariat ou rejetee_direction. Passe a rejetee_secretariat et rouvre la saisie enseignant. Motif obligatoire conserve dans l historique.",
                 "operationId": "rejeterNotesSecretariat",
                 "parameters": [
                     {
@@ -10792,7 +10792,7 @@
                     "Administration des notes"
                 ],
                 "summary": "Transmettre une feuille verifiee par le secretariat a la direction",
-                "description": "ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Apres verification, transmettre directement depuis transmise ou rejetee_direction. Accepte aussi validee_secretariat pour les anciennes feuilles. Aucune validation intermediaire requise. Passe a transmise_direction. Les notes restent verrouillees pour l enseignant.",
+                "description": "Droit requis : notes.supervision-notes.transmettre. ADMIN passe toujours. Apres verification, transmettre directement depuis transmise ou rejetee_direction. Accepte aussi validee_secretariat pour les anciennes feuilles. Aucune validation intermediaire requise. Passe a transmise_direction. Les notes restent verrouillees pour l enseignant.",
                 "operationId": "transmettreNotesDirection",
                 "parameters": [
                     {
@@ -10834,7 +10834,7 @@
                     "Administration des notes"
                 ],
                 "summary": "Valider une feuille par la direction",
-                "description": "ADMIN, DIRECTION. Seul le statut transmise_direction est accepte. Passe a validee_direction. Une correction appliquee ensuite renvoie la feuille au statut transmise pour un nouveau controle du secretariat.",
+                "description": "Droit requis : notes.validation-notes.valider. ADMIN passe toujours. Seul le statut transmise_direction est accepte. Passe a validee_direction. Une correction appliquee ensuite renvoie la feuille au statut transmise pour un nouveau controle du secretariat.",
                 "operationId": "validerNotesDirection",
                 "parameters": [
                     {
@@ -10876,7 +10876,7 @@
                     "Administration des notes"
                 ],
                 "summary": "Rejeter une feuille avec motif et la renvoyer au secretariat",
-                "description": "ADMIN, DIRECTION. Seul le statut transmise_direction est accepte. Passe a rejetee_direction. La saisie de cette feuille est rouverte pour l enseignant, qui peut corriger puis retransmettre au secretariat.",
+                "description": "Droit requis : notes.validation-notes.rejeter. ADMIN passe toujours. Seul le statut transmise_direction est accepte. Passe a rejetee_direction. La saisie de cette feuille est rouverte pour l enseignant, qui peut corriger puis retransmettre au secretariat.",
                 "operationId": "rejeterNotesDirection",
                 "parameters": [
                     {
@@ -11459,7 +11459,7 @@
                     "Rattrapages"
                 ],
                 "summary": "Consulter le plan de rattrapage et ses indicateurs",
-                "description": "ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE ou DIRECTION actif. Absences sur seances realisees et feuilles de presence validees. Une ligne par etudiant et seance manquee, avec matiere, cours facultatif, module, promotion origine et session retenue. La programmation ne change pas la promotion origine ni la presence initiale. Statistiques calculees apres recherche et filtres de contexte, avant filtre de statut et pagination. Part non planifiee = non_planifies / (non_planifies + inscrits) * 100, zero si aucun reste a faire. effectue signifie cours termine ou programmation realisee ; ne garantit pas une note saisie.",
+                "description": "Un de ces droits requis : progression.rattrapages.consulter ou progression.passage-de-niveau.consulter. ADMIN passe toujours. Absences sur seances realisees et feuilles de presence validees. Une ligne par etudiant et seance manquee, avec matiere, cours facultatif, module, promotion origine et session retenue. La programmation ne change pas la promotion origine ni la presence initiale. Statistiques calculees apres recherche et filtres de contexte, avant filtre de statut et pagination. Part non planifiee = non_planifies / (non_planifies + inscrits) * 100, zero si aucun reste a faire. effectue signifie cours termine ou programmation realisee ; ne garantit pas une note saisie.",
                 "operationId": "d64baf6bb445cad61a9761d5ac710066",
                 "parameters": [
                     {
@@ -11602,7 +11602,7 @@
                     "Rattrapages"
                 ],
                 "summary": "Inscrire un etudiant a une session de rattrapage",
-                "description": "ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE ou DIRECTION. La date, les horaires, l enseignant et la salle sont derives de la session ; ne pas les fournir. La session doit correspondre au meme enseignement et etre prevue, non passee. Une programmation par absence. POST /administration/rattrapages accepte aussi ce format. Pour reprogrammer apres annulation, PUT /administration/rattrapages/{id} avec id_seance_rattrapage et observations facultatives, sans id_cours_a_faire. Une inscription ne valide pas le cours et ne cree aucune note.",
+                "description": "Droit requis : progression.rattrapages.inscrire. ADMIN passe toujours. La date, les horaires, l enseignant et la salle sont derives de la session ; ne pas les fournir. La session doit correspondre au meme enseignement et etre prevue, non passee. Une programmation par absence. POST /administration/rattrapages accepte aussi ce format. Pour reprogrammer apres annulation, PUT /administration/rattrapages/{id} avec id_seance_rattrapage et observations facultatives, sans id_cours_a_faire. Une inscription ne valide pas le cours et ne cree aucune note.",
                 "operationId": "1ac17777a0aea440e45b93ed7771d24e",
                 "requestBody": {
                     "required": true,
@@ -11806,7 +11806,7 @@
                     "Publication des bulletins"
                 ],
                 "summary": "Publier un bulletin existant",
-                "description": "ADMIN, DIRECTION, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Aucun corps requis. Passe un Brouillon ou Généré à Publié avec date_publication et updated_by. Un bulletin déjà publié conserve sa date et son auteur. Ne génère pas de bulletin et ne recalcule pas les notes.",
+                "description": "Droit requis : notes.validation-notes.valider. ADMIN passe toujours. Aucun corps requis. Passe un Brouillon ou Généré à Publié avec date_publication et updated_by. Un bulletin déjà publié conserve sa date et son auteur. Ne génère pas de bulletin et ne recalcule pas les notes.",
                 "operationId": "b055691dda2a20f3431941810cab7674",
                 "parameters": [
                     {
@@ -11960,7 +11960,7 @@
                         "description": "Authentification requise."
                     },
                     "403": {
-                        "description": "Rôle ADMIN requis."
+                        "description": "Droit requis : planification.publication-programme.consulter. ADMIN passe toujours."
                     },
                     "422": {
                         "description": "Filtres invalides."
@@ -12015,7 +12015,7 @@
                         "description": "Authentification requise."
                     },
                     "403": {
-                        "description": "Rôle ADMIN requis."
+                        "description": "Droit requis : planification.publication-programme.publier. ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Calendrier introuvable ou année supprimée."
@@ -12073,7 +12073,7 @@
                         "description": "Authentification requise."
                     },
                     "403": {
-                        "description": "Rôle ADMIN requis."
+                        "description": "Droit requis : planification.publication-programme.publier. ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Calendrier introuvable ou année supprimée."
@@ -12095,7 +12095,7 @@
                     "Rattrapages"
                 ],
                 "summary": "Lister les programmations de rattrapage",
-                "description": "Roles ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE, DIRECTION. Pagination Laravel data, total, current_page. Relations cours_a_faire (etudiant, seance, cours, matiere), enseignant et salle.",
+                "description": "Un de ces droits requis : progression.rattrapages.consulter ou progression.passage-de-niveau.consulter. ADMIN passe toujours. Pagination Laravel data, total, current_page. Relations cours_a_faire (etudiant, seance, cours, matiere), enseignant et salle.",
                 "operationId": "listerRattrapages",
                 "parameters": [
                     {
@@ -12605,7 +12605,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Pagination Laravel. ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE, DIRECTION."
+                        "description": "Pagination Laravel. Un de ces droits requis : notes.supervision-notes.consulter ou notes.validation-notes.consulter ou notes.corrections.consulter. ADMIN passe toujours."
                     }
                 },
                 "security": [
@@ -13310,7 +13310,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Un de ces droits requis : planification.salles.consulter ou planification.repartition-horaire.consulter. Lecture ouverte aussi aux roles SECRETAIRE_ACADEMIQUE, DIRECTION, GESTIONNAIRE (lecteurs d avant la matrice). ADMIN passe toujours."
                     },
                     "422": {
                         "description": "Validation invalide",
@@ -13368,7 +13368,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Droit requis : planification.salles.creer. ADMIN passe toujours."
                     },
                     "422": {
                         "description": "Validation invalide",
@@ -13426,7 +13426,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Un de ces droits requis : planification.salles.consulter ou planification.repartition-horaire.consulter. Lecture ouverte aussi aux roles SECRETAIRE_ACADEMIQUE, DIRECTION, GESTIONNAIRE (lecteurs d avant la matrice). ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Salle introuvable"
@@ -13488,7 +13488,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Un de ces droits requis : planification.salles.modifier ou planification.salles.archiver. ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Salle introuvable"
@@ -13547,7 +13547,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Droit requis : planification.salles.archiver. ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Salle introuvable"
@@ -13609,7 +13609,7 @@
                         "description": "Authentification requise"
                     },
                     "403": {
-                        "description": "Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION"
+                        "description": "Un de ces droits requis : planification.salles.modifier ou planification.salles.archiver. ADMIN passe toujours."
                     },
                     "404": {
                         "description": "Salle introuvable"
@@ -17399,7 +17399,7 @@
                         "nullable": true
                     },
                     "statut": {
-                        "description": "Statut selon le role : a_verifier au secretariat ; en_attente, validee ou rejetee a la direction. ADMIN conserve le statut interne.",
+                        "description": "Statut selon la vue du compte, deduite de ses droits : a_verifier pour qui ne tient que la supervision ; en_attente, validee ou rejetee pour qui ne tient que la validation. Qui tient les deux (ADMIN compris) lit le statut interne. Lire plutot statut_workflow.",
                         "type": "string",
                         "enum": [
                             "a_verifier",
@@ -18944,7 +18944,7 @@
         },
         {
             "name": "Bulletin de notes calcule",
-            "description": "Bulletin par etudiant pour le secretariat et la direction, calcule sur les notes definitivement validees. Accessible aux comptes actifs ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION. Ne cree ni ne publie de bulletin enregistre."
+            "description": "Bulletin par etudiant pour le secretariat et la direction, calcule sur les notes definitivement validees. Compte actif ; un de ces droits requis : notes.supervision-notes.consulter ou notes.validation-notes.consulter ou notes.corrections.consulter. ADMIN passe toujours. Ne cree ni ne publie de bulletin enregistre."
         },
         {
             "name": "Comptes",
@@ -18952,7 +18952,7 @@
         },
         {
             "name": "Corrections des notes",
-            "description": "Circuit : demande enseignant, verification par le secretariat, puis application directe ou rejet avec motif. Aucune autorisation de la direction requise. POST /{id}/appliquer autorise et applique atomiquement une demande en_attente pour ADMIN, SECRETARIAT ou SECRETAIRE_ACADEMIQUE. Les decisions sont tracees. Les routes historiques restent disponibles."
+            "description": "Circuit : demande enseignant, verification par le secretariat, puis application directe ou rejet avec motif. Aucune autorisation de la direction requise. POST /{id}/appliquer autorise et applique atomiquement une demande en_attente pour qui detient notes.corrections.autoriser, quel que soit son role. Les decisions sont tracees. Les routes historiques restent disponibles."
         },
         {
             "name": "Dossier étudiant",
@@ -18968,7 +18968,7 @@
         },
         {
             "name": "Saisie des notes",
-            "description": "La saisie est liee a une seance precise. Fournir id_seance, id_matiere (ou cours dans le chemin), id_promotion et id_annee_academique. La seance doit appartenir a l enseignant connecte et correspondre au contexte. Une affectation active et un creneau correspondant sont requis.\r\nGET /enseignant/notes/feuille retourne les etudiants et leur eligibilite sur cette seance. GET /enseignant/notes/tableau retourne directement les notes de cette seance. Sans id_seance, GET consulte uniquement les anciennes feuilles sans seance ; aucune attribution automatique n est faite.\r\nPUT enregistre et transmet immediatement la feuille de la seance. id_seance est obligatoire pour PUT et POST /transmettre. Seule la presence de la seance choisie est controlee : seance realisee, presences validees et completes, etudiant present ou absence autorisee. Les autres seances ne bloquent pas la saisie.\r\nChaque seance a sa propre feuille et son verrouillage. Envoyer toutes les evaluations ensemble dans notes[].evaluation pour une matiere. Tous les etudiants evaluables doivent avoir au moins une note ; sinon la requete entiere est annulee. La moyenne matiere directe est la moyenne simple des notes de toutes ses seances dans la meme promotion et annee. Les notes par cours restent separees.\r\nApres succes, statut=transmise et saisie_ouverte=false. Une correction autorisee ou un rejet du secretariat ou de la direction permet de corriger les notes. Les transmissions et leurs decisions restent suivies via /enseignant/transmissions-notes et /administration/notes-transmises. Aucune publication aux etudiants."
+            "description": "La saisie est liee a une seance precise. Fournir id_seance, id_matiere (ou cours dans le chemin), id_promotion et id_annee_academique. La seance doit appartenir a l enseignant connecte et correspondre au contexte. Une affectation active et un creneau correspondant sont requis.\nGET /enseignant/notes/feuille retourne les etudiants et leur eligibilite sur cette seance. GET /enseignant/notes/tableau retourne directement les notes de cette seance. Sans id_seance, GET consulte uniquement les anciennes feuilles sans seance ; aucune attribution automatique n est faite.\nPUT enregistre et transmet immediatement la feuille de la seance. id_seance est obligatoire pour PUT et POST /transmettre. Seule la presence de la seance choisie est controlee : seance realisee, presences validees et completes, etudiant present ou absence autorisee. Les autres seances ne bloquent pas la saisie.\nChaque seance a sa propre feuille et son verrouillage. Envoyer toutes les evaluations ensemble dans notes[].evaluation pour une matiere. Tous les etudiants evaluables doivent avoir au moins une note ; sinon la requete entiere est annulee. La moyenne matiere directe est la moyenne simple des notes de toutes ses seances dans la meme promotion et annee. Les notes par cours restent separees.\nApres succes, statut=transmise et saisie_ouverte=false. Une correction autorisee ou un rejet du secretariat ou de la direction permet de corriger les notes. Les transmissions et leurs decisions restent suivies via /enseignant/transmissions-notes et /administration/notes-transmises. Aucune publication aux etudiants."
         },
         {
             "name": "Permissions",
@@ -18980,11 +18980,11 @@
         },
         {
             "name": "Tableau des notes par matiere",
-            "description": "Tableaux des notes definitivement validees, pour le secretariat et la direction. Mise a jour automatique a la lecture apres validation direction. Compte actif requis. Accessible a ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE et DIRECTION."
+            "description": "Tableaux des notes definitivement validees, pour le secretariat et la direction. Mise a jour automatique a la lecture apres validation direction. Compte actif requis. Un de ces droits requis : notes.supervision-notes.consulter ou notes.validation-notes.consulter ou notes.corrections.consulter. ADMIN passe toujours."
         },
         {
             "name": "Unités enseignement",
-            "description": "CRUD des UE. Compte actif, rôles ADMIN, SECRETAIRE_ACADEMIQUE, SECRETARIAT ou DIRECTION."
+            "description": "CRUD des UE. Compte actif. Lecture : programme.domaines.consulter ou programme.matieres.consulter (et les roles SECRETAIRE_ACADEMIQUE, SECRETARIAT, DIRECTION, lecteurs d avant la matrice). Ecritures : programme.domaines.creer, modifier ou supprimer. ADMIN passe toujours."
         },
         {
             "name": "Églises",

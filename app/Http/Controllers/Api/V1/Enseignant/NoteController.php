@@ -166,7 +166,7 @@ class NoteController extends Controller
         return ['id_seance' => $cle['id_seance'], 'cours' => $parMatiere ? null : $cours->only(['id', 'libelle']),
             'module' => $parMatiere ? null : $cours->module->only(['id', 'libelle']), 'matiere' => $matiere->only(['id', 'libelle']),
             'promotion' => $promotion->only(['id', 'code', 'num_promotion']), 'id_annee_academique' => $cle['id_annee_academique'],
-            'statut' => ! $feuille || $feuille->statut === 'brouillon' ? 'non_transmise' : $feuille->statutPourRole('ENSEIGNANT'),
+            'statut' => ! $feuille || $feuille->statut === 'brouillon' ? 'non_transmise' : $feuille->statutPourVue('enseignant'),
             'statut_workflow' => $feuille?->statut ?? 'brouillon',
             'motif' => $feuille?->motifRejet(),
             'date_transmission' => $feuille?->date_transmission,

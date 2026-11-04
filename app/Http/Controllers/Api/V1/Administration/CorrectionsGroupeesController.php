@@ -90,7 +90,8 @@ class CorrectionsGroupeesController extends CorrectionNoteController
         $statut = $actives->isNotEmpty() ? 'en_attente' : ($demandes->pluck('statut')->unique()->count() === 1 ? $demandes->first()->statut : 'mixte');
         $notes = $feuille->notes->filter(fn ($n) => $n->evaluation === $evaluation);
         $moyenne = $notes->avg('note');
-        $editable = in_array($request->user()->role?->code, ['ADMIN', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true);
+        $peutAppliquer = $this->appliqueDirectement($request);
+        $peutRejeter = $request->user()->detientUnDroit('notes.corrections.refuser');
         $enseignants = $demandes->pluck('demandeur')->filter()->unique('id')->map(fn ($u) => $u->only(['id', 'nom', 'prenoms']))->values();
         $historique = DB::table('traces_corrections_notes')->whereIn('id_correction', $demandes->pluck('id'))->orderBy('id')->get();
 
@@ -117,7 +118,7 @@ class CorrectionsGroupeesController extends CorrectionNoteController
                 'etudiant' => $n->etudiant?->only(['id', 'matricule', 'nom', 'prenoms']),
                 'corrections' => $demandes->where('id_note', $n->id)->map(fn ($c) => $this->presenterAdministration($request, $c))->values(),
             ])->values(),
-            'actions' => ['peut_appliquer' => $editable && $actives->isNotEmpty(), 'peut_rejeter' => $editable && $rejetables->isNotEmpty()],
+            'actions' => ['peut_appliquer' => $peutAppliquer && $actives->isNotEmpty(), 'peut_rejeter' => $peutRejeter && $rejetables->isNotEmpty()],
             'historique' => $historique,
         ];
     }

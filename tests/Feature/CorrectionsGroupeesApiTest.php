@@ -139,4 +139,33 @@ class CorrectionsGroupeesApiTest extends TestCase
         $users['SECRETAIRE_ACADEMIQUE']->update(['is_active' => false]);
         $this->getJson($base)->assertForbidden();
     }
+
+    public function test_tout_detenteur_du_droit_applique_le_groupe_quel_que_soit_son_role(): void
+    {
+        [$users, $feuille, $corrections] = $this->contexte();
+        $base = '/api/v1/administration/corrections-notes/groupes/'.$feuille->id;
+        $participation = $corrections->take(2)->pluck('id')->all();
+
+        // La Direction détient notes.corrections.autoriser : « Autoriser la
+        // correction » applique, comme au secrétariat.
+        Sanctum::actingAs($users['DIRECTION']);
+        $this->getJson($base.'?evaluation=Participation')->assertOk()
+            ->assertJsonPath('feuille_corrections.actions.peut_appliquer', true)
+            ->assertJsonPath('feuille_corrections.actions.peut_rejeter', true);
+        $this->postJson($base.'/appliquer', ['evaluation' => 'Participation', 'ids_corrections' => $participation])
+            ->assertOk()->assertJsonPath('feuille_corrections.statut', 'appliquee');
+
+        // Un rôle personnalisé qui ne détient que le refus : rejeter oui,
+        // appliquer non.
+        Role::create(['code' => 'ARBITRE', 'libelle' => 'Arbitre']);
+        $this->accorderDroits('ARBITRE', 'notes.corrections.consulter', 'notes.corrections.refuser');
+        Sanctum::actingAs(User::factory()->create(['id_role' => Role::where('code', 'ARBITRE')->value('id')]));
+        $expose = [$corrections->last()->id];
+        $this->getJson($base.'?evaluation=Expose')->assertOk()
+            ->assertJsonPath('feuille_corrections.actions.peut_appliquer', false)
+            ->assertJsonPath('feuille_corrections.actions.peut_rejeter', true);
+        $this->postJson($base.'/appliquer', ['evaluation' => 'Expose', 'ids_corrections' => $expose])->assertForbidden();
+        $this->postJson($base.'/rejeter', ['evaluation' => 'Expose', 'ids_corrections' => $expose, 'motif' => 'Non justifiée'])
+            ->assertOk()->assertJsonPath('feuille_corrections.statut', 'rejetee');
+    }
 }

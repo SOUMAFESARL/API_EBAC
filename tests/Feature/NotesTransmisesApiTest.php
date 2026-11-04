@@ -366,4 +366,54 @@ class NotesTransmisesApiTest extends TestCase
         $this->postJson('/api/v1/administration/corrections-notes/'.$response->json('correction.id').'/rejeter', ['motif' => 'Non justifie'])->assertOk();
         $this->postJson($url.'/valider-secretariat')->assertOk();
     }
+
+    public function test_un_role_personnalise_dote_des_droits_obtient_les_gestes_du_circuit(): void
+    {
+        [$users, $feuille] = $this->contexte();
+        // Un rôle inventé par l'Administrateur : ni secrétariat ni direction,
+        // seulement les droits cochés de la supervision et de la validation.
+        Role::create(['code' => 'CONTROLE_NOTES', 'libelle' => 'Contrôle des notes']);
+        $this->accorderDroits('CONTROLE_NOTES',
+            'notes.supervision-notes.consulter', 'notes.supervision-notes.transmettre',
+            'notes.validation-notes.consulter', 'notes.validation-notes.valider');
+        $controleur = User::factory()->create(['id_role' => Role::where('code', 'CONTROLE_NOTES')->value('id')]);
+        Sanctum::actingAs($controleur);
+
+        $this->getJson($this->url($feuille))->assertOk()
+            ->assertJsonPath('feuille_notes.actions.peut_transmettre_direction', true)
+            // Le rejet n'est pas coché : le geste n'est pas offert.
+            ->assertJsonPath('feuille_notes.actions.peut_rejeter_secretariat', false);
+        $this->postJson($this->url($feuille).'/transmettre-direction')->assertOk()
+            ->assertJsonPath('feuille_notes.actions.peut_valider_direction', true)
+            ->assertJsonPath('feuille_notes.actions.peut_rejeter_direction', false);
+        $this->postJson($this->url($feuille).'/valider-direction')->assertOk()
+            ->assertJsonPath('feuille_notes.verrouillee', true);
+    }
+
+    public function test_un_role_d_origine_prive_d_un_droit_perd_le_geste(): void
+    {
+        [$users, $feuille] = $this->contexte();
+        // Le secrétariat garde la lecture mais perd la transmission.
+        $this->accorderDroits('SECRETARIAT', 'notes.supervision-notes.consulter');
+        Role::where('code', 'SECRETARIAT')->firstOrFail()->permissions()
+            ->detach(\App\Models\Permission::where('code', 'notes.supervision-notes.transmettre')->pluck('id'));
+        Sanctum::actingAs($users['SECRETARIAT']->fresh());
+
+        $this->getJson($this->url($feuille))->assertOk()
+            ->assertJsonPath('feuille_notes.actions.peut_transmettre_direction', false);
+        $this->postJson($this->url($feuille).'/transmettre-direction')->assertForbidden();
+    }
+
+    public function test_le_statut_affiche_suit_la_vue_des_droits(): void
+    {
+        [$users, $feuille] = $this->contexte();
+        Role::create(['code' => 'LECTEUR_SUPERVISION', 'libelle' => 'Lecteur']);
+        $this->accorderDroits('LECTEUR_SUPERVISION', 'notes.supervision-notes.consulter');
+        Sanctum::actingAs(User::factory()->create(['id_role' => Role::where('code', 'LECTEUR_SUPERVISION')->value('id')]));
+
+        // Comme le secrétariat : une feuille transmise se lit « à vérifier ».
+        $this->getJson($this->url($feuille))->assertOk()
+            ->assertJsonPath('feuille_notes.statut', 'a_verifier')
+            ->assertJsonPath('feuille_notes.statut_workflow', 'transmise');
+    }
 }

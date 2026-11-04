@@ -26,7 +26,7 @@ use OpenApi\Attributes as OA;
         new OA\Response(response: 403, description: 'Accès refusé.'),
         new OA\Response(response: 404, description: 'Bulletin introuvable.')])]
 #[OA\Post(path: '/administration/bulletins/{id}/publier', summary: 'Publier un bulletin existant',
-    description: 'ADMIN, DIRECTION, SECRETARIAT, SECRETAIRE_ACADEMIQUE. Aucun corps requis. Passe un Brouillon ou Généré à Publié avec date_publication et updated_by. Un bulletin déjà publié conserve sa date et son auteur. Ne génère pas de bulletin et ne recalcule pas les notes.',
+    description: 'Droit requis : notes.validation-notes.valider. ADMIN passe toujours. Aucun corps requis. Passe un Brouillon ou Généré à Publié avec date_publication et updated_by. Un bulletin déjà publié conserve sa date et son auteur. Ne génère pas de bulletin et ne recalcule pas les notes.',
     tags: ['Publication des bulletins'], security: [['sanctum' => []]],
     parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
     responses: [new OA\Response(response: 200, description: 'message et bulletin publié.'),

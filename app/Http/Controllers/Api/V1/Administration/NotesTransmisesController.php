@@ -26,9 +26,13 @@ class NotesTransmisesController extends Controller
 
     private function presenter(FeuilleNotes $feuille, Request $request): array
     {
-        $role = $request->user()->role->code;
-        $secretariat = in_array($role, ['ADMIN', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'], true);
-        $direction = in_array($role, ['ADMIN', 'DIRECTION'], true);
+        // Les gestes suivent les droits cochés, pas le code du rôle : un
+        // rôle personnalisé doté du droit obtient le même geste.
+        $utilisateur = $request->user();
+        $peutTransmettre = $utilisateur->detientUnDroit('notes.supervision-notes.transmettre');
+        $peutRejeterSecretariat = $utilisateur->detientUnDroit('notes.supervision-notes.rejeter');
+        $peutValider = $utilisateur->detientUnDroit('notes.validation-notes.valider');
+        $peutRejeterDirection = $utilisateur->detientUnDroit('notes.validation-notes.rejeter');
         $controle = in_array($feuille->statut, ['transmise', 'validee_secretariat', 'rejetee_direction'], true);
         $bloquee = (bool) $feuille->correction_en_cours;
         $notesSaisies = $feuille->notes->whereNotNull('note');
@@ -63,13 +67,13 @@ class NotesTransmisesController extends Controller
                     'statut' => $index + 1 < $etape ? 'terminee' : ($index + 1 === $etape ? 'courante' : 'a_venir')])->all(),
             'actions' => [
                 'peut_consulter' => true,
-                'peut_transmettre_direction' => $secretariat && $controle && ! $bloquee,
-                'peut_rejeter_secretariat' => $secretariat && $controle && ! $bloquee,
-                'peut_valider_direction' => $direction && $feuille->statut === 'transmise_direction' && ! $bloquee,
-                'peut_rejeter_direction' => $direction && $feuille->statut === 'transmise_direction' && ! $bloquee,
+                'peut_transmettre_direction' => $peutTransmettre && $controle && ! $bloquee,
+                'peut_rejeter_secretariat' => $peutRejeterSecretariat && $controle && ! $bloquee,
+                'peut_valider_direction' => $peutValider && $feuille->statut === 'transmise_direction' && ! $bloquee,
+                'peut_rejeter_direction' => $peutRejeterDirection && $feuille->statut === 'transmise_direction' && ! $bloquee,
             ],
             ...$feuille->only(['id', 'id_annee_academique', 'id_promotion', 'id_matiere', 'id_cours', 'id_seance', 'statut', 'date_transmission']),
-            'statut' => $feuille->statutPourRole($request->user()->role->code),
+            'statut' => $feuille->statutPourVue(FeuilleNotes::vueDe($utilisateur)),
             'statut_workflow' => $feuille->statut,
             'motif' => $feuille->motifRejet(),
             'annee_academique' => $feuille->anneeAcademique?->only(['id', 'libelle']),
@@ -84,7 +88,7 @@ class NotesTransmisesController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $statuts = FeuilleNotes::statutsPourRole($request->user()->role->code);
+        $statuts = FeuilleNotes::statutsPourVue(FeuilleNotes::vueDe($request->user()));
         $data = $request->validate([
             'search' => ['sometimes', 'string', 'max:255'],
             'id_seance' => ['sometimes', 'integer', 'exists:seances_cahier_texte,id'],

@@ -11,7 +11,7 @@ use OpenApi\Attributes as OA;
         new OA\Response(response: 401, description: 'Authentification requise'), new OA\Response(response: 403, description: 'Compte inactif')])]
 #[OA\Post(path: '/parametres/ecole', operationId: 'enregistrerConfigurationEcole',
     summary: 'Créer ou modifier la configuration et ses images', tags: ['Configuration école'], security: [['sanctum' => []]],
-    description: 'ADMIN ou DIRECTION, compte actif. Configuration unique, sans ID. nom_ecole et code_ecole obligatoires au premier enregistrement. Les champs omis sont conserves. Pour supprimer une image, envoyer son champ a null en JSON. POST multipart/form-data pour les fichiers. biographie correspond a l historique de l ecole.',
+    description: 'Droit requis : parametres.parametrage-systeme.modifier. ADMIN passe toujours. Configuration unique, sans ID. nom_ecole et code_ecole obligatoires au premier enregistrement. Les champs omis sont conserves. Pour supprimer une image, envoyer son champ a null en JSON. POST multipart/form-data pour les fichiers. biographie correspond a l historique de l ecole.',
     requestBody: new OA\RequestBody(required: true, content: [
         new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(ref: '#/components/schemas/ConfigurationEcolePayload')),
         new OA\JsonContent(ref: '#/components/schemas/ConfigurationEcolePayload', example: ['nom_ecole' => 'École Biblique de l’Alliance Chrétienne', 'code_ecole' => 'EBAC', 'ville' => 'Abidjan', 'email' => 'contact@example.com']),
@@ -21,13 +21,13 @@ use OpenApi\Attributes as OA;
         new OA\Response(response: 401, description: 'Authentification requise'), new OA\Response(response: 403, description: 'Compte inactif ou rôle interdit'), new OA\Response(response: 422, description: 'Champs ou fichiers invalides')])]
 #[OA\Patch(path: '/parametres/ecole', operationId: 'modifierConfigurationEcole',
     summary: 'Modifier les informations de l’école en JSON', tags: ['Configuration école'], security: [['sanctum' => []]],
-    description: 'ADMIN ou DIRECTION. Memes regles que POST. Champs omis conserves. Champs facultatifs effacables avec null. Images a envoyer avec POST multipart/form-data.',
+    description: 'Droit requis : parametres.parametrage-systeme.modifier. ADMIN passe toujours. Memes regles que POST. Champs omis conserves. Champs facultatifs effacables avec null. Images a envoyer avec POST multipart/form-data.',
     requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ConfigurationEcolePayload')),
     responses: [new OA\Response(response: 200, description: 'Configuration modifiée', content: new OA\JsonContent(ref: '#/components/schemas/ConfigurationEcoleReponse')),
         new OA\Response(response: 201, description: 'Configuration créée si absente'), new OA\Response(response: 401, description: 'Authentification requise'), new OA\Response(response: 403, description: 'Accès refusé'), new OA\Response(response: 422, description: 'Données invalides')])]
 #[OA\Put(path: '/parametres/ecole', operationId: 'mettreAJourConfigurationEcole',
     summary: 'Enregistrer les informations de l’école en JSON', tags: ['Configuration école'], security: [['sanctum' => []]],
-    description: 'Alias de PATCH : mise a jour partielle, champs omis conserves. ADMIN ou DIRECTION. Pour les fichiers utiliser POST multipart/form-data.',
+    description: 'Alias de PATCH : mise a jour partielle, champs omis conserves. Droit requis : parametres.parametrage-systeme.modifier. ADMIN passe toujours. Pour les fichiers utiliser POST multipart/form-data.',
     requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ConfigurationEcolePayload')),
     responses: [new OA\Response(response: 200, description: 'Configuration modifiée', content: new OA\JsonContent(ref: '#/components/schemas/ConfigurationEcoleReponse')),
         new OA\Response(response: 201, description: 'Configuration créée si absente'), new OA\Response(response: 401, description: 'Authentification requise'), new OA\Response(response: 403, description: 'Accès refusé'), new OA\Response(response: 422, description: 'Données invalides')])]

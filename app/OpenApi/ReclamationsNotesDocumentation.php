@@ -18,7 +18,7 @@ use OpenApi\Attributes as OA;
     parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'reclamation.'), new OA\Response(response: 404, description: 'Réclamation inaccessible.')])]
 #[OA\Get(path: '/administration/reclamations-notes', summary: 'Lister les réclamations des étudiants', tags: ['Réclamations des notes'], security: [['sanctum' => []]],
     parameters: [new OA\Parameter(name: 'statut', in: 'query', schema: new OA\Schema(type: 'string', enum: ['en_attente', 'acceptee', 'rejetee'])), new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100))],
-    responses: [new OA\Response(response: 200, description: 'Pagination Laravel. ADMIN, SECRETARIAT, SECRETAIRE_ACADEMIQUE, DIRECTION.')])]
+    responses: [new OA\Response(response: 200, description: 'Pagination Laravel. Un de ces droits requis : notes.supervision-notes.consulter ou notes.validation-notes.consulter ou notes.corrections.consulter. ADMIN passe toujours.')])]
 #[OA\Get(path: '/administration/reclamations-notes/{id}', summary: 'Consulter une réclamation', tags: ['Réclamations des notes'], security: [['sanctum' => []]],
     parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'reclamation.'), new OA\Response(response: 404, description: 'Introuvable.')])]
 #[OA\Post(path: '/administration/reclamations-notes/{id}/traiter', summary: 'Accepter ou rejeter une réclamation avec réponse',

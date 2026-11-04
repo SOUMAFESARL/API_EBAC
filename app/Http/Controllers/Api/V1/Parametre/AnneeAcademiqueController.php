@@ -15,7 +15,7 @@ use OpenApi\Attributes as OA;
 
 class AnneeAcademiqueController extends Controller
 {
-    #[OA\Get(path: '/parametres/annees-academiques', operationId: 'listerAnneesAcademiques', tags: ['Années académiques'], security: [['sanctum' => []]], responses: [new OA\Response(response: 403, description: 'Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION'), new OA\Response(response: 200, description: 'Liste des années académiques')])]
+    #[OA\Get(path: '/parametres/annees-academiques', operationId: 'listerAnneesAcademiques', tags: ['Années académiques'], security: [['sanctum' => []]], responses: [new OA\Response(response: 403, description: 'Un de ces droits requis : planification.calendrier-academique.consulter ou planification.repartition-horaire.consulter. Lecture ouverte aussi aux roles SECRETAIRE_ACADEMIQUE, DIRECTION, GESTIONNAIRE (lecteurs d avant la matrice). ADMIN passe toujours.'), new OA\Response(response: 200, description: 'Liste des années académiques')])]
     public function index(): JsonResponse
     {
         return response()->json([
@@ -23,7 +23,7 @@ class AnneeAcademiqueController extends Controller
         ]);
     }
 
-    #[OA\Post(path: '/parametres/annees-academiques', operationId: 'creerAnneeAcademique', tags: ['Années académiques'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AnneeAcademiquePayload')), responses: [new OA\Response(response: 403, description: 'Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION'), new OA\Response(response: 201, description: 'Année créée'), new OA\Response(response: 422, description: 'Erreur de validation')])]
+    #[OA\Post(path: '/parametres/annees-academiques', operationId: 'creerAnneeAcademique', tags: ['Années académiques'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AnneeAcademiquePayload')), responses: [new OA\Response(response: 403, description: 'Droit requis : planification.calendrier-academique.creer. ADMIN passe toujours.'), new OA\Response(response: 201, description: 'Année créée'), new OA\Response(response: 422, description: 'Erreur de validation')])]
     public function store(CreerAnneeAcademiqueRequest $request): JsonResponse
     {
         $utilisateur = $request->user();
@@ -46,7 +46,7 @@ class AnneeAcademiqueController extends Controller
         ], 201);
     }
 
-    #[OA\Get(path: '/parametres/annees-academiques/{id}', operationId: 'afficherAnneeAcademique', tags: ['Années académiques'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 403, description: 'Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION'), new OA\Response(response: 200, description: 'Année trouvée'), new OA\Response(response: 404, description: 'Introuvable')])]
+    #[OA\Get(path: '/parametres/annees-academiques/{id}', operationId: 'afficherAnneeAcademique', tags: ['Années académiques'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 403, description: 'Un de ces droits requis : planification.calendrier-academique.consulter ou planification.repartition-horaire.consulter. Lecture ouverte aussi aux roles SECRETAIRE_ACADEMIQUE, DIRECTION, GESTIONNAIRE (lecteurs d avant la matrice). ADMIN passe toujours.'), new OA\Response(response: 200, description: 'Année trouvée'), new OA\Response(response: 404, description: 'Introuvable')])]
     public function show(int $id): JsonResponse
     {
         return response()->json([
@@ -54,8 +54,8 @@ class AnneeAcademiqueController extends Controller
         ]);
     }
 
-    #[OA\Put(path: '/parametres/annees-academiques/{id}', operationId: 'remplacerAnneeAcademique', tags: ['Années académiques'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AnneeAcademiquePayload')), responses: [new OA\Response(response: 403, description: 'Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION'), new OA\Response(response: 200, description: 'Année modifiée'), new OA\Response(response: 422, description: 'Erreur de validation')])]
-    #[OA\Patch(path: '/parametres/annees-academiques/{id}', operationId: 'modifierAnneeAcademique', tags: ['Années académiques'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AnneeAcademiquePayload')), responses: [new OA\Response(response: 403, description: 'Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION'), new OA\Response(response: 200, description: 'Année modifiée'), new OA\Response(response: 422, description: 'Erreur de validation')])]
+    #[OA\Put(path: '/parametres/annees-academiques/{id}', operationId: 'remplacerAnneeAcademique', tags: ['Années académiques'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AnneeAcademiquePayload')), responses: [new OA\Response(response: 403, description: 'Un de ces droits requis : planification.calendrier-academique.modifier ou planification.calendrier-academique.activer-annee. ADMIN passe toujours.'), new OA\Response(response: 200, description: 'Année modifiée'), new OA\Response(response: 422, description: 'Erreur de validation')])]
+    #[OA\Patch(path: '/parametres/annees-academiques/{id}', operationId: 'modifierAnneeAcademique', tags: ['Années académiques'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AnneeAcademiquePayload')), responses: [new OA\Response(response: 403, description: 'Un de ces droits requis : planification.calendrier-academique.modifier ou planification.calendrier-academique.activer-annee. ADMIN passe toujours.'), new OA\Response(response: 200, description: 'Année modifiée'), new OA\Response(response: 422, description: 'Erreur de validation')])]
     public function update(ModifierAnneeAcademiqueRequest $request, int $id): JsonResponse
     {
         return DB::transaction(function () use ($request, $id) {
@@ -89,7 +89,7 @@ class AnneeAcademiqueController extends Controller
         });
     }
 
-    #[OA\Delete(path: '/parametres/annees-academiques/{id}', operationId: 'supprimerAnneeAcademique', tags: ['Années académiques'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 403, description: 'Acc?s r?serv? aux comptes actifs ADMIN, SECRETAIRE_ACADEMIQUE et DIRECTION'), new OA\Response(response: 200, description: 'Année supprimée'), new OA\Response(response: 404, description: 'Introuvable')])]
+    #[OA\Delete(path: '/parametres/annees-academiques/{id}', operationId: 'supprimerAnneeAcademique', tags: ['Années académiques'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 403, description: 'Droit requis : planification.calendrier-academique.modifier. ADMIN passe toujours.'), new OA\Response(response: 200, description: 'Année supprimée'), new OA\Response(response: 404, description: 'Introuvable')])]
     public function destroy(Request $request, int $id): JsonResponse
     {
         $anneeAcademique = AnneeAcademique::query()->findOrFail($id);

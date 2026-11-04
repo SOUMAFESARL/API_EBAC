@@ -180,7 +180,7 @@ class TransmissionNotesController extends Controller
 
         return [
             ...$feuille->only(['id', 'statut', 'date_transmission', 'transmise_par', 'id_annee_academique', 'id_promotion', 'id_matiere', 'id_cours', 'id_seance']),
-            'statut' => $feuille->statutPourRole('ENSEIGNANT'),
+            'statut' => $feuille->statutPourVue('enseignant'),
             'statut_workflow' => $feuille->statut,
             'motif' => $feuille->motifRejet(),
             'annee_academique' => $feuille->anneeAcademique?->only(['id', 'libelle']),
