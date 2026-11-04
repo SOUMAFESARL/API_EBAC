@@ -112,7 +112,8 @@ class RolePermissionApiTest extends TestCase
         $this->getJson('/api/v1/administration/roles/catalogue-droits')
             ->assertOk()
             ->assertJsonPath('nombre_roles', 2)
-            ->assertJsonPath('nombre_droits', 1);
+            // Le catalogue module · sous-module · action est semé par migration.
+            ->assertJsonPath('nombre_droits', Permission::query()->count());
 
         $url = "/api/v1/administration/roles/{$gestionnaire->id}/droits/{$permission->id}";
         $this->patchJson($url, ['accordee' => true])
@@ -124,9 +125,10 @@ class RolePermissionApiTest extends TestCase
             'actif' => true,
         ]);
 
-        $this->getJson("/api/v1/administration/roles/{$gestionnaire->id}/droits")
+        $droits = $this->getJson("/api/v1/administration/roles/{$gestionnaire->id}/droits")
             ->assertOk()
-            ->assertJsonPath('droits.0.accordee', true);
+            ->json('droits');
+        $this->assertTrue(collect($droits)->firstWhere('id', $permission->id)['accordee']);
 
         $this->patchJson($url, ['accordee' => false])
             ->assertOk()

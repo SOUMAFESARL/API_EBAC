@@ -357,10 +357,7 @@ class NotesEnseignantApiTest extends TestCase
             $this->postJson($base.'/'.$id.'/rejeter', ['motif' => 'Autre décision'])->assertUnprocessable();
             $this->getJson($base.'/'.$id)->assertOk()->assertJsonPath('correction.actions.peut_valider', false)
                 ->assertJsonPath('correction.actions.peut_appliquer', $code !== 'DIRECTION');
-            if ($code === 'DIRECTION') {
-                $this->postJson($base.'/'.$id.'/appliquer')->assertForbidden();
-                Sanctum::actingAs($data['admin']);
-            }
+            // La Direction détient notes.corrections.autoriser : elle applique elle-même.
             $this->postJson($base.'/'.$id.'/appliquer')->assertOk()
                 ->assertJsonPath('correction.note_finale', fn ($valeur) => (float) $valeur === (float) $payload['note_proposee']);
         }

@@ -96,6 +96,8 @@ class RegistreEtudiantApiTest extends TestCase
 
     public function test_la_direction_peut_acceder_et_modifier_le_registre(): void
     {
+        // Matrice des droits : le geste suit le droit coché, plus le seul rôle.
+        $this->accorderDroits('DIRECTION', 'gestion-academique.etudiants.modifier');
         $role = Role::query()->create(['code' => 'DIRECTION', 'libelle' => 'Direction']);
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
         $annee = AnneeAcademique::query()->create([

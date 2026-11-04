@@ -18,8 +18,11 @@ class PermissionController extends Controller
                     ->where('code', 'like', "%{$recherche}%")
                     ->orWhere('libelle', 'like', "%{$recherche}%"));
             })
+            ->when($request->string('module')->toString(), fn ($query, string $module) => $query->where('module', $module))
             ->orderBy('libelle')
-            ->paginate(min(max($request->integer('par_page', 15), 1), 100));
+            // Plafond à 200 : l'écran « Rôles & droits » charge tout le
+            // catalogue (102 droits et plus) en une page.
+            ->paginate(min(max($request->integer('par_page', 15), 1), 200));
 
         return response()->json($permissions);
     }

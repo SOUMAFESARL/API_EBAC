@@ -81,6 +81,37 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class, 'id_role');
     }
 
+    /**
+     * Codes des permissions effectives du compte : toutes pour ADMIN,
+     * aucune pour un rôle inactif, sinon celles du rôle actives sur le pivot.
+     * Même règle que le middleware `permission`.
+     *
+     * @return list<string>
+     */
+    public function codesPermissions(): array
+    {
+        $role = $this->role;
+
+        if (! $role) {
+            return [];
+        }
+
+        if ($role->code === 'ADMIN') {
+            return Permission::query()->orderBy('code')->pluck('code')->all();
+        }
+
+        if (! ($role->actif ?? true)) {
+            return [];
+        }
+
+        return $role->permissions
+            ->filter(fn (Permission $permission) => (bool) $permission->pivot->actif)
+            ->pluck('code')
+            ->sort()
+            ->values()
+            ->all();
+    }
+
     public function civilite(): BelongsTo
     {
         return $this->belongsTo(Civilite::class, 'civilite_id');

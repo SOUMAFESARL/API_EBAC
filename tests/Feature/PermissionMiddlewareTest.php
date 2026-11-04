@@ -66,13 +66,17 @@ class PermissionMiddlewareTest extends TestCase
         }
     }
 
-    public function test_le_secretariat_academique_peut_gerer_les_comptes_sans_permission_supplementaire(): void
+    public function test_le_secretariat_academique_gere_les_comptes_avec_les_droits_coches(): void
     {
         $role = Role::query()->create([
             'code' => 'SECRETARIAT',
             'libelle' => 'Secrétaire académique',
         ]);
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
+        // Par défaut, le secrétariat ouvre l'accès des candidats sans lister les comptes.
+        $this->getJson('/api/v1/administration/comptes')->assertForbidden();
+        $this->getJson('/api/v1/administration/comptes/create')->assertOk();
+        $this->accorderDroits('SECRETARIAT', 'securite-comptes.utilisateurs.consulter', 'securite-comptes.utilisateurs.creer');
 
         $this->getJson('/api/v1/administration/comptes')->assertOk();
         $this->getJson('/api/v1/administration/comptes/create')->assertOk();

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Civilite;
 use App\Models\ConfigurationEcole;
 use App\Models\Role;
 use App\Models\User;
@@ -51,6 +52,8 @@ class ConfigurationEcoleApiTest extends TestCase
             $this->get('/api/v1/parametres/ecole/fichiers/'.$type)->assertForbidden();
         }
         $ancienLogo = $ecole->logo;
+        // Matrice des droits : le geste suit le droit coché, plus le seul rôle.
+        $this->accorderDroits('DIRECTION', 'parametres.parametrage-systeme.modifier');
         $this->connecter('DIRECTION');
         $this->post(self::URL, ['logo' => UploadedFile::fake()->image('nouveau.png')])->assertOk();
         Storage::disk('local')->assertMissing($ancienLogo);
@@ -103,7 +106,7 @@ class ConfigurationEcoleApiTest extends TestCase
             'directeur_actuel' => 'Nom historique', 'slogan' => 'Slogan initial',
             'signature_directeur' => UploadedFile::fake()->image('signature.png')])->assertCreated();
         $signatureInitiale = ConfigurationEcole::findOrFail(1)->signature_directeur;
-        $civilite = \App\Models\Civilite::create(['code' => 'M', 'name' => 'Monsieur']);
+        $civilite = Civilite::create(['code' => 'M', 'name' => 'Monsieur']);
         $ajouts = ['sigle' => 'EBAC', 'nom_plateforme' => 'EBAC SIG',
             'arrete' => 'N°1287/SE/INT/AG du 30 octobre 1965', 'boite_postale' => 'BP 31 Toumodi',
             'site_web' => 'https://www.ebac-edu.org', 'directeur_civilite_id' => $civilite->id,

@@ -101,6 +101,9 @@ class AffectationEnseignantApiTest extends TestCase
     public function test_controle_des_roles(): void
     {
         $data = $this->contexte();
+        // Matrice des droits : le geste suit le droit coché, plus le seul rôle.
+        $this->accorderDroits('SECRETAIRE_ACADEMIQUE', 'planification.affectations.consulter')
+            ->accorderDroits('GESTIONNAIRE', 'planification.affectations.consulter');
         foreach (['ADMIN', 'SECRETAIRE_ACADEMIQUE', 'DIRECTION', 'GESTIONNAIRE'] as $role) {
             $this->connecter($role);
             $this->getJson(self::URL.'/tableau-de-bord')->assertOk();

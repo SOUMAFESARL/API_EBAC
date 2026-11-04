@@ -2,14 +2,37 @@
 
 namespace App\Http\Requests\Api\V1\Administration;
 
+use App\Models\Role;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Rule;
 
 class EnregistrerCompteRequest extends FormRequest
 {
+    /**
+     * Ouvrir l'accès d'un candidat (`gestion-academique.preinscriptions.ouvrir-acces`)
+     * ne crée qu'un compte Étudiant ; tout autre compte exige
+     * `securite-comptes.utilisateurs.creer`. ADMIN détient tout.
+     */
     public function authorize(): bool
     {
-        return true;
+        $utilisateur = $this->user();
+        if ($utilisateur?->role?->code === 'ADMIN'
+            || in_array('securite-comptes.utilisateurs.creer', $utilisateur?->codesPermissions() ?? [], true)) {
+            return true;
+        }
+
+        $roleEtudiant = Role::query()->where('code', 'ETUDIANT')->value('id');
+
+        return $roleEtudiant !== null && (int) $this->input('id_role') === (int) $roleEtudiant;
+    }
+
+    protected function failedAuthorization(): void
+    {
+        throw new HttpResponseException(response()->json([
+            'message' => "Ce droit n'ouvre que des comptes Étudiant.",
+            'permissions_requises' => ['securite-comptes.utilisateurs.creer'],
+        ], 403));
     }
 
     /**

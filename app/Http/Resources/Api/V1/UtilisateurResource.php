@@ -38,6 +38,11 @@ class UtilisateurResource extends JsonResource
                 'id' => $this->role->id,
                 'code' => $this->role->code,
                 'libelle' => $this->role->libelle,
+                // Servi seulement là où les droits sont chargés (`GET /auth/profil`).
+                'permissions' => $this->when(
+                    $this->role->relationLoaded('permissions'),
+                    fn () => $this->resource->codesPermissions(),
+                ),
             ]),
             'civilite' => $this->whenLoaded('civilite', fn () => $this->civilite ? [
                 'id' => $this->civilite->id,

@@ -2,7 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Models\{AnneeAcademique, Bulletin, Etudiant, Inscription, Niveau, Promotion, Role, User};
+use App\Models\AnneeAcademique;
+use App\Models\Bulletin;
+use App\Models\Etudiant;
+use App\Models\Inscription;
+use App\Models\Niveau;
+use App\Models\Promotion;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -21,6 +28,8 @@ class PublicationBulletinsApiTest extends TestCase
         $annee = AnneeAcademique::create(['libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31', 'active' => true]);
         $inscription = Inscription::create(['id_etudiant' => $etudiant->id, 'id_promotion' => $promotion->id, 'id_annee_academique' => $annee->id, 'date_inscription' => '2026-09-01']);
 
+        // Matrice des droits : le geste suit le droit coché, plus le seul rôle.
+        $this->accorderDroits('SECRETARIAT', 'notes.validation-notes.valider')->accorderDroits('SECRETAIRE_ACADEMIQUE', 'notes.validation-notes.valider');
         foreach (['ADMIN', 'DIRECTION', 'SECRETARIAT', 'SECRETAIRE_ACADEMIQUE'] as $code) {
             $role = Role::create(['code' => $code, 'libelle' => $code]);
             $actor = User::factory()->create(['id_role' => $role->id]);

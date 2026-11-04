@@ -2,7 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Models\{AnneeAcademique, CorrectionNote, Etudiant, FeuilleNotes, Inscription, Matiere, Niveau, Promotion, Role, User};
+use App\Models\AnneeAcademique;
+use App\Models\CorrectionNote;
+use App\Models\Etudiant;
+use App\Models\FeuilleNotes;
+use App\Models\Inscription;
+use App\Models\Matiere;
+use App\Models\Niveau;
+use App\Models\Promotion;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -114,7 +123,8 @@ class CorrectionsGroupeesApiTest extends TestCase
         $this->postJson($base.'/'.$feuille->id.'/appliquer', $payload)->assertUnauthorized();
         Sanctum::actingAs($users['ENSEIGNANT']);
         $this->getJson($base)->assertForbidden();
-        Sanctum::actingAs($users['DIRECTION']);
+        // La Direction décide aussi (droits notes.corrections.*) : le refus se teste sans droit.
+        Sanctum::actingAs(User::factory()->create(['id_role' => Role::create(['code' => 'SANS_DROIT', 'libelle' => 'Sans droit'])->id]));
         $this->postJson($base.'/'.$feuille->id.'/appliquer', $payload)->assertForbidden();
         $this->postJson($base.'/'.$feuille->id.'/rejeter', [...$payload, 'motif' => 'Refus'])->assertForbidden();
         Sanctum::actingAs($users['SECRETAIRE_ACADEMIQUE']);

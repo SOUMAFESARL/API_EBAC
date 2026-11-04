@@ -44,6 +44,9 @@ class AccesParametragePlanningTest extends TestCase
     public function test_roles_administratifs_autorises(): void
     {
         $annee = AnneeAcademique::create(['libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-30']);
+        // Matrice des droits : le geste suit le droit coché, plus le seul rôle.
+        $droits = ['planification.calendrier-academique.creer', 'planification.calendrier-academique.modifier', 'planification.salles.creer', 'planification.salles.modifier', 'planification.salles.archiver'];
+        $this->accorderDroits('SECRETAIRE_ACADEMIQUE', ...$droits)->accorderDroits('DIRECTION', ...$droits);
         foreach (['ADMIN', 'SECRETAIRE_ACADEMIQUE', 'DIRECTION'] as $role) {
             $this->connecter($role);
             $this->getJson('/api/v1/parametres/annees-academiques')->assertOk();

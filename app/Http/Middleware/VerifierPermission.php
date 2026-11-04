@@ -13,7 +13,7 @@ class VerifierPermission
      */
     public function handle(Request $request, Closure $next, string ...$permissions): Response
     {
-        $utilisateur = $request->user()?->loadMissing('role.permissions');
+        $utilisateur = $request->user()?->load('role.permissions');
 
         if (! $utilisateur) {
             return response()->json(['message' => 'Non authentifié.'], 401);
@@ -27,10 +27,19 @@ class VerifierPermission
             return response()->json(['message' => 'Votre rôle est inactif.'], 403);
         }
 
-        $permissionsActives = $utilisateur->role?->permissions
-            ->filter(fn ($permission) => (bool) $permission->pivot->actif)
-            ->pluck('code')
-            ->all() ?? [];
+        // `@CODE_ROLE` ouvre la route à un rôle, quels que soient ses droits :
+        // c'est ainsi que les référentiels gardent leurs lecteurs d'avant la
+        // matrice, à côté du droit « consulter » qui les ouvre aux autres.
+        $rolesAdmis = array_map(
+            fn (string $jeton) => substr($jeton, 1),
+            array_filter($permissions, fn (string $jeton) => str_starts_with($jeton, '@')),
+        );
+        if (in_array($utilisateur->role?->code, $rolesAdmis, true)) {
+            return $next($request);
+        }
+        $permissions = array_values(array_filter($permissions, fn (string $jeton) => ! str_starts_with($jeton, '@')));
+
+        $permissionsActives = $utilisateur->codesPermissions();
 
         if (array_intersect($permissions, $permissionsActives) === []) {
             return response()->json([

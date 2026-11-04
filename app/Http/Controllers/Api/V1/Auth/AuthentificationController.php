@@ -321,7 +321,7 @@ class AuthentificationController extends Controller
     public function profil(Request $request): JsonResponse
     {
         return response()->json([
-            'utilisateur' => UtilisateurResource::make($request->user()?->load(['role', 'civilite'])),
+            'utilisateur' => UtilisateurResource::make($request->user()?->load(['role.permissions', 'civilite'])),
         ]);
     }
 

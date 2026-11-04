@@ -127,11 +127,13 @@ class GestionPreInscriptionApiTest extends TestCase
         $this->assertSame(1, User::query()->where('email', $etudiant->email)->count());
     }
 
-    public function test_un_autre_role_sans_permission_peut_acceder_aux_preinscriptions(): void
+    public function test_un_autre_role_accede_aux_preinscriptions_seulement_avec_le_droit(): void
     {
         $role = Role::query()->create(['code' => 'GESTIONNAIRE', 'libelle' => 'Gestionnaire']);
         Sanctum::actingAs(User::factory()->create(['id_role' => $role->id]));
 
+        $this->getJson('/api/v1/administration/preinscriptions')->assertForbidden();
+        $this->accorderDroits('GESTIONNAIRE', 'gestion-academique.preinscriptions.consulter', 'gestion-academique.preinscriptions.ouvrir-acces');
         $this->getJson('/api/v1/administration/preinscriptions')->assertOk();
         $this->getJson('/api/v1/administration/preinscriptions/999999')->assertNotFound();
         $this->postJson('/api/v1/administration/preinscriptions/999999/creer-compte')->assertNotFound();
@@ -153,6 +155,8 @@ class GestionPreInscriptionApiTest extends TestCase
 
     public function test_un_gestionnaire_peut_rejeter_une_preinscription_avec_un_motif(): void
     {
+        // Matrice des droits : le geste suit le droit coché, plus le seul rôle.
+        $this->accorderDroits('GESTIONNAIRE', 'gestion-academique.preinscriptions.consulter', 'gestion-academique.preinscriptions.rejeter');
         $role = Role::query()->create(['code' => 'GESTIONNAIRE', 'libelle' => 'Gestionnaire']);
         $gestionnaire = User::factory()->create(['id_role' => $role->id]);
         Sanctum::actingAs($gestionnaire);

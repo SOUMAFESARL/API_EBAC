@@ -79,6 +79,10 @@ class UniteEnseignementApiTest extends TestCase
 
     public function test_les_roles_autorises_peuvent_effectuer_le_crud(): void
     {
+        // Matrice des droits : le geste suit le droit coché, plus le seul rôle.
+        foreach (['SECRETAIRE_ACADEMIQUE', 'SECRETARIAT', 'DIRECTION'] as $role) {
+            $this->accorderDroits($role, 'programme.domaines.creer', 'programme.domaines.modifier', 'programme.domaines.supprimer');
+        }
         foreach (['ADMIN', 'SECRETAIRE_ACADEMIQUE', 'SECRETARIAT', 'DIRECTION'] as $role) {
             $this->connecter($role);
             $id = $this->postJson(self::URL, [...$this->payload(), 'code' => $role])

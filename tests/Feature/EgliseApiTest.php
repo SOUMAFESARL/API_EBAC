@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Role;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -123,13 +123,18 @@ class EgliseApiTest extends TestCase
             ->assertJsonPath('eglise.code', 'EGL-000001');
     }
 
-    public function test_le_crud_des_eglises_est_public(): void
+    public function test_la_lecture_des_eglises_est_publique_mais_pas_leur_ecriture(): void
     {
+        // Écrire sans session était possible : l'écriture exige désormais le droit.
+        $this->postJson('/api/v1/eglises', ['nom' => 'Anonyme', 'ville_commune' => 'Abidjan'])->assertUnauthorized();
+        $this->getJson('/api/v1/eglises')->assertOk();
+        $administrateur = $this->authentifierAdministrateur();
+
         $egliseId = $this->postJson('/api/v1/eglises', [
             'nom' => 'Église publique',
             'ville_commune' => 'Abidjan',
         ])->assertCreated()
-            ->assertJsonPath('eglise.created_by', null)
+            ->assertJsonPath('eglise.created_by', $administrateur->id)
             ->json('eglise.id');
 
         $this->getJson('/api/v1/eglises')->assertOk();

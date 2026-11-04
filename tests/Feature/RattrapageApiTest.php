@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\CoursAFaire;
 use App\Models\Cours;
+use App\Models\CoursAFaire;
 use App\Models\Etudiant;
 use App\Models\FeuillePresence;
 use App\Models\Matiere;
@@ -127,6 +127,8 @@ class RattrapageApiTest extends TestCase
 
     public function test_direction_planifie_une_session_et_annule_sans_changer_la_promotion(): void
     {
+        // Matrice des droits : le geste suit le droit coché, plus le seul rôle.
+        $this->accorderDroits('DIRECTION', 'progression.rattrapages.consulter', 'progression.rattrapages.inscrire', 'progression.rattrapages.annuler');
         $data = $this->contexte('DIRECTION');
         $origine = Promotion::create(['num_promotion' => 4, 'annee_entree' => 2026, 'id_niveau' => $data['seance']->id_niveau]);
         $accueil = Promotion::create(['num_promotion' => 5, 'annee_entree' => 2026, 'id_niveau' => $data['seance']->id_niveau]);
