@@ -70,7 +70,6 @@ return [
                 'promotions' => ['Promotions', $crud],
                 'domaines' => ["Domaines d'enseignement", $crud],
                 'matieres' => ['Matières', $crud],
-                'programme' => ['Programme académique', ['consulter']],
             ],
         ],
         'planification' => [
@@ -169,7 +168,7 @@ return [
             'roles' => ['DIRECTION', 'DIRECTEUR'],
             'droits' => [
                 'accueil.tableau-de-bord.consulter',
-                'programme.programme.consulter',
+                'programme.matieres.consulter',
                 'planification.affectations.consulter',
                 'planification.affectations.creer',
                 'planification.affectations.terminer',
