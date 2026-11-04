@@ -38,13 +38,20 @@ class NouvelleAdmissionApiTest extends TestCase
 
     public static function rolesAutorises(): array
     {
-        return [['ADMIN'], ['SECRETARIAT'], ['SECRETAIRE_ACADEMIQUE'], ['DIRECTION'], ['GESTIONNAIRE'], ['AUTRE']];
+        // Admin et Secrétariat (droits par défaut), et un rôle personnalisé à qui
+        // l'Administrateur a coché les droits du module.
+        return [['ADMIN'], ['SECRETARIAT'], ['SECRETAIRE_ACADEMIQUE'], ['SECRETARIAT_ACADEMIQUE'], ['PERSONNALISE']];
     }
 
     #[DataProvider('rolesAutorises')]
     public function test_import_liste_coordonnees_statistiques_et_pdf(string $role): void
     {
         Storage::fake('local');
+        $this->accorderDroits('PERSONNALISE',
+            'gestion-academique.nouvelle-admission.consulter',
+            'gestion-academique.nouvelle-admission.importer',
+            'gestion-academique.nouvelle-admission.exporter',
+        );
         $this->connecter($role);
         $reponse = $this->postJson(self::URL.'/importer', [
             'annee_entree' => 2026, 'liste' => $this->liste(),
@@ -77,7 +84,7 @@ class NouvelleAdmissionApiTest extends TestCase
             ->assertCreated()->assertJsonPath('importes', 2);
     }
 
-    public function test_direction_peut_consulter_et_ecrire(): void
+    public function test_direction_consulte_sans_ecrire(): void
     {
         Storage::fake('local');
         $this->connecter('ADMIN');
@@ -94,12 +101,12 @@ class NouvelleAdmissionApiTest extends TestCase
         foreach (['/pdf?annee_entree=2026', '/imports/'.$idImport.'/arrete', '/imports/'.$idImport.'/document-pdf', '/imports/'.$idImport.'/document-pdf/telecharger'] as $suffixe) {
             $this->get(self::URL.$suffixe)->assertOk()->assertHeader('content-type', 'application/pdf');
         }
-        $this->postJson(self::URL.'/importer', ['annee_entree' => 2027, 'liste' => $this->liste()])->assertCreated();
-        $this->patchJson(self::URL.'/'.$admis->id, ['telephone' => '0102030405'])->assertOk();
+        $this->postJson(self::URL.'/importer', ['annee_entree' => 2027, 'liste' => $this->liste()])->assertForbidden();
+        $this->patchJson(self::URL.'/'.$admis->id, ['telephone' => '0102030405'])->assertForbidden();
         $this->deleteJson(self::URL.'/'.$admis->id)->assertStatus(405);
-        $this->assertSame('0102030405', $admis->fresh()->telephone);
-        $this->assertDatabaseCount('nouvelles_admissions', 4);
-        $this->assertDatabaseCount('imports_admissions', 2);
+        $this->assertNull($admis->fresh()->telephone);
+        $this->assertDatabaseCount('nouvelles_admissions', 2);
+        $this->assertDatabaseCount('imports_admissions', 1);
     }
 
     public static function formatsExcel(): array
@@ -168,7 +175,7 @@ class NouvelleAdmissionApiTest extends TestCase
         foreach ($routes as [$methode, $suffixe]) {
             $this->json($methode, self::URL.$suffixe)->assertUnauthorized();
         }
-        foreach (['ETUDIANT', 'ENSEIGNANT'] as $role) {
+        foreach (['ETUDIANT', 'ENSEIGNANT', 'GESTIONNAIRE', 'AUTRE'] as $role) {
             $this->connecter($role);
             foreach ($routes as [$methode, $suffixe]) {
                 $this->json($methode, self::URL.$suffixe)->assertForbidden();
