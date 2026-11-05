@@ -5269,7 +5269,7 @@
                 "tags": [
                     "Bulletin de notes calcule"
                 ],
-                "summary": "Bulletin etudiant : matieres, coefficients, notes, decisions, enseignants et moyenne",
+                "summary": "Bulletin etudiant : matieres regroupees par domaine d enseignement",
                 "description": "id est l identifiant etudiant. Inscription requise dans la promotion et l annee demandees. Seules les feuilles validee_direction contribuent. Meme calcul de notes que /administration/notes-matieres ; moyenne generale ponderee par les coefficients des matieres, sans arrondi intermediaire. Les matieres sans note validee pour cet etudiant sont absentes. Bulletin partiel si toutes les evaluations ne sont pas encore validees. credits_valides est la somme des coefficients des matieres validees. Une correction renvoyee au controle ne contribue de nouveau qu apres revalidation.",
                 "operationId": "fec0acc92e371db37d61084c6bf6297d",
                 "parameters": [
@@ -5411,6 +5411,11 @@
                                                                     "libelle": {
                                                                         "type": "string",
                                                                         "example": "Introduction Biblique"
+                                                                    },
+                                                                    "unite_ensigne_id": {
+                                                                        "description": "Identifiant du domaine d enseignement de la matiere.",
+                                                                        "type": "integer",
+                                                                        "nullable": true
                                                                     }
                                                                 },
                                                                 "type": "object"
@@ -5477,6 +5482,79 @@
                                                     "type": "number",
                                                     "example": 15,
                                                     "nullable": true
+                                                },
+                                                "unites_enseignement": {
+                                                    "description": "Chaque unite_ensigne_id apparait une seule fois avec toutes ses matieres dans le tableau matieres. L identifiant de chaque matiere est matiere.id. Le groupe unite_ensigne_id null rassemble les matieres sans domaine. Tableau vide si aucune matiere. La liste bulletin.matieres reste disponible.",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "unite_ensigne_id": {
+                                                                "type": "integer",
+                                                                "example": 2,
+                                                                "nullable": true
+                                                            },
+                                                            "matieres": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "$ref": "#/paths/~1administration~1bulletins-notes~1{id}/get/responses/200/content/application~1json/schema/properties/bulletin/properties/matieres/items"
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "example": [
+                                                        {
+                                                            "unite_ensigne_id": 2,
+                                                            "matieres": [
+                                                                {
+                                                                    "numero": 1,
+                                                                    "matiere": {
+                                                                        "id": 8,
+                                                                        "code": "BIB-01",
+                                                                        "libelle": "Introduction biblique",
+                                                                        "unite_ensigne_id": 2
+                                                                    },
+                                                                    "coefficient": 2,
+                                                                    "note": 14,
+                                                                    "note_validation": 10,
+                                                                    "nombre_notes_validees": 2,
+                                                                    "decision": "valide",
+                                                                    "decision_libelle": "Validé",
+                                                                    "enseignants": [
+                                                                        {
+                                                                            "id": 5,
+                                                                            "nom": "YAO",
+                                                                            "prenoms": "Paul"
+                                                                        }
+                                                                    ],
+                                                                    "annee": "2026-2027"
+                                                                },
+                                                                {
+                                                                    "numero": 2,
+                                                                    "matiere": {
+                                                                        "id": 9,
+                                                                        "code": "BIB-02",
+                                                                        "libelle": "Nouveau Testament",
+                                                                        "unite_ensigne_id": 2
+                                                                    },
+                                                                    "coefficient": 3,
+                                                                    "note": 16,
+                                                                    "note_validation": 10,
+                                                                    "nombre_notes_validees": 2,
+                                                                    "decision": "valide",
+                                                                    "decision_libelle": "Validé",
+                                                                    "enseignants": [
+                                                                        {
+                                                                            "id": 5,
+                                                                            "nom": "YAO",
+                                                                            "prenoms": "Paul"
+                                                                        }
+                                                                    ],
+                                                                    "annee": "2026-2027"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
                                                 },
                                                 "total_coefficients": {
                                                     "type": "number",
@@ -8643,10 +8721,134 @@
                                         "bulletin": {
                                             "description": "Bulletin avec annee_academique, promotion, niveau, matieres (avec mention par matiere), moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire et telechargement_pdf_url.",
                                             "properties": {
+                                                "matieres": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "description": "Identifiant de la ligne du bulletin.",
+                                                                "type": "integer",
+                                                                "example": 101
+                                                            },
+                                                            "matiere": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "code": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "libelle": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "type": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "unite_ensigne_id": {
+                                                                        "description": "Identifiant du domaine d enseignement de la matiere.",
+                                                                        "type": "integer",
+                                                                        "nullable": true
+                                                                    }
+                                                                },
+                                                                "type": "object",
+                                                                "nullable": true
+                                                            },
+                                                            "coefficient": {
+                                                                "type": "number",
+                                                                "example": 2
+                                                            },
+                                                            "note": {
+                                                                "type": "number",
+                                                                "example": 14,
+                                                                "nullable": true
+                                                            },
+                                                            "mention": {
+                                                                "type": "string",
+                                                                "example": "Bien"
+                                                            },
+                                                            "moyenne_ponderee": {
+                                                                "type": "number",
+                                                                "example": 28,
+                                                                "nullable": true
+                                                            },
+                                                            "appreciation": {
+                                                                "type": "string",
+                                                                "nullable": true
+                                                            },
+                                                            "statut": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "a_completer",
+                                                                    "validee",
+                                                                    "non_validee"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
                                                 "mention": {
                                                     "description": "Mention enregistree ou calculee : sans note ou <10 À REPRENDRE, >=10 Passable, >=12 Assez bien, >=14 Bien, >=16 Tres bien.",
                                                     "type": "string",
                                                     "example": "Bien"
+                                                },
+                                                "unites_enseignement": {
+                                                    "description": "Chaque unite_ensigne_id apparait une seule fois avec toutes ses matieres dans un tableau matieres. L identifiant de chaque matiere est matiere.id ; id est celui de la ligne du bulletin. Le groupe unite_ensigne_id null contient les matieres sans domaine. Tableau vide si aucune matiere.",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "unite_ensigne_id": {
+                                                                "type": "integer",
+                                                                "nullable": true
+                                                            },
+                                                            "matieres": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "$ref": "#/paths/~1etudiant~1bulletins~1{id}/get/responses/200/content/application~1json/schema/properties/bulletin/properties/matieres/items"
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "example": [
+                                                        {
+                                                            "unite_ensigne_id": 2,
+                                                            "matieres": [
+                                                                {
+                                                                    "id": 101,
+                                                                    "matiere": {
+                                                                        "id": 8,
+                                                                        "code": "BIB-01",
+                                                                        "libelle": "Introduction biblique",
+                                                                        "type": "Théorique",
+                                                                        "unite_ensigne_id": 2
+                                                                    },
+                                                                    "coefficient": 2,
+                                                                    "note": 14,
+                                                                    "mention": "Bien",
+                                                                    "moyenne_ponderee": 28,
+                                                                    "appreciation": null,
+                                                                    "statut": "validee"
+                                                                },
+                                                                {
+                                                                    "id": 102,
+                                                                    "matiere": {
+                                                                        "id": 9,
+                                                                        "code": "BIB-02",
+                                                                        "libelle": "Nouveau Testament",
+                                                                        "type": "Théorique",
+                                                                        "unite_ensigne_id": 2
+                                                                    },
+                                                                    "coefficient": 3,
+                                                                    "note": 16,
+                                                                    "mention": "Tres bien",
+                                                                    "moyenne_ponderee": 48,
+                                                                    "appreciation": null,
+                                                                    "statut": "validee"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
                                                 },
                                                 "qr_code": {
                                                     "properties": {
@@ -18968,7 +19170,7 @@
         },
         {
             "name": "Saisie des notes",
-            "description": "La saisie est liee a une seance precise. Fournir id_seance, id_matiere (ou cours dans le chemin), id_promotion et id_annee_academique. La seance doit appartenir a l enseignant connecte et correspondre au contexte. Une affectation active et un creneau correspondant sont requis.\nGET /enseignant/notes/feuille retourne les etudiants et leur eligibilite sur cette seance. GET /enseignant/notes/tableau retourne directement les notes de cette seance. Sans id_seance, GET consulte uniquement les anciennes feuilles sans seance ; aucune attribution automatique n est faite.\nPUT enregistre et transmet immediatement la feuille de la seance. id_seance est obligatoire pour PUT et POST /transmettre. Seule la presence de la seance choisie est controlee : seance realisee, presences validees et completes, etudiant present ou absence autorisee. Les autres seances ne bloquent pas la saisie.\nChaque seance a sa propre feuille et son verrouillage. Envoyer toutes les evaluations ensemble dans notes[].evaluation pour une matiere. Tous les etudiants evaluables doivent avoir au moins une note ; sinon la requete entiere est annulee. La moyenne matiere directe est la moyenne simple des notes de toutes ses seances dans la meme promotion et annee. Les notes par cours restent separees.\nApres succes, statut=transmise et saisie_ouverte=false. Une correction autorisee ou un rejet du secretariat ou de la direction permet de corriger les notes. Les transmissions et leurs decisions restent suivies via /enseignant/transmissions-notes et /administration/notes-transmises. Aucune publication aux etudiants."
+            "description": "La saisie est liee a une seance precise. Fournir id_seance, id_matiere (ou cours dans le chemin), id_promotion et id_annee_academique. La seance doit appartenir a l enseignant connecte et correspondre au contexte. Une affectation active et un creneau correspondant sont requis.\r\nGET /enseignant/notes/feuille retourne les etudiants et leur eligibilite sur cette seance. GET /enseignant/notes/tableau retourne directement les notes de cette seance. Sans id_seance, GET consulte uniquement les anciennes feuilles sans seance ; aucune attribution automatique n est faite.\r\nPUT enregistre et transmet immediatement la feuille de la seance. id_seance est obligatoire pour PUT et POST /transmettre. Seule la presence de la seance choisie est controlee : seance realisee, presences validees et completes, etudiant present ou absence autorisee. Les autres seances ne bloquent pas la saisie.\r\nChaque seance a sa propre feuille et son verrouillage. Envoyer toutes les evaluations ensemble dans notes[].evaluation pour une matiere. Tous les etudiants evaluables doivent avoir au moins une note ; sinon la requete entiere est annulee. La moyenne matiere directe est la moyenne simple des notes de toutes ses seances dans la meme promotion et annee. Les notes par cours restent separees.\r\nApres succes, statut=transmise et saisie_ouverte=false. Une correction autorisee ou un rejet du secretariat ou de la direction permet de corriger les notes. Les transmissions et leurs decisions restent suivies via /enseignant/transmissions-notes et /administration/notes-transmises. Aucune publication aux etudiants."
         },
         {
             "name": "Permissions",

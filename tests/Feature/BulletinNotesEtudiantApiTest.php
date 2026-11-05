@@ -24,8 +24,10 @@ class BulletinNotesEtudiantApiTest extends TestCase
         $etudiant = Etudiant::create(['matricule' => 'ETU-1', 'nom' => 'KONE', 'prenoms' => 'Test', 'date_inscription' => '2026-09-01']);
         Inscription::create(['id_etudiant' => $etudiant->id, 'id_promotion' => $promotion->id, 'id_annee_academique' => $annee->id, 'date_inscription' => '2026-09-01']);
         $feuilles = [];
+        $domaine = \App\Models\UniteEnseignement::create(['code' => 'DOM', 'libelle' => 'Domaine', 'statut' => 'Actif']);
         foreach ([['INF', 2, 12, 'validee_direction'], ['MATH', 4, 15, 'validee_direction'], ['NON', 10, 0, 'validee_secretariat']] as [$code, $coefficient, $note, $statut]) {
             $matiere = Matiere::create(['code' => $code, 'libelle' => $code, 'id_niveau' => $niveau->id, 'coefficient' => $coefficient, 'note_validation' => 13]);
+            $matiere->update(['unite_ensigne_id' => $code === 'INF' ? $domaine->id : null]);
             $feuille = FeuilleNotes::create(['id_matiere' => $matiere->id, 'id_promotion' => $promotion->id,
                 'id_annee_academique' => $annee->id, 'statut' => $statut, 'updated_by' => $users['ENSEIGNANT']->id, 'transmise_par' => $users['ENSEIGNANT']->id]);
             $feuille->notes()->create(['id_etudiant' => $etudiant->id, 'note' => $note]);
@@ -42,6 +44,13 @@ class BulletinNotesEtudiantApiTest extends TestCase
                 ->assertJsonPath('bulletin.credits_valides', 4)
                 ->assertJsonPath('bulletin.regle_credits', 'somme_coefficients_matieres_validees')
                 ->assertJsonPath('bulletin.matieres.0.decision', 'ajourne')
+                ->assertJsonPath('bulletin.matieres.0.matiere.unite_ensigne_id', $domaine->id)
+                ->assertJsonPath('bulletin.matieres.1.matiere.unite_ensigne_id', null)
+                ->assertJsonCount(2, 'bulletin.unites_enseignement')
+                ->assertJsonPath('bulletin.unites_enseignement.0.unite_ensigne_id', $domaine->id)
+                ->assertJsonPath('bulletin.unites_enseignement.0.matieres.0.matiere.code', 'INF')
+                ->assertJsonPath('bulletin.unites_enseignement.1.unite_ensigne_id', null)
+                ->assertJsonPath('bulletin.unites_enseignement.1.matieres.0.matiere.code', 'MATH')
                 ->assertJsonPath('bulletin.matieres.1.decision', 'valide')
                 ->assertJsonPath('bulletin.matieres.0.enseignants.0.id', $users['ENSEIGNANT']->id)
                 ->assertJsonPath('bulletin.matieres.0.annee', '2026-2027');

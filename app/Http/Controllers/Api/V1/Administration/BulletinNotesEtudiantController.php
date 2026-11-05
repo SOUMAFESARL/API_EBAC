@@ -43,7 +43,7 @@ class BulletinNotesEtudiantController extends Controller
             $validees += $validee ? 1 : 0;
 
             return [
-                'numero' => $index + 1, 'matiere' => $matiere->only(['id', 'code', 'libelle']),
+                'numero' => $index + 1, 'matiere' => $matiere->only(['id', 'code', 'libelle', 'unite_ensigne_id']),
                 'coefficient' => $coefficient, 'note' => $note === null ? null : round($note, 2),
                 'note_validation' => $seuil, 'nombre_notes_validees' => (int) $resultat->nombre_notes,
                 'decision' => $note === null ? 'en_attente' : ($validee ? 'valide' : 'ajourne'),
@@ -61,6 +61,11 @@ class BulletinNotesEtudiantController extends Controller
             'niveau' => $inscription->promotion?->niveau?->only(['id', 'code', 'libelle']),
             'annee_academique' => $inscription->anneeAcademique->only(['id', 'libelle']),
             'matieres' => $lignes->values(),
+            'unites_enseignement' => $lignes->groupBy('matiere.unite_ensigne_id')
+                ->map(fn ($matieres) => [
+                    'unite_ensigne_id' => $matieres->first()['matiere']['unite_ensigne_id'],
+                    'matieres' => $matieres->values(),
+                ])->values(),
             'moyenne_generale' => $coefficients > 0 ? round($somme / $coefficients, 2) : null,
             'total_coefficients' => $coefficients,
             'nombre_matieres' => $lignes->count(), 'matieres_validees' => $validees,

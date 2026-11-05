@@ -123,7 +123,7 @@ class MesBulletinsController extends Controller
 
             return [
                 'id' => $ligne->id,
-                'matiere' => $ligne->matiere?->only(['id', 'code', 'libelle', 'type']),
+                'matiere' => $ligne->matiere?->only(['id', 'code', 'libelle', 'type', 'unite_ensigne_id']),
                 'coefficient' => (float) $ligne->coefficient, 'note' => $note,
                 'mention' => MentionBulletinService::calculer($note),
                 'moyenne_ponderee' => $ligne->moyenne_ponderee !== null ? (float) $ligne->moyenne_ponderee : null,
@@ -138,12 +138,17 @@ class MesBulletinsController extends Controller
         return [
             'etudiant' => $this->presenterEtudiant($etudiant),
             'bulletin' => [...$this->presenter($bulletin), 'matieres' => $lignes,
+                'unites_enseignement' => $lignes->groupBy('matiere.unite_ensigne_id')
+                    ->map(fn ($matieres) => [
+                        'unite_ensigne_id' => $matieres->first()['matiere']['unite_ensigne_id'] ?? null,
+                        'matieres' => $matieres->values(),
+                    ])->values(),
                 'qr_code' => app(BulletinQrCodeService::class)->presenter($bulletin),
                 'recapitulatif_uv' => ['validees' => $lignes->where('statut', 'validee')->count(),
                     'non_validees' => $lignes->where('statut', 'non_validee')->count(), 'a_completer' => $lignes->where('statut', 'a_completer')->count()],
                 'cours_a_faire' => $rattrapages->map(fn ($r) => [
                     ...$r->only(['id', 'statut', 'motif']),
-                    'matiere' => $r->matiere?->only(['id', 'code', 'libelle']),
+                    'matiere' => $r->matiere?->only(['id', 'code', 'libelle', 'unite_ensigne_id']),
                     'cours' => $r->cours?->only(['id', 'code', 'libelle']),
                     'date_seance_manquee' => $r->seance?->date_prevue,
                 ]),

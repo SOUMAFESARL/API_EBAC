@@ -37,8 +37,10 @@ class MesBulletinsEtudiantApiTest extends TestCase
         $brouillon = Bulletin::create(['id_inscription' => $inscription->id, 'periode' => 'Brouillon']);
         $retire = Bulletin::create(['id_inscription' => $inscription->id, 'periode' => 'Retire', 'statut' => 'Brouillon', 'date_publication' => '2026-10-01']);
         $etranger = Bulletin::create(['id_inscription' => $autreInscription->id, 'periode' => 'Annuel', 'statut' => 'Publié', 'date_publication' => '2026-10-01']);
+        $domaine = \App\Models\UniteEnseignement::create(['code' => 'DOM', 'libelle' => 'Domaine', 'statut' => 'Actif']);
         foreach ([14, 8, null] as $index => $note) {
             $matiere = Matiere::create(['code' => 'MAT-'.$index, 'libelle' => 'Matiere '.$index, 'id_niveau' => $niveau->id, 'note_validation' => 10]);
+            $matiere->update(['unite_ensigne_id' => $index < 2 ? $domaine->id : null]);
             LigneBulletin::create(['id_bulletin' => $publie->id, 'id_matiere' => $matiere->id, 'note' => $note, 'coefficient' => 2]);
         }
         Sanctum::actingAs($user);
@@ -47,6 +49,14 @@ class MesBulletinsEtudiantApiTest extends TestCase
             ->assertJsonPath('bulletins.0.annee_academique.id', $annee->id)->assertJsonMissingPath('bulletins.0.fichier_chemin');
         $this->getJson($base.'/'.$publie->id)->assertOk()->assertJsonPath('bulletin.moyenne_generale', 14.1)
             ->assertJsonPath('bulletin.rang', 3)->assertJsonCount(3, 'bulletin.matieres')
+            ->assertJsonPath('bulletin.matieres.0.matiere.unite_ensigne_id', $domaine->id)
+            ->assertJsonPath('bulletin.matieres.2.matiere.unite_ensigne_id', null)
+            ->assertJsonCount(2, 'bulletin.unites_enseignement')
+            ->assertJsonPath('bulletin.unites_enseignement.0.unite_ensigne_id', $domaine->id)
+            ->assertJsonCount(2, 'bulletin.unites_enseignement.0.matieres')
+            ->assertJsonPath('bulletin.unites_enseignement.0.matieres.1.matiere.code', 'MAT-1')
+            ->assertJsonPath('bulletin.unites_enseignement.1.unite_ensigne_id', null)
+            ->assertJsonCount(1, 'bulletin.unites_enseignement.1.matieres')
             ->assertJsonPath('bulletin.recapitulatif_uv.validees', 1)->assertJsonPath('bulletin.recapitulatif_uv.non_validees', 1)
             ->assertJsonPath('bulletin.recapitulatif_uv.a_completer', 1)->assertJsonCount(0, 'bulletin.cours_a_faire');
         $this->getJson($base.'/'.$publie->id)->assertOk()->assertJsonPath('etudiant.date_naissance', null)
