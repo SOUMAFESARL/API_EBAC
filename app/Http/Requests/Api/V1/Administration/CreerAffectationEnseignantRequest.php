@@ -18,8 +18,8 @@ class CreerAffectationEnseignantRequest extends FormRequest
         return [
             'enseignant_id' => ['required', 'integer', new UtilisateurEstEnseignant],
             'portee' => ['required', Rule::in(['matiere', 'cours'])],
-            'id_matiere' => ['required', 'integer', 'exists:matieres,id'],
-            'id_cours' => [Rule::requiredIf($this->input('portee') === 'cours'), Rule::prohibitedIf($this->input('portee') === 'matiere'), 'nullable', 'integer', 'exists:cours,id'],
+            'id_matiere' => ['required', 'integer', \Illuminate\Validation\Rule::exists('matieres', 'id')->whereNull('deleted_at')],
+            'id_cours' => [Rule::requiredIf($this->input('portee') === 'cours'), Rule::prohibitedIf($this->input('portee') === 'matiere'), 'nullable', 'integer', \Illuminate\Validation\Rule::exists('cours', 'id')->whereNull('deleted_at')],
             'date_debut' => ['required', 'date_format:Y-m-d'],
         ];
     }

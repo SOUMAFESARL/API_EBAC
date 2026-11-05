@@ -35,14 +35,14 @@ class ModifierMatiereRequest extends FormRequest
             'module_calendrier_id.*' => ['integer', 'distinct', 'exists:modules_calendrier,id'],
             // Modules imbriqués : la présence du tableau déclenche la synchronisation complète
             'modules' => ['sometimes', 'array', 'min:1'],
-            'modules.*.id' => ['sometimes', 'nullable', 'integer', 'exists:modules,id'],
+            'modules.*.id' => ['sometimes', 'nullable', 'integer', \Illuminate\Validation\Rule::exists('modules', 'id')->whereNull('deleted_at')],
             'modules.*.code' => ['nullable', 'string', 'max:50'],
             'modules.*.libelle' => ['required_with:modules', 'string', 'max:180'],
             'modules.*.ordre' => ['sometimes', 'integer', 'min:1', 'max:65535'],
             'modules.*.description' => ['nullable', 'string'],
             // Cours imbriqués dans chaque module
             'modules.*.cours' => ['sometimes', 'array', 'min:1'],
-            'modules.*.cours.*.id' => ['sometimes', 'nullable', 'integer', 'exists:cours,id'],
+            'modules.*.cours.*.id' => ['sometimes', 'nullable', 'integer', \Illuminate\Validation\Rule::exists('cours', 'id')->whereNull('deleted_at')],
             'modules.*.cours.*.code' => ['nullable', 'string', 'max:50'],
             'modules.*.cours.*.libelle' => ['required_with:modules.*.cours', 'string', 'max:180'],
             'modules.*.cours.*.volume_horaire' => ['sometimes', 'numeric', 'min:0', 'max:9999.99'],

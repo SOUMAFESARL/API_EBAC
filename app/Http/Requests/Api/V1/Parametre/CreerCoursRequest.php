@@ -12,7 +12,7 @@ class CreerCoursRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_module' => ['required', 'integer', 'exists:modules,id'],
+            'id_module' => ['required', 'integer', \Illuminate\Validation\Rule::exists('modules', 'id')->whereNull('deleted_at')],
             'code' => ['nullable', 'string', 'max:50'],
             'libelle' => ['required', 'string', 'max:180', Rule::unique('cours')->where('id_module', $this->integer('id_module'))],
             'volume_horaire' => ['sometimes', 'numeric', 'min:0', 'max:9999.99'],

@@ -243,12 +243,11 @@ class MatiereController extends Controller
         ]);
     }
 
-    #[OA\Delete(path: '/parametres/matieres/{id}', operationId: 'supprimerMatiere', tags: ['Matières'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Matière supprimée')])]
+    #[OA\Delete(path: '/parametres/matieres/{id}', operationId: 'supprimerMatiere', description: 'Suppression en cascade des modules, cours, seances, presences, rattrapages, affectations et notes de travail. Retrait des programmes publies concernes. Les bulletins non publies sont recalcules ou supprimes si vides. Les bulletins publies et leurs matieres restent consultables et inchanges.', tags: ['Matières'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [new OA\Response(response: 200, description: 'Matière supprimée')])]
     public function destroy(ModifierMatiereRequest $request, int $id): JsonResponse
     {
         $matiere = Matiere::query()->findOrFail($id);
-        $matiere->update(['deleted_by' => $request->user()->id]);
-        $matiere->delete();
+        app(\App\Services\SuppressionProgrammeService::class)->supprimerMatiere($matiere, $request->user()->id);
 
         return response()->json(['message' => 'Matière supprimée avec succès.']);
     }

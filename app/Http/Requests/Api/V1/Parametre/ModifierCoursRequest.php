@@ -16,7 +16,7 @@ class ModifierCoursRequest extends FormRequest
         $module = $this->integer('id_module') ?: $cours?->id_module;
 
         return [
-            'id_module' => ['sometimes', 'required', 'integer', 'exists:modules,id'],
+            'id_module' => ['sometimes', 'required', 'integer', \Illuminate\Validation\Rule::exists('modules', 'id')->whereNull('deleted_at')],
             'code' => ['nullable', 'string', 'max:50'],
             'libelle' => ['sometimes', 'required', 'string', 'max:180', Rule::unique('cours')->where('id_module', $module)->ignore($this->route('id'))],
             'volume_horaire' => ['sometimes', 'numeric', 'min:0', 'max:9999.99'],

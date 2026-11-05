@@ -62,10 +62,7 @@ class UniteEnseignementController extends Controller
     public function destroy(Request $request, int $id): JsonResponse
     {
         $unite = UniteEnseignement::query()->findOrFail($id);
-        $unite->getConnection()->transaction(function () use ($unite, $request) {
-            $unite->update(['deleted_by' => $request->user()->id]);
-            $unite->delete();
-        });
+        app(\App\Services\SuppressionProgrammeService::class)->supprimerUnite($unite, $request->user()->id);
 
         return response()->json(['message' => 'Unité d’enseignement supprimée avec succès.']);
     }

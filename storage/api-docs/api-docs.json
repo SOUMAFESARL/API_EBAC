@@ -3057,6 +3057,7 @@
                 "tags": [
                     "Matières"
                 ],
+                "description": "Suppression en cascade des modules, cours, seances, presences, rattrapages, affectations et notes de travail. Retrait des programmes publies concernes. Les bulletins non publies sont recalcules ou supprimes si vides. Les bulletins publies et leurs matieres restent consultables et inchanges.",
                 "operationId": "supprimerMatiere",
                 "parameters": [
                     {
@@ -14563,6 +14564,7 @@
                 "tags": [
                     "Unités enseignement"
                 ],
+                "description": "Supprime toutes les matieres de cette unite et leurs donnees de travail associees dans une transaction. Les programmes concernes sont retires. Les bulletins non publies sont recalcules ou supprimes si vides. Les bulletins publies sont conserves avec leurs notes et leurs matieres lisibles.",
                 "operationId": "supprimerUniteEnseignement",
                 "parameters": [
                     {

@@ -17,5 +17,5 @@ class LigneBulletin extends Model
     }
 
     public function bulletin(): BelongsTo { return $this->belongsTo(Bulletin::class, 'id_bulletin'); }
-    public function matiere(): BelongsTo { return $this->belongsTo(Matiere::class, 'id_matiere'); }
+    public function matiere(): BelongsTo { return $this->belongsTo(Matiere::class, 'id_matiere')->withTrashed(); }
 }
