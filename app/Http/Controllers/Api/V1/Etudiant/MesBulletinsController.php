@@ -117,7 +117,8 @@ class MesBulletinsController extends Controller
     private function detail(Request $request, int $id): array
     {
         $etudiant = $this->etudiant($request);
-        $bulletin = $this->bulletins($etudiant)->with('lignes.matiere')->findOrFail($id);
+        $bulletin = $this->bulletins($etudiant)->with('lignes.matiere.uniteEnseignement')->findOrFail($id);
+        $domaines = $bulletin->lignes->map(fn ($ligne) => $ligne->matiere?->uniteEnseignement)->filter()->keyBy('id');
         $lignes = $bulletin->lignes->map(function ($ligne) {
             $note = $ligne->note !== null ? (float) $ligne->note : null;
 
@@ -141,6 +142,7 @@ class MesBulletinsController extends Controller
                 'unites_enseignement' => $lignes->groupBy('matiere.unite_ensigne_id')
                     ->map(fn ($matieres) => [
                         'unite_ensigne_id' => $matieres->first()['matiere']['unite_ensigne_id'] ?? null,
+                        'libelle' => $domaines->get($matieres->first()['matiere']['unite_ensigne_id'] ?? null)?->libelle,
                         'matieres' => $matieres->values(),
                     ])->values(),
                 'qr_code' => app(BulletinQrCodeService::class)->presenter($bulletin),

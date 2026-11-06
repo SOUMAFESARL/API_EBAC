@@ -53,9 +53,11 @@ class MesBulletinsEtudiantApiTest extends TestCase
             ->assertJsonPath('bulletin.matieres.2.matiere.unite_ensigne_id', null)
             ->assertJsonCount(2, 'bulletin.unites_enseignement')
             ->assertJsonPath('bulletin.unites_enseignement.0.unite_ensigne_id', $domaine->id)
+            ->assertJsonPath('bulletin.unites_enseignement.0.libelle', 'Domaine')
             ->assertJsonCount(2, 'bulletin.unites_enseignement.0.matieres')
             ->assertJsonPath('bulletin.unites_enseignement.0.matieres.1.matiere.code', 'MAT-1')
             ->assertJsonPath('bulletin.unites_enseignement.1.unite_ensigne_id', null)
+            ->assertJsonPath('bulletin.unites_enseignement.1.libelle', null)
             ->assertJsonCount(1, 'bulletin.unites_enseignement.1.matieres')
             ->assertJsonPath('bulletin.recapitulatif_uv.validees', 1)->assertJsonPath('bulletin.recapitulatif_uv.non_validees', 1)
             ->assertJsonPath('bulletin.recapitulatif_uv.a_completer', 1)->assertJsonCount(0, 'bulletin.cours_a_faire');

@@ -46,12 +46,13 @@ use OpenApi\Attributes as OA;
                 ])),
                 new OA\Property(property: 'mention', description: 'Mention enregistree ou calculee : sans note ou <10 À REPRENDRE, >=10 Passable, >=12 Assez bien, >=14 Bien, >=16 Tres bien.', type: 'string', example: 'Bien'),
                 new OA\Property(property: 'unites_enseignement', description: 'Chaque unite_ensigne_id apparait une seule fois avec toutes ses matieres dans un tableau matieres. L identifiant de chaque matiere est matiere.id ; id est celui de la ligne du bulletin. Le groupe unite_ensigne_id null contient les matieres sans domaine. Tableau vide si aucune matiere.', type: 'array', example: [
-                    ['unite_ensigne_id' => 2, 'matieres' => [
+                    ['unite_ensigne_id' => 2, 'libelle' => 'Etudes bibliques', 'matieres' => [
                         ['id' => 101, 'matiere' => ['id' => 8, 'code' => 'BIB-01', 'libelle' => 'Introduction biblique', 'type' => 'Théorique', 'unite_ensigne_id' => 2], 'coefficient' => 2, 'note' => 14, 'mention' => 'Bien', 'moyenne_ponderee' => 28, 'appreciation' => null, 'statut' => 'validee'],
                         ['id' => 102, 'matiere' => ['id' => 9, 'code' => 'BIB-02', 'libelle' => 'Nouveau Testament', 'type' => 'Théorique', 'unite_ensigne_id' => 2], 'coefficient' => 3, 'note' => 16, 'mention' => 'Tres bien', 'moyenne_ponderee' => 48, 'appreciation' => null, 'statut' => 'validee'],
                     ]],
                 ], items: new OA\Items(type: 'object', properties: [
                     new OA\Property(property: 'unite_ensigne_id', type: 'integer', nullable: true),
+                    new OA\Property(property: 'libelle', description: 'Libelle du domaine d enseignement, null pour les matieres sans domaine.', type: 'string', nullable: true, example: 'Etudes bibliques'),
                     new OA\Property(property: 'matieres', type: 'array', items: new OA\Items(ref: '#/paths/~1etudiant~1bulletins~1{id}/get/responses/200/content/application~1json/schema/properties/bulletin/properties/matieres/items')),
                 ])),
                 new OA\Property(property: 'qr_code', type: 'object', properties: [
