@@ -26,7 +26,8 @@ class BulletinNotesEtudiantController extends Controller
             ->leftJoin('users as u', fn ($join) => $join->whereRaw('u.id = COALESCE(f.transmise_par, s.enseignant_id)'))
             ->selectRaw('COALESCE(m.id_matiere, f.id_matiere) as id_matiere, u.id, u.nom, u.prenoms')
             ->distinct()->get()->groupBy('id_matiere');
-        $matieres = Matiere::whereIn('id', $moyennes->keys())->orderBy('libelle')->orderBy('id')->get();
+        $matieres = Matiere::with('uniteEnseignement')->whereIn('id', $moyennes->keys())->orderBy('libelle')->orderBy('id')->get();
+        $domaines = $matieres->pluck('uniteEnseignement')->filter()->keyBy('id');
         $somme = 0.0;
         $coefficients = 0.0;
         $validees = 0;
@@ -64,6 +65,7 @@ class BulletinNotesEtudiantController extends Controller
             'unites_enseignement' => $lignes->groupBy('matiere.unite_ensigne_id')
                 ->map(fn ($matieres) => [
                     'unite_ensigne_id' => $matieres->first()['matiere']['unite_ensigne_id'],
+                    'libelle' => $domaines->get($matieres->first()['matiere']['unite_ensigne_id'])?->libelle,
                     'matieres' => $matieres->values(),
                 ])->values(),
             'moyenne_generale' => $coefficients > 0 ? round($somme / $coefficients, 2) : null,

@@ -60,6 +60,7 @@ use OpenApi\Attributes as OA;
             new OA\Property(property: 'moyenne_generale', type: 'number', nullable: true, example: 15),
             new OA\Property(property: 'unites_enseignement', description: 'Chaque unite_ensigne_id apparait une seule fois avec toutes ses matieres dans le tableau matieres. L identifiant de chaque matiere est matiere.id. Le groupe unite_ensigne_id null rassemble les matieres sans domaine. Tableau vide si aucune matiere. La liste bulletin.matieres reste disponible.', type: 'array', example: BulletinNotesEtudiantDocumentation::EXEMPLE_DOMAINES, items: new OA\Items(type: 'object', properties: [
                 new OA\Property(property: 'unite_ensigne_id', type: 'integer', nullable: true, example: 2),
+                new OA\Property(property: 'libelle', description: 'Libelle du domaine d enseignement, null pour les matieres sans domaine.', type: 'string', nullable: true, example: 'Etudes bibliques'),
                 new OA\Property(property: 'matieres', type: 'array', items: new OA\Items(ref: '#/paths/~1administration~1bulletins-notes~1{id}/get/responses/200/content/application~1json/schema/properties/bulletin/properties/matieres/items')),
             ])),
             new OA\Property(property: 'total_coefficients', type: 'number', example: 2),
@@ -74,6 +75,7 @@ final class BulletinNotesEtudiantDocumentation
     public const EXEMPLE_DOMAINES = [
         [
             'unite_ensigne_id' => 2,
+            'libelle' => 'Etudes bibliques',
             'matieres' => [
                 [
                     'numero' => 1,
