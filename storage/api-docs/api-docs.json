@@ -13849,6 +13849,376 @@
                 ]
             }
         },
+        "/enseignant/bibliotheque": {
+            "get": {
+                "tags": [
+                    "Bibliothèque pédagogique"
+                ],
+                "summary": "Bibliothèque de l enseignant connecté",
+                "description": "Rôle ENSEIGNANT. Cours affectés aujourd hui, rangés matière › module › cours, avec leurs supports et le quota.",
+                "operationId": "maBibliotheque",
+                "responses": {
+                    "200": {
+                        "description": "enseignant, matieres[{id, code, libelle, niveau, modules[{id, libelle, cours[{id, libelle, supports[SupportPedagogique]}]}]}], quota (QuotaStockage)"
+                    },
+                    "404": {
+                        "description": "AUCUNE_AFFECTATION"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/supports/bibliotheque": {
+            "get": {
+                "tags": [
+                    "Bibliothèque pédagogique"
+                ],
+                "summary": "Bibliothèque de l établissement",
+                "description": "Droit requis : ressources.bibliotheque.consulter. ADMIN passe toujours. Documents rangés par domaine d enseignement puis matière ; id/code/libelle null pour les matières non classées.",
+                "operationId": "bibliothequeEtablissement",
+                "responses": {
+                    "200": {
+                        "description": "domaines[{id, code, libelle, matieres[{id, code, libelle, niveau, enseignant_responsable, documents[{support, module, cours, ajoute_par}]}]}], matieres_sans_document"
+                    },
+                    "403": {
+                        "description": "Droit manquant"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/supports": {
+            "post": {
+                "tags": [
+                    "Bibliothèque pédagogique"
+                ],
+                "summary": "Déposer un support (v1)",
+                "operationId": "deposerSupport",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "id_cours",
+                                    "nom",
+                                    "type",
+                                    "fichier"
+                                ],
+                                "properties": {
+                                    "id_cours": {
+                                        "type": "integer"
+                                    },
+                                    "nom": {
+                                        "type": "string",
+                                        "maxLength": 120,
+                                        "minLength": 3
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "cours",
+                                            "travaux-diriges",
+                                            "exercices",
+                                            "corrige",
+                                            "reference",
+                                            "media"
+                                        ]
+                                    },
+                                    "note": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 300
+                                    },
+                                    "fichier": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Support créé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EcritureSupport"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "COURS_NON_AFFECTE ou DROITS_INSUFFISANTS"
+                    },
+                    "409": {
+                        "description": "FORMAT_REFUSE, FICHIER_TROP_LOURD ou QUOTA_DEPASSE"
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/supports/{support}/versions": {
+            "post": {
+                "tags": [
+                    "Bibliothèque pédagogique"
+                ],
+                "summary": "Publier une nouvelle version",
+                "operationId": "publierVersionSupport",
+                "parameters": [
+                    {
+                        "name": "support",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "note",
+                                    "fichier"
+                                ],
+                                "properties": {
+                                    "note": {
+                                        "type": "string",
+                                        "maxLength": 300,
+                                        "minLength": 5
+                                    },
+                                    "fichier": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Support avec son historique",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EcritureSupport"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "SUPPORT_NON_AFFECTE ou DROITS_INSUFFISANTS"
+                    },
+                    "404": {
+                        "description": "SUPPORT_INTROUVABLE"
+                    },
+                    "409": {
+                        "description": "FORMAT_REFUSE, FICHIER_TROP_LOURD ou QUOTA_DEPASSE"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/supports/{support}/versions/{numero}/republication": {
+            "post": {
+                "tags": [
+                    "Bibliothèque pédagogique"
+                ],
+                "summary": "Republier une version antérieure sous un numéro neuf",
+                "operationId": "republierVersionSupport",
+                "parameters": [
+                    {
+                        "name": "support",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "numero",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Support avec son historique",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EcritureSupport"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "SUPPORT_INTROUVABLE ou VERSION_INTROUVABLE"
+                    },
+                    "409": {
+                        "description": "QUOTA_DEPASSE"
+                    },
+                    "422": {
+                        "description": "Version déjà courante"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/supports/{support}/versions/{numero}/fichier": {
+            "get": {
+                "tags": [
+                    "Bibliothèque pédagogique"
+                ],
+                "summary": "Télécharger une version",
+                "description": "Enseignant du cours, étudiant d un niveau égal ou supérieur à celui de la matière, ou ressources.bibliotheque.consulter. ADMIN passe toujours.",
+                "operationId": "telechargerVersionSupport",
+                "parameters": [
+                    {
+                        "name": "support",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "numero",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contenu binaire du fichier"
+                    },
+                    "403": {
+                        "description": "DROITS_INSUFFISANTS"
+                    },
+                    "404": {
+                        "description": "VERSION_INTROUVABLE"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/supports/quotas": {
+            "get": {
+                "tags": [
+                    "Bibliothèque pédagogique"
+                ],
+                "summary": "Quotas de stockage des enseignants",
+                "description": "Droit requis : ressources.quotas-supports.consulter. ADMIN passe toujours.",
+                "operationId": "listerQuotasSupports",
+                "responses": {
+                    "200": {
+                        "description": "quotas[QuotaStockage]"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/supports/quotas/{enseignant}": {
+            "put": {
+                "tags": [
+                    "Bibliothèque pédagogique"
+                ],
+                "summary": "Fixer le quota d un enseignant",
+                "description": "Droit requis : ressources.quotas-supports.modifier. ADMIN passe toujours. Le quota ne descend pas sous l espace occupé.",
+                "operationId": "definirQuotaSupports",
+                "parameters": [
+                    {
+                        "name": "enseignant",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "quota_mo"
+                                ],
+                                "properties": {
+                                    "quota_mo": {
+                                        "type": "integer",
+                                        "maximum": 20000,
+                                        "minimum": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "quota (QuotaStockage)"
+                    },
+                    "404": {
+                        "description": "ENSEIGNANT_INTROUVABLE"
+                    },
+                    "409": {
+                        "description": "QUOTA_INFERIEUR_UTILISE"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/enseignant/transmissions-notes/tableau-general": {
             "get": {
                 "tags": [
@@ -18901,6 +19271,122 @@
                     }
                 ]
             },
+            "PersonneSupport": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "nom": {
+                        "type": "string",
+                        "example": "KONAN"
+                    },
+                    "prenoms": {
+                        "type": "string",
+                        "example": "Abraham",
+                        "nullable": true
+                    }
+                },
+                "type": "object",
+                "nullable": true
+            },
+            "SupportPedagogique": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 12
+                    },
+                    "nom": {
+                        "type": "string",
+                        "example": "Plan de cours"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "cours",
+                            "travaux-diriges",
+                            "exercices",
+                            "corrige",
+                            "reference",
+                            "media"
+                        ]
+                    },
+                    "versions": {
+                        "description": "De la plus récente à la plus ancienne.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "numero": {
+                                    "type": "integer",
+                                    "example": 2
+                                },
+                                "taille_mo": {
+                                    "type": "number",
+                                    "example": 2.4
+                                },
+                                "format": {
+                                    "type": "string",
+                                    "example": "PDF"
+                                },
+                                "depose_le": {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                "note": {
+                                    "type": "string"
+                                },
+                                "depose_par": {
+                                    "$ref": "#/components/schemas/PersonneSupport"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "QuotaStockage": {
+                "properties": {
+                    "enseignant_id": {
+                        "type": "integer"
+                    },
+                    "enseignant": {
+                        "$ref": "#/components/schemas/PersonneSupport"
+                    },
+                    "quota_mo": {
+                        "type": "integer",
+                        "example": 500
+                    },
+                    "utilise_mo": {
+                        "type": "number",
+                        "example": 42.3
+                    },
+                    "supports": {
+                        "type": "integer"
+                    },
+                    "versions": {
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
+            "EcritureSupport": {
+                "properties": {
+                    "support": {
+                        "$ref": "#/components/schemas/SupportPedagogique"
+                    },
+                    "quota": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/QuotaStockage"
+                            }
+                        ],
+                        "nullable": true,
+                        "description": "Quota du déposant enseignant ; null pour la gestion (hors quota)."
+                    }
+                },
+                "type": "object"
+            },
             "SuiviTransmissionNotes": {
                 "properties": {
                     "id": {
@@ -19195,6 +19681,10 @@
         {
             "name": "Rôles",
             "description": "Gestion des rôles, droits et autorisations. Permission ROLE_GERER requise."
+        },
+        {
+            "name": "Bibliothèque pédagogique",
+            "description": "Supports de cours versionnés : rien ne se supprime, une correction publie une version. Formats : PDF, DOCX, ODT, PPTX, ODP, XLSX, MP3, MP4, JPG, PNG, ZIP ; 50 Mo par fichier. Écritures : l enseignant (rôle ENSEIGNANT) sur ses cours affectés, dans son quota ; la gestion avec ressources.bibliotheque.creer (dépôt) ou ressources.bibliotheque.modifier (versions), hors quota. ADMIN passe toujours. Erreurs : { code, message } — COURS_NON_AFFECTE, SUPPORT_NON_AFFECTE, DROITS_INSUFFISANTS (403), SUPPORT_INTROUVABLE, VERSION_INTROUVABLE (404), FORMAT_REFUSE, FICHIER_TROP_LOURD, QUOTA_DEPASSE, QUOTA_INFERIEUR_UTILISE (409)."
         },
         {
             "name": "Tableau des notes par matiere",

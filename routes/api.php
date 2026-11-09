@@ -52,6 +52,7 @@ use App\Http\Controllers\Api\V1\Parametre\PromotionController;
 use App\Http\Controllers\Api\V1\Parametre\SalleController;
 use App\Http\Controllers\Api\V1\Parametre\UniteEnseignementController;
 use App\Http\Controllers\Api\V1\ProgrammePublieController;
+use App\Http\Controllers\Api\V1\SupportPedagogiqueController;
 use App\Http\Controllers\Api\V1\VerificationBulletinController;
 use Illuminate\Support\Facades\Route;
 
@@ -313,6 +314,30 @@ Route::get('v1/navigation/sidebar', SidebarController::class)
 Route::get('v1/programme', ProgrammePublieController::class)
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:SECRETAIRE_ACADEMIQUE,SECRETARIAT,GESTIONNAIRE,ETUDIANT,ENSEIGNANT'])
     ->name('api.v1.programme');
+
+Route::get('v1/enseignant/bibliotheque', [SupportPedagogiqueController::class, 'monEspace'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ENSEIGNANT'])
+    ->name('api.v1.enseignant.bibliotheque');
+
+// Écritures : l'enseignant sur ses cours affectés, la gestion avec
+// ressources.bibliotheque.creer / modifier (contrôlé dans le contrôleur).
+Route::prefix('v1/supports')->name('api.v1.supports.')
+    ->middleware(['auth:sanctum', 'compte.actif'])
+    ->group(function () use ($droit) {
+        Route::get('bibliotheque', [SupportPedagogiqueController::class, 'bibliotheque'])
+            ->middleware($droit('ressources.bibliotheque.consulter'))->name('bibliotheque');
+        Route::get('quotas', [SupportPedagogiqueController::class, 'quotas'])
+            ->middleware($droit('ressources.quotas-supports.consulter'))->name('quotas.index');
+        Route::put('quotas/{enseignant}', [SupportPedagogiqueController::class, 'definirQuota'])
+            ->whereNumber('enseignant')->middleware($droit('ressources.quotas-supports.modifier'))->name('quotas.update');
+        Route::post('/', [SupportPedagogiqueController::class, 'store'])->name('store');
+        Route::post('{support}/versions', [SupportPedagogiqueController::class, 'publierVersion'])
+            ->whereNumber('support')->name('versions.store');
+        Route::post('{support}/versions/{numero}/republication', [SupportPedagogiqueController::class, 'republier'])
+            ->whereNumber(['support', 'numero'])->name('versions.republication');
+        Route::get('{support}/versions/{numero}/fichier', [SupportPedagogiqueController::class, 'telecharger'])
+            ->whereNumber(['support', 'numero'])->name('versions.fichier');
+    });
 
 Route::prefix('v1/enseignant/mes-cours')
     ->name('api.v1.enseignant.mes-cours.')
