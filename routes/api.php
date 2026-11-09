@@ -320,7 +320,8 @@ Route::get('v1/enseignant/bibliotheque', [SupportPedagogiqueController::class, '
     ->name('api.v1.enseignant.bibliotheque');
 
 // Écritures : l'enseignant sur ses cours affectés, la gestion avec
-// ressources.bibliotheque.creer / modifier (contrôlé dans le contrôleur).
+// ressources.bibliotheque.creer / supprimer (contrôlé dans le contrôleur).
+// Pas de versions : un document se supprime puis se redépose.
 Route::prefix('v1/supports')->name('api.v1.supports.')
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->group(function () use ($droit) {
@@ -331,12 +332,10 @@ Route::prefix('v1/supports')->name('api.v1.supports.')
         Route::put('quotas/{enseignant}', [SupportPedagogiqueController::class, 'definirQuota'])
             ->whereNumber('enseignant')->middleware($droit('ressources.quotas-supports.modifier'))->name('quotas.update');
         Route::post('/', [SupportPedagogiqueController::class, 'store'])->name('store');
-        Route::post('{support}/versions', [SupportPedagogiqueController::class, 'publierVersion'])
-            ->whereNumber('support')->name('versions.store');
-        Route::post('{support}/versions/{numero}/republication', [SupportPedagogiqueController::class, 'republier'])
-            ->whereNumber(['support', 'numero'])->name('versions.republication');
-        Route::get('{support}/versions/{numero}/fichier', [SupportPedagogiqueController::class, 'telecharger'])
-            ->whereNumber(['support', 'numero'])->name('versions.fichier');
+        Route::delete('{support}', [SupportPedagogiqueController::class, 'destroy'])
+            ->whereNumber('support')->name('destroy');
+        Route::get('{support}/fichier', [SupportPedagogiqueController::class, 'telecharger'])
+            ->whereNumber('support')->name('fichier');
     });
 
 Route::prefix('v1/enseignant/mes-cours')

@@ -4,7 +4,7 @@ use Database\Seeders\CatalogueDroitsSeeder;
 use Illuminate\Database\Migrations\Migration;
 
 /**
- * Sème le droit `ressources.bibliotheque.consulter` (Bibliothèque
+ * Sème les droits `ressources.bibliotheque.consulter/creer/supprimer` (Bibliothèque
  * pédagogique des espaces de gestion), ajouté au catalogue le 09/11/2026.
  * Le seeder est idempotent : il n'ajoute que ce qui manque et ne touche
  * pas aux droits déjà cochés des rôles.

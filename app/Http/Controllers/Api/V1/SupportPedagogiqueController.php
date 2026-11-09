@@ -10,12 +10,10 @@ use App\Models\Role;
 use App\Models\SupportPedagogique;
 use App\Models\UniteEnseignement;
 use App\Models\User;
-use App\Models\VersionSupport;
 use App\Services\BibliothequeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -36,7 +34,7 @@ class SupportPedagogiqueController extends Controller
         }
 
         $cours = Cours::query()->whereIn('id', $ids)->with(['module.matiere.niveau'])->orderBy('ordre')->get();
-        $supports = SupportPedagogique::query()->whereIn('id_cours', $ids)->with('versions.auteur')->orderBy('id')->get()->groupBy('id_cours');
+        $supports = SupportPedagogique::query()->whereIn('id_cours', $ids)->with('auteur')->orderBy('id')->get()->groupBy('id_cours');
 
         $matieres = $cours->groupBy(fn (Cours $c) => $c->module->id_matiere)->map(function ($liste) use ($supports) {
             $matiere = $liste->first()->module->matiere;
@@ -69,7 +67,7 @@ class SupportPedagogiqueController extends Controller
     public function bibliotheque(): JsonResponse
     {
         $supports = SupportPedagogique::query()
-            ->with(['versions.auteur', 'auteur', 'cours.module.matiere.niveau', 'cours.module.matiere.enseignant'])
+            ->with(['auteur', 'cours.module.matiere.niveau', 'cours.module.matiere.enseignant'])
             ->whereHas('cours.module.matiere')->orderBy('id')->get();
 
         $parMatiere = $supports->groupBy(fn ($s) => $s->cours->module->id_matiere);
@@ -121,7 +119,6 @@ class SupportPedagogiqueController extends Controller
             'id_cours' => ['required', 'integer', Rule::exists('cours', 'id')->whereNull('deleted_at')],
             'nom' => ['required', 'string', 'min:3', 'max:120'],
             'type' => ['required', Rule::in(SupportPedagogique::TYPES)],
-            'note' => ['nullable', 'string', 'max:300'],
             'fichier' => ['required', 'file'],
         ]);
         $utilisateur = $request->user();
@@ -131,90 +128,69 @@ class SupportPedagogiqueController extends Controller
                 ? $this->refus(403, 'COURS_NON_AFFECTE', 'Ce cours ne vous est pas affecté.')
                 : $this->refus(403, 'DROITS_INSUFFISANTS', 'Vous ne disposez pas de la permission nécessaire pour cette action.');
         }
-        if ($refus = $this->refusFichier($request->file('fichier'), $utilisateur)) {
+        $fichier = $request->file('fichier');
+        if ($refus = $this->refusFichier($fichier, $utilisateur)) {
             return $refus;
         }
 
-        $support = DB::transaction(function () use ($donnees, $request, $utilisateur) {
+        $chemin = $fichier->store('supports', self::DISQUE);
+        try {
             $support = SupportPedagogique::create([
-                'id_cours' => $donnees['id_cours'], 'nom' => $donnees['nom'], 'type' => $donnees['type'], 'depose_par' => $utilisateur->id,
+                'id_cours' => $donnees['id_cours'],
+                'nom' => $donnees['nom'],
+                'type' => $donnees['type'],
+                'chemin' => $chemin,
+                'nom_fichier' => $fichier->getClientOriginalName(),
+                'format' => strtoupper($fichier->getClientOriginalExtension()),
+                'taille_octets' => (int) $fichier->getSize(),
+                'depose_par' => $utilisateur->id,
             ]);
-            $this->enregistrerVersion($support, 1, $request->file('fichier'), $donnees['note'] ?? 'Version initiale.', $utilisateur);
+        } catch (\Throwable $erreur) {
+            Storage::disk(self::DISQUE)->delete($chemin);
+            throw $erreur;
+        }
 
-            return $support;
-        });
-
-        return $this->reponseEcriture($support, $utilisateur, 201);
+        return response()->json([
+            'support' => $this->service->support($support),
+            'quota' => $this->quotaDe($utilisateur),
+        ], 201);
     }
 
-    public function publierVersion(Request $request, int $support): JsonResponse
-    {
-        $donnees = $request->validate([
-            'note' => ['required', 'string', 'min:5', 'max:300'],
-            'fichier' => ['required', 'file'],
-        ]);
-        $utilisateur = $request->user();
-        $item = SupportPedagogique::find($support);
-        if (! $item) {
-            return $this->refus(404, 'SUPPORT_INTROUVABLE', 'Support introuvable.');
-        }
-        if ($refus = $this->refusEcriture($utilisateur, $item)) {
-            return $refus;
-        }
-        if ($refus = $this->refusFichier($request->file('fichier'), $utilisateur)) {
-            return $refus;
-        }
-
-        DB::transaction(fn () => $this->enregistrerVersion(
-            $item, $this->prochainNumero($item), $request->file('fichier'), $donnees['note'], $utilisateur
-        ));
-
-        return $this->reponseEcriture($item, $utilisateur);
-    }
-
-    public function republier(Request $request, int $support, int $numero): JsonResponse
+    /**
+     * Supprime le document et son fichier. Un support n'a pas de versions :
+     * pour le remplacer, on le supprime puis on dépose le nouveau.
+     */
+    public function destroy(Request $request, int $support): JsonResponse
     {
         $utilisateur = $request->user();
         $item = SupportPedagogique::find($support);
         if (! $item) {
             return $this->refus(404, 'SUPPORT_INTROUVABLE', 'Support introuvable.');
         }
-        if ($refus = $this->refusEcriture($utilisateur, $item)) {
-            return $refus;
-        }
-        $ancienne = $item->versions()->where('numero', $numero)->first();
-        if (! $ancienne) {
-            return $this->refus(404, 'VERSION_INTROUVABLE', 'Version introuvable.');
-        }
-        $courante = $this->prochainNumero($item) - 1;
-        if ($ancienne->numero === $courante) {
-            return $this->refus(422, 'DONNEES_INVALIDES', 'Cette version est déjà la version courante.');
-        }
-        if ($this->service->quotaDepasse($utilisateur, $ancienne->taille_octets)) {
-            return $this->refus(409, 'QUOTA_DEPASSE', 'Espace de stockage insuffisant.');
+        if (! $this->service->peutEcrire($utilisateur, $item->id_cours, 'supprimer')) {
+            return $this->service->estEnseignant($utilisateur)
+                ? $this->refus(403, 'SUPPORT_NON_AFFECTE', "Ce support relève d'un cours qui ne vous est pas affecté.")
+                : $this->refus(403, 'DROITS_INSUFFISANTS', 'Vous ne disposez pas de la permission nécessaire pour cette action.');
         }
 
-        DB::transaction(fn () => VersionSupport::create([
-            'id_support' => $item->id, 'numero' => $courante + 1, 'chemin' => $ancienne->chemin,
-            'nom_fichier' => $ancienne->nom_fichier, 'format' => $ancienne->format, 'taille_octets' => $ancienne->taille_octets,
-            'note' => "Republication de la version v{$ancienne->numero}.", 'depose_par' => $utilisateur->id,
-        ]));
+        $chemin = $item->chemin;
+        $item->delete();
+        Storage::disk(self::DISQUE)->delete($chemin);
 
-        return $this->reponseEcriture($item, $utilisateur);
+        return response()->json(['quota' => $this->quotaDe($utilisateur)]);
     }
 
-    public function telecharger(Request $request, int $support, int $numero): JsonResponse|StreamedResponse
+    public function telecharger(Request $request, int $support): JsonResponse|StreamedResponse
     {
         $item = SupportPedagogique::with('cours.module.matiere.niveau')->find($support);
-        $version = $item?->versions()->where('numero', $numero)->first();
-        if (! $version || ! Storage::disk(self::DISQUE)->exists($version->chemin)) {
-            return $this->refus(404, 'VERSION_INTROUVABLE', 'Fichier introuvable.');
+        if (! $item || ! Storage::disk(self::DISQUE)->exists($item->chemin)) {
+            return $this->refus(404, 'SUPPORT_INTROUVABLE', 'Fichier introuvable.');
         }
         if (! $this->service->peutLire($request->user(), $item)) {
             return $this->refus(403, 'DROITS_INSUFFISANTS', "Vous n'avez pas accès à ce document.");
         }
 
-        return Storage::disk(self::DISQUE)->download($version->chemin, $version->nom_fichier, [
+        return Storage::disk(self::DISQUE)->download($item->chemin, $item->nom_fichier, [
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
@@ -243,17 +219,6 @@ class SupportPedagogiqueController extends Controller
         return response()->json(['quota' => $this->service->quota($titulaire)]);
     }
 
-    private function refusEcriture(User $utilisateur, SupportPedagogique $support): ?JsonResponse
-    {
-        if ($this->service->peutEcrire($utilisateur, $support->id_cours, 'modifier')) {
-            return null;
-        }
-
-        return $this->service->estEnseignant($utilisateur)
-            ? $this->refus(403, 'SUPPORT_NON_AFFECTE', "Ce support relève d'un cours qui ne vous est pas affecté.")
-            : $this->refus(403, 'DROITS_INSUFFISANTS', 'Vous ne disposez pas de la permission nécessaire pour cette action.');
-    }
-
     private function refusFichier(UploadedFile $fichier, User $deposant): ?JsonResponse
     {
         if (! in_array(strtoupper($fichier->getClientOriginalExtension()), BibliothequeService::FORMATS, true)) {
@@ -269,33 +234,10 @@ class SupportPedagogiqueController extends Controller
         return null;
     }
 
-    private function enregistrerVersion(SupportPedagogique $support, int $numero, UploadedFile $fichier, string $note, User $auteur): void
+    /** Quota du déposant enseignant ; `null` pour la gestion, hors quota. */
+    private function quotaDe(User $utilisateur): ?array
     {
-        VersionSupport::create([
-            'id_support' => $support->id,
-            'numero' => $numero,
-            'chemin' => $fichier->store("supports/{$support->id}", self::DISQUE),
-            'nom_fichier' => $fichier->getClientOriginalName(),
-            'format' => strtoupper($fichier->getClientOriginalExtension()),
-            'taille_octets' => (int) $fichier->getSize(),
-            'note' => $note,
-            'depose_par' => $auteur->id,
-        ]);
-    }
-
-    private function prochainNumero(SupportPedagogique $support): int
-    {
-        return (int) VersionSupport::query()->where('id_support', $support->id)->lockForUpdate()->max('numero') + 1;
-    }
-
-    private function reponseEcriture(SupportPedagogique $support, User $utilisateur, int $statut = 200): JsonResponse
-    {
-        $support->unsetRelation('versions');
-
-        return response()->json([
-            'support' => $this->service->support($support),
-            'quota' => $this->service->estEnseignant($utilisateur) ? $this->service->quota($utilisateur) : null,
-        ], $statut);
+        return $this->service->estEnseignant($utilisateur) ? $this->service->quota($utilisateur) : null;
     }
 
     private function refus(int $statut, string $code, string $message): JsonResponse

@@ -13900,7 +13900,7 @@
                 "tags": [
                     "Bibliothèque pédagogique"
                 ],
-                "summary": "Déposer un support (v1)",
+                "summary": "Déposer un support",
                 "operationId": "deposerSupport",
                 "requestBody": {
                     "required": true,
@@ -13932,11 +13932,6 @@
                                             "reference",
                                             "media"
                                         ]
-                                    },
-                                    "note": {
-                                        "type": "string",
-                                        "nullable": true,
-                                        "maxLength": 300
                                     },
                                     "fichier": {
                                         "type": "string",
@@ -13976,13 +13971,14 @@
                 ]
             }
         },
-        "/supports/{support}/versions": {
-            "post": {
+        "/supports/{support}": {
+            "delete": {
                 "tags": [
                     "Bibliothèque pédagogique"
                 ],
-                "summary": "Publier une nouvelle version",
-                "operationId": "publierVersionSupport",
+                "summary": "Supprimer un support et son fichier",
+                "description": "Enseignant du cours affecté, ou ressources.bibliotheque.supprimer. ADMIN passe toujours. Libère l espace du déposant.",
+                "operationId": "supprimerSupport",
                 "parameters": [
                     {
                         "name": "support",
@@ -13993,50 +13989,15 @@
                         }
                     }
                 ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "note",
-                                    "fichier"
-                                ],
-                                "properties": {
-                                    "note": {
-                                        "type": "string",
-                                        "maxLength": 300,
-                                        "minLength": 5
-                                    },
-                                    "fichier": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
-                        "description": "Support avec son historique",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/EcritureSupport"
-                                }
-                            }
-                        }
+                        "description": "quota (QuotaStockage du déposant enseignant, null pour la gestion)"
                     },
                     "403": {
                         "description": "SUPPORT_NON_AFFECTE ou DROITS_INSUFFISANTS"
                     },
                     "404": {
                         "description": "SUPPORT_INTROUVABLE"
-                    },
-                    "409": {
-                        "description": "FORMAT_REFUSE, FICHIER_TROP_LOURD ou QUOTA_DEPASSE"
                     }
                 },
                 "security": [
@@ -14046,78 +14007,17 @@
                 ]
             }
         },
-        "/supports/{support}/versions/{numero}/republication": {
-            "post": {
-                "tags": [
-                    "Bibliothèque pédagogique"
-                ],
-                "summary": "Republier une version antérieure sous un numéro neuf",
-                "operationId": "republierVersionSupport",
-                "parameters": [
-                    {
-                        "name": "support",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "numero",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Support avec son historique",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/EcritureSupport"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "SUPPORT_INTROUVABLE ou VERSION_INTROUVABLE"
-                    },
-                    "409": {
-                        "description": "QUOTA_DEPASSE"
-                    },
-                    "422": {
-                        "description": "Version déjà courante"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/supports/{support}/versions/{numero}/fichier": {
+        "/supports/{support}/fichier": {
             "get": {
                 "tags": [
                     "Bibliothèque pédagogique"
                 ],
-                "summary": "Télécharger une version",
+                "summary": "Télécharger un support",
                 "description": "Enseignant du cours, étudiant d un niveau égal ou supérieur à celui de la matière, ou ressources.bibliotheque.consulter. ADMIN passe toujours.",
-                "operationId": "telechargerVersionSupport",
+                "operationId": "telechargerSupport",
                 "parameters": [
                     {
                         "name": "support",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "numero",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -14133,7 +14033,7 @@
                         "description": "DROITS_INSUFFISANTS"
                     },
                     "404": {
-                        "description": "VERSION_INTROUVABLE"
+                        "description": "SUPPORT_INTROUVABLE"
                     }
                 },
                 "security": [
@@ -19311,36 +19211,20 @@
                             "media"
                         ]
                     },
-                    "versions": {
-                        "description": "De la plus récente à la plus ancienne.",
-                        "type": "array",
-                        "items": {
-                            "properties": {
-                                "numero": {
-                                    "type": "integer",
-                                    "example": 2
-                                },
-                                "taille_mo": {
-                                    "type": "number",
-                                    "example": 2.4
-                                },
-                                "format": {
-                                    "type": "string",
-                                    "example": "PDF"
-                                },
-                                "depose_le": {
-                                    "type": "string",
-                                    "format": "date"
-                                },
-                                "note": {
-                                    "type": "string"
-                                },
-                                "depose_par": {
-                                    "$ref": "#/components/schemas/PersonneSupport"
-                                }
-                            },
-                            "type": "object"
-                        }
+                    "taille_mo": {
+                        "type": "number",
+                        "example": 2.4
+                    },
+                    "format": {
+                        "type": "string",
+                        "example": "PDF"
+                    },
+                    "depose_le": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "depose_par": {
+                        "$ref": "#/components/schemas/PersonneSupport"
                     }
                 },
                 "type": "object"
@@ -19362,9 +19246,6 @@
                         "example": 42.3
                     },
                     "supports": {
-                        "type": "integer"
-                    },
-                    "versions": {
                         "type": "integer"
                     }
                 },
@@ -19684,7 +19565,7 @@
         },
         {
             "name": "Bibliothèque pédagogique",
-            "description": "Supports de cours versionnés : rien ne se supprime, une correction publie une version. Formats : PDF, DOCX, ODT, PPTX, ODP, XLSX, MP3, MP4, JPG, PNG, ZIP ; 50 Mo par fichier. Écritures : l enseignant (rôle ENSEIGNANT) sur ses cours affectés, dans son quota ; la gestion avec ressources.bibliotheque.creer (dépôt) ou ressources.bibliotheque.modifier (versions), hors quota. ADMIN passe toujours. Erreurs : { code, message } — COURS_NON_AFFECTE, SUPPORT_NON_AFFECTE, DROITS_INSUFFISANTS (403), SUPPORT_INTROUVABLE, VERSION_INTROUVABLE (404), FORMAT_REFUSE, FICHIER_TROP_LOURD, QUOTA_DEPASSE, QUOTA_INFERIEUR_UTILISE (409)."
+            "description": "Supports de cours : un document = un fichier, sans versions ; pour le remplacer, on le supprime puis on le redépose. Formats : PDF, DOCX, ODT, PPTX, ODP, XLSX, MP3, MP4, JPG, PNG, ZIP ; 50 Mo par fichier. Écritures : l enseignant (rôle ENSEIGNANT) sur ses cours affectés, dans son quota ; la gestion avec ressources.bibliotheque.creer (dépôt) ou ressources.bibliotheque.supprimer (suppression), hors quota. ADMIN passe toujours. Erreurs : { code, message } — COURS_NON_AFFECTE, SUPPORT_NON_AFFECTE, DROITS_INSUFFISANTS (403), SUPPORT_INTROUVABLE (404), FORMAT_REFUSE, FICHIER_TROP_LOURD, QUOTA_DEPASSE, QUOTA_INFERIEUR_UTILISE (409)."
         },
         {
             "name": "Tableau des notes par matiere",

@@ -61,7 +61,7 @@ class SupportPedagogiqueApiTest extends TestCase
     {
         Sanctum::actingAs($this->enseignant);
         $this->deposer($this->coursAffecte)->assertCreated()
-            ->assertJsonPath('support.versions.0.numero', 1)
+            ->assertJsonPath('support.nom', 'Plan de cours')
             ->assertJsonPath('quota.supports', 1);
         $this->deposer($this->autreCours)->assertForbidden()->assertJsonPath('code', 'COURS_NON_AFFECTE');
 
@@ -98,21 +98,41 @@ class SupportPedagogiqueApiTest extends TestCase
         $this->deposer($this->coursAffecte)->assertCreated();
     }
 
-    public function test_versions_republication_et_telechargement(): void
+    public function test_un_document_se_telecharge_puis_se_supprime_pour_etre_remplace(): void
     {
         Sanctum::actingAs($this->enseignant);
-        $id = $this->deposer($this->coursAffecte)->json('support.id');
+        $depot = $this->deposer($this->coursAffecte)->assertCreated()
+            ->assertJsonPath('support.format', 'PDF')
+            ->assertJsonMissingPath('support.versions');
+        $id = $depot->json('support.id');
+        $chemin = \App\Models\SupportPedagogique::find($id)->chemin;
 
-        $this->post("/api/v1/supports/{$id}/versions", [
-            'note' => 'Ajout du chapitre 3', 'fichier' => UploadedFile::fake()->create('plan-v2.pdf', 100),
-        ], ['Accept' => 'application/json'])->assertOk()->assertJsonPath('support.versions.0.numero', 2);
+        $this->get("/api/v1/supports/{$id}/fichier")->assertOk()->assertDownload('plan.pdf');
+        $this->postJson("/api/v1/supports/{$id}/versions")->assertNotFound();
 
-        $this->postJson("/api/v1/supports/{$id}/versions/1/republication")->assertOk()
-            ->assertJsonPath('support.versions.0.numero', 3)
-            ->assertJsonPath('support.versions.0.note', 'Republication de la version v1.');
-        $this->postJson("/api/v1/supports/{$id}/versions/3/republication")->assertStatus(422);
+        $this->deleteJson("/api/v1/supports/{$id}")->assertOk()->assertJsonPath('quota.supports', 0);
+        Storage::disk('local')->assertMissing($chemin);
+        $this->get("/api/v1/supports/{$id}/fichier")->assertNotFound();
+        $this->deleteJson("/api/v1/supports/{$id}")->assertNotFound()->assertJsonPath('code', 'SUPPORT_INTROUVABLE');
 
-        $this->get("/api/v1/supports/{$id}/versions/2/fichier")->assertOk()->assertDownload('plan-v2.pdf');
+        $this->deposer($this->coursAffecte, 'plan-corrige.pdf')->assertCreated();
+    }
+
+    public function test_la_suppression_exige_le_cours_affecte_ou_le_droit(): void
+    {
+        Sanctum::actingAs($this->admin);
+        $id = $this->deposer($this->autreCours)->json('support.id');
+
+        Sanctum::actingAs($this->enseignant);
+        $this->deleteJson("/api/v1/supports/{$id}")->assertForbidden()->assertJsonPath('code', 'SUPPORT_NON_AFFECTE');
+
+        $direction = User::factory()->create(['id_role' => Role::create(['code' => 'DIRECTION', 'libelle' => 'Direction'])->id]);
+        Sanctum::actingAs($direction);
+        $this->deleteJson("/api/v1/supports/{$id}")->assertForbidden()->assertJsonPath('code', 'DROITS_INSUFFISANTS');
+
+        $this->accorderDroits('DIRECTION', 'ressources.bibliotheque.supprimer');
+        $direction->unsetRelation('role');
+        $this->deleteJson("/api/v1/supports/{$id}")->assertOk()->assertJsonPath('quota', null);
     }
 
     public function test_format_et_quota_refuses(): void

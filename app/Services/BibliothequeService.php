@@ -8,7 +8,6 @@ use App\Models\Etudiant;
 use App\Models\QuotaStockage;
 use App\Models\SupportPedagogique;
 use App\Models\User;
-use App\Models\VersionSupport;
 
 class BibliothequeService
 {
@@ -70,7 +69,7 @@ class BibliothequeService
 
     public function utiliseOctets(User $enseignant): int
     {
-        return (int) VersionSupport::query()->where('depose_par', $enseignant->id)->sum('taille_octets');
+        return (int) SupportPedagogique::query()->where('depose_par', $enseignant->id)->sum('taille_octets');
     }
 
     public function quotaMo(User $enseignant): int
@@ -87,34 +86,28 @@ class BibliothequeService
 
     public function quota(User $enseignant): array
     {
-        $versions = VersionSupport::query()->where('depose_par', $enseignant->id);
-
         return [
             'enseignant_id' => $enseignant->id,
             'enseignant' => $this->personne($enseignant),
             'quota_mo' => $this->quotaMo($enseignant),
             'utilise_mo' => round($this->utiliseOctets($enseignant) / 1048576, 1),
-            'supports' => (clone $versions)->distinct('id_support')->count('id_support'),
-            'versions' => $versions->count(),
+            'supports' => SupportPedagogique::query()->where('depose_par', $enseignant->id)->count(),
         ];
     }
 
+    /** Un support = un fichier : pas de versions, on le supprime pour le remplacer. */
     public function support(SupportPedagogique $support): array
     {
-        $support->loadMissing('versions.auteur');
+        $support->loadMissing('auteur');
 
         return [
             'id' => $support->id,
             'nom' => $support->nom,
             'type' => $support->type,
-            'versions' => $support->versions->map(fn (VersionSupport $v) => [
-                'numero' => $v->numero,
-                'taille_mo' => max(0.1, round($v->taille_octets / 1048576, 1)),
-                'format' => $v->format,
-                'depose_le' => $v->created_at?->toDateString(),
-                'note' => $v->note ?? '',
-                'depose_par' => $this->personne($v->auteur),
-            ])->values()->all(),
+            'taille_mo' => max(0.1, round($support->taille_octets / 1048576, 1)),
+            'format' => $support->format,
+            'depose_le' => $support->created_at?->toDateString(),
+            'depose_par' => $this->personne($support->auteur),
         ];
     }
 
