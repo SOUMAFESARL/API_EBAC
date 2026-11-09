@@ -8389,6 +8389,472 @@
                 ]
             }
         },
+        "/fin-de-cycle/epreuves": {
+            "get": {
+                "tags": [
+                    "Fin de cycle"
+                ],
+                "summary": "Référentiel des épreuves de fin de cycle",
+                "description": "Droit : notes.fin-de-cycle-epreuves.consulter ou notes.fin-de-cycle-notes.consulter. Toutes les épreuves, retirées comprises, par rang.",
+                "operationId": "listerEpreuvesFinDeCycle",
+                "responses": {
+                    "200": {
+                        "description": "Épreuves",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "epreuves"
+                                    ],
+                                    "properties": {
+                                        "epreuves": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/EpreuveFinDeCycle"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Droit manquant"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Fin de cycle"
+                ],
+                "summary": "Ajouter une épreuve",
+                "description": "Droit : notes.fin-de-cycle-epreuves.creer. Le code est attribué par le service ; l épreuve prend le dernier rang.",
+                "operationId": "creerEpreuveFinDeCycle",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "libelle",
+                                    "coefficient"
+                                ],
+                                "properties": {
+                                    "libelle": {
+                                        "type": "string",
+                                        "example": "Oral de synthèse",
+                                        "maxLength": 120,
+                                        "minLength": 3
+                                    },
+                                    "coefficient": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "maximum": 20,
+                                        "minimum": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Épreuve créée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "epreuve"
+                                    ],
+                                    "properties": {
+                                        "epreuve": {
+                                            "$ref": "#/components/schemas/EpreuveFinDeCycle"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/fin-de-cycle/epreuves/{epreuve}": {
+            "patch": {
+                "tags": [
+                    "Fin de cycle"
+                ],
+                "summary": "Reprendre une épreuve",
+                "description": "Droit : notes.fin-de-cycle-epreuves.modifier. Intitulé et coefficient ; le code ne change pas.",
+                "operationId": "modifierEpreuveFinDeCycle",
+                "parameters": [
+                    {
+                        "name": "epreuve",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "libelle",
+                                    "coefficient"
+                                ],
+                                "properties": {
+                                    "libelle": {
+                                        "type": "string",
+                                        "maxLength": 120,
+                                        "minLength": 3
+                                    },
+                                    "coefficient": {
+                                        "type": "integer",
+                                        "maximum": 20,
+                                        "minimum": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Épreuve reprise",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "epreuve"
+                                    ],
+                                    "properties": {
+                                        "epreuve": {
+                                            "$ref": "#/components/schemas/EpreuveFinDeCycle"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "EPREUVE_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/fin-de-cycle/epreuves/{epreuve}/activation": {
+            "post": {
+                "tags": [
+                    "Fin de cycle"
+                ],
+                "summary": "Retirer une épreuve, ou la remettre",
+                "description": "Droit : notes.fin-de-cycle-epreuves.retirer. Jamais de suppression ; la dernière épreuve active ne se retire pas.",
+                "operationId": "activerEpreuveFinDeCycle",
+                "parameters": [
+                    {
+                        "name": "epreuve",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "actif"
+                                ],
+                                "properties": {
+                                    "actif": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "État enregistré",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "epreuve"
+                                    ],
+                                    "properties": {
+                                        "epreuve": {
+                                            "$ref": "#/components/schemas/EpreuveFinDeCycle"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "EPREUVE_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "REFERENTIEL_VIDE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusFinDeCycle"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/fin-de-cycle/promotions": {
+            "get": {
+                "tags": [
+                    "Fin de cycle"
+                ],
+                "summary": "Promotions proposées à la saisie",
+                "description": "Droit : notes.fin-de-cycle-notes.consulter. Du niveau le plus avancé au premier, puis de la promotion la plus récente.",
+                "operationId": "listerPromotionsFinDeCycle",
+                "responses": {
+                    "200": {
+                        "description": "Promotions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "promotions"
+                                    ],
+                                    "properties": {
+                                        "promotions": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PromotionFinDeCycle"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Droit manquant"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/fin-de-cycle/promotions/{promotion}/notes": {
+            "get": {
+                "tags": [
+                    "Fin de cycle"
+                ],
+                "summary": "Notes de fin de cycle d une promotion",
+                "description": "Droit : notes.fin-de-cycle-notes.consulter.",
+                "operationId": "notesFinDeCycle",
+                "parameters": [
+                    {
+                        "name": "promotion",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Feuille de la promotion",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FeuilleFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "PROMOTION_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusFinDeCycle"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/fin-de-cycle/promotions/{promotion}/epreuves/{epreuve}/notes": {
+            "put": {
+                "tags": [
+                    "Fin de cycle"
+                ],
+                "summary": "Saisir les notes d une épreuve",
+                "description": "Droit : notes.fin-de-cycle-notes.saisir. Une ligne à null ne touche rien (on n efface pas une note) ; une note déjà portée est reprise et prend le nom de qui la reprend. Renvoie la feuille à jour.",
+                "operationId": "saisirNotesFinDeCycle",
+                "parameters": [
+                    {
+                        "name": "promotion",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "epreuve",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "notes"
+                                ],
+                                "properties": {
+                                    "notes": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "id_etudiant"
+                                            ],
+                                            "properties": {
+                                                "id_etudiant": {
+                                                    "type": "integer",
+                                                    "example": 51
+                                                },
+                                                "note": {
+                                                    "description": "0 à 20, deux décimales au plus ; null = non saisie.",
+                                                    "type": "number",
+                                                    "example": 13.17,
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "minItems": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Feuille à jour",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FeuilleFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "PROMOTION_INTROUVABLE ou EPREUVE_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "EPREUVE_RETIREE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "ETUDIANT_HORS_PROMOTION, ou note hors barème"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/enseignant/liste-presence": {
             "get": {
                 "tags": [
@@ -17138,6 +17604,209 @@
                 },
                 "type": "object"
             },
+            "EpreuveFinDeCycle": {
+                "required": [
+                    "id",
+                    "code",
+                    "libelle",
+                    "coefficient",
+                    "rang",
+                    "actif"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "code": {
+                        "description": "Attribué par le service à la création, ne change plus.",
+                        "type": "string",
+                        "example": "predication"
+                    },
+                    "libelle": {
+                        "type": "string",
+                        "example": "Prédication"
+                    },
+                    "coefficient": {
+                        "type": "integer",
+                        "example": 1,
+                        "maximum": 20,
+                        "minimum": 1
+                    },
+                    "rang": {
+                        "description": "Ordre d affichage sur le bulletin.",
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "actif": {
+                        "description": "false = retirée : n entre plus dans la moyenne et ne reçoit plus de notes.",
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "PromotionFinDeCycle": {
+                "required": [
+                    "id",
+                    "code",
+                    "num_promotion",
+                    "niveau",
+                    "effectif"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 4
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "PROMO-000013"
+                    },
+                    "num_promotion": {
+                        "type": "integer",
+                        "example": 13,
+                        "nullable": true
+                    },
+                    "niveau": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 3
+                            },
+                            "libelle": {
+                                "type": "string",
+                                "example": "3e Année"
+                            },
+                            "rang": {
+                                "type": "integer",
+                                "example": 3
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "effectif": {
+                        "description": "Étudiants inscrits dans la promotion.",
+                        "type": "integer",
+                        "example": 24
+                    }
+                },
+                "type": "object"
+            },
+            "FeuilleFinDeCycle": {
+                "required": [
+                    "promotion",
+                    "epreuves",
+                    "etudiants"
+                ],
+                "properties": {
+                    "promotion": {
+                        "$ref": "#/components/schemas/PromotionFinDeCycle"
+                    },
+                    "epreuves": {
+                        "description": "Épreuves actives, par rang.",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/EpreuveFinDeCycle"
+                        }
+                    },
+                    "etudiants": {
+                        "description": "Étudiants inscrits dans la promotion, par nom.",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 51
+                                },
+                                "matricule": {
+                                    "type": "string",
+                                    "example": "411-2021",
+                                    "nullable": true
+                                },
+                                "nom": {
+                                    "type": "string",
+                                    "example": "KOUADIO"
+                                },
+                                "prenoms": {
+                                    "type": "string",
+                                    "example": "Yao Devallois",
+                                    "nullable": true
+                                },
+                                "notes": {
+                                    "description": "Notes portées ; une épreuve absente n est pas encore notée.",
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id_epreuve": {
+                                                "type": "integer",
+                                                "example": 2
+                                            },
+                                            "note": {
+                                                "type": "number",
+                                                "example": 13.17
+                                            },
+                                            "saisi_par": {
+                                                "description": "Compte qui a saisi la note (ou l a reprise en dernier).",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 7
+                                                    },
+                                                    "nom": {
+                                                        "type": "string",
+                                                        "example": "ADJOUA"
+                                                    },
+                                                    "prenoms": {
+                                                        "type": "string",
+                                                        "example": "Marie-Claire",
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object",
+                                                "nullable": true
+                                            },
+                                            "saisi_le": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "nullable": true
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "RefusFinDeCycle": {
+                "required": [
+                    "code",
+                    "message"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "example": "REFERENTIEL_VIDE",
+                        "enum": [
+                            "EPREUVE_INTROUVABLE",
+                            "PROMOTION_INTROUVABLE",
+                            "REFERENTIEL_VIDE",
+                            "EPREUVE_RETIREE",
+                            "ETUDIANT_HORS_PROMOTION"
+                        ]
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "La dernière épreuve active ne peut pas être retirée."
+                    }
+                },
+                "type": "object"
+            },
             "EtudiantPresence": {
                 "properties": {
                     "id": {
@@ -19936,6 +20605,10 @@
         {
             "name": "Dossier étudiant",
             "description": "Dossier du compte étudiant connecté. Utiliser Authorize avec son token Bearer. Aucun ID étudiant à envoyer. Les documents ajoutés ou remplacés sont en attente de validation."
+        },
+        {
+            "name": "Fin de cycle",
+            "description": "Bulletin de fin de cycle (3e Année) : référentiel des épreuves et saisie de leurs notes. Une épreuve ne se supprime pas, elle se retire. Chaque note garde qui l a saisie. La moyenne de fin de cycle n est pas servie : moyenne pondérée des épreuves actives. ADMIN passe toujours. Erreurs : { code, message } (RefusFinDeCycle)."
         },
         {
             "name": "Navigation",

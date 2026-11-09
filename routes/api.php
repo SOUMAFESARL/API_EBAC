@@ -52,6 +52,7 @@ use App\Http\Controllers\Api\V1\Parametre\PromotionController;
 use App\Http\Controllers\Api\V1\Parametre\SalleController;
 use App\Http\Controllers\Api\V1\Parametre\UniteEnseignementController;
 use App\Http\Controllers\Api\V1\ProgrammePublieController;
+use App\Http\Controllers\Api\V1\FinDeCycleController;
 use App\Http\Controllers\Api\V1\SupportPedagogiqueController;
 use App\Http\Controllers\Api\V1\VerificationBulletinController;
 use Illuminate\Support\Facades\Route;
@@ -336,6 +337,28 @@ Route::prefix('v1/supports')->name('api.v1.supports.')
             ->whereNumber('support')->name('destroy');
         Route::get('{support}/fichier', [SupportPedagogiqueController::class, 'telecharger'])
             ->whereNumber('support')->name('fichier');
+    });
+
+// Fin de cycle (bulletin de fin de cycle, 3e Année) : référentiel des
+// épreuves et saisie des notes. Une épreuve se retire, jamais ne se
+// supprime ; chaque note garde qui l'a saisie.
+Route::prefix('v1/fin-de-cycle')->name('api.v1.fin-de-cycle.')
+    ->middleware(['auth:sanctum', 'compte.actif'])
+    ->controller(FinDeCycleController::class)
+    ->group(function () use ($droit) {
+        $lecture = $droit('notes.fin-de-cycle-epreuves.consulter', 'notes.fin-de-cycle-notes.consulter');
+        Route::get('epreuves', 'epreuves')->middleware($lecture)->name('epreuves.index');
+        Route::post('epreuves', 'creerEpreuve')->middleware($droit('notes.fin-de-cycle-epreuves.creer'))->name('epreuves.store');
+        Route::patch('epreuves/{epreuve}', 'modifierEpreuve')->whereNumber('epreuve')
+            ->middleware($droit('notes.fin-de-cycle-epreuves.modifier'))->name('epreuves.update');
+        Route::post('epreuves/{epreuve}/activation', 'activerEpreuve')->whereNumber('epreuve')
+            ->middleware($droit('notes.fin-de-cycle-epreuves.retirer'))->name('epreuves.activation');
+        Route::get('promotions', 'promotions')->middleware($droit('notes.fin-de-cycle-notes.consulter'))->name('promotions.index');
+        Route::get('promotions/{promotion}/notes', 'notes')->whereNumber('promotion')
+            ->middleware($droit('notes.fin-de-cycle-notes.consulter'))->name('notes.index');
+        Route::put('promotions/{promotion}/epreuves/{epreuve}/notes', 'saisir')
+            ->whereNumber(['promotion', 'epreuve'])
+            ->middleware($droit('notes.fin-de-cycle-notes.saisir'))->name('notes.saisir');
     });
 
 Route::prefix('v1/enseignant/mes-cours')
