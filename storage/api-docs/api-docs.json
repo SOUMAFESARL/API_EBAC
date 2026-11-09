@@ -5494,6 +5494,12 @@
                                                                 "example": 2,
                                                                 "nullable": true
                                                             },
+                                                            "libelle": {
+                                                                "description": "Libelle du domaine d enseignement, null pour les matieres sans domaine.",
+                                                                "type": "string",
+                                                                "example": "Etudes bibliques",
+                                                                "nullable": true
+                                                            },
                                                             "matieres": {
                                                                 "type": "array",
                                                                 "items": {
@@ -5506,6 +5512,7 @@
                                                     "example": [
                                                         {
                                                             "unite_ensigne_id": 2,
+                                                            "libelle": "Etudes bibliques",
                                                             "matieres": [
                                                                 {
                                                                     "numero": 1,
@@ -8802,6 +8809,12 @@
                                                                 "type": "integer",
                                                                 "nullable": true
                                                             },
+                                                            "libelle": {
+                                                                "description": "Libelle du domaine d enseignement, null pour les matieres sans domaine.",
+                                                                "type": "string",
+                                                                "example": "Etudes bibliques",
+                                                                "nullable": true
+                                                            },
                                                             "matieres": {
                                                                 "type": "array",
                                                                 "items": {
@@ -8814,6 +8827,7 @@
                                                     "example": [
                                                         {
                                                             "unite_ensigne_id": 2,
+                                                            "libelle": "Etudes bibliques",
                                                             "matieres": [
                                                                 {
                                                                     "id": 101,
@@ -19172,7 +19186,7 @@
         },
         {
             "name": "Saisie des notes",
-            "description": "La saisie est liee a une seance precise. Fournir id_seance, id_matiere (ou cours dans le chemin), id_promotion et id_annee_academique. La seance doit appartenir a l enseignant connecte et correspondre au contexte. Une affectation active et un creneau correspondant sont requis.\r\nGET /enseignant/notes/feuille retourne les etudiants et leur eligibilite sur cette seance. GET /enseignant/notes/tableau retourne directement les notes de cette seance. Sans id_seance, GET consulte uniquement les anciennes feuilles sans seance ; aucune attribution automatique n est faite.\r\nPUT enregistre et transmet immediatement la feuille de la seance. id_seance est obligatoire pour PUT et POST /transmettre. Seule la presence de la seance choisie est controlee : seance realisee, presences validees et completes, etudiant present ou absence autorisee. Les autres seances ne bloquent pas la saisie.\r\nChaque seance a sa propre feuille et son verrouillage. Envoyer toutes les evaluations ensemble dans notes[].evaluation pour une matiere. Tous les etudiants evaluables doivent avoir au moins une note ; sinon la requete entiere est annulee. La moyenne matiere directe est la moyenne simple des notes de toutes ses seances dans la meme promotion et annee. Les notes par cours restent separees.\r\nApres succes, statut=transmise et saisie_ouverte=false. Une correction autorisee ou un rejet du secretariat ou de la direction permet de corriger les notes. Les transmissions et leurs decisions restent suivies via /enseignant/transmissions-notes et /administration/notes-transmises. Aucune publication aux etudiants."
+            "description": "La saisie est liee a une seance precise. Fournir id_seance, id_matiere (ou cours dans le chemin), id_promotion et id_annee_academique. La seance doit appartenir a l enseignant connecte et correspondre au contexte. Une affectation active et un creneau correspondant sont requis.\nGET /enseignant/notes/feuille retourne les etudiants et leur eligibilite sur cette seance. GET /enseignant/notes/tableau retourne directement les notes de cette seance. Sans id_seance, GET consulte uniquement les anciennes feuilles sans seance ; aucune attribution automatique n est faite.\nPUT enregistre et transmet immediatement la feuille de la seance. id_seance est obligatoire pour PUT et POST /transmettre. Seule la presence de la seance choisie est controlee : seance realisee, presences validees et completes, etudiant present ou absence autorisee. Les autres seances ne bloquent pas la saisie.\nChaque seance a sa propre feuille et son verrouillage. Envoyer toutes les evaluations ensemble dans notes[].evaluation pour une matiere. Tous les etudiants evaluables doivent avoir au moins une note ; sinon la requete entiere est annulee. La moyenne matiere directe est la moyenne simple des notes de toutes ses seances dans la meme promotion et annee. Les notes par cours restent separees.\nApres succes, statut=transmise et saisie_ouverte=false. Une correction autorisee ou un rejet du secretariat ou de la direction permet de corriger les notes. Les transmissions et leurs decisions restent suivies via /enseignant/transmissions-notes et /administration/notes-transmises. Aucune publication aux etudiants."
         },
         {
             "name": "Permissions",
@@ -19188,7 +19202,7 @@
         },
         {
             "name": "Unités enseignement",
-            "description": "CRUD des UE. Compte actif. Lecture : programme.domaines.consulter ou programme.matieres.consulter (et les roles SECRETAIRE_ACADEMIQUE, SECRETARIAT, DIRECTION, lecteurs d avant la matrice). Ecritures : programme.domaines.creer, modifier ou supprimer. ADMIN passe toujours."
+            "description": "CRUD des UE. Compte actif. Lecture : programme.domaines.consulter, programme.matieres.consulter ou ressources.bibliotheque.consulter (et les roles SECRETAIRE_ACADEMIQUE, SECRETARIAT, DIRECTION, lecteurs d avant la matrice). Ecritures : programme.domaines.creer, modifier ou supprimer. ADMIN passe toujours."
         },
         {
             "name": "Églises",

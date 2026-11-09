@@ -474,7 +474,7 @@ Route::prefix('v1/parametres')
         $lectureSalles = $droit('@SECRETAIRE_ACADEMIQUE', '@DIRECTION', '@GESTIONNAIRE', 'planification.salles.consulter', 'planification.repartition-horaire.consulter');
         $lectureCreneaux = $droit('@SECRETAIRE_ACADEMIQUE', '@DIRECTION', 'planification.repartition-horaire.consulter');
         $lectureCalendrier = $droit('@SECRETAIRE_ACADEMIQUE', '@DIRECTION', '@GESTIONNAIRE', 'planification.calendrier-academique.consulter', 'planification.repartition-horaire.consulter');
-        $lectureDomaines = $droit('@SECRETAIRE_ACADEMIQUE', '@SECRETARIAT', '@DIRECTION', 'programme.domaines.consulter', 'programme.matieres.consulter');
+        $lectureDomaines = $droit('@SECRETAIRE_ACADEMIQUE', '@SECRETARIAT', '@DIRECTION', 'programme.domaines.consulter', 'programme.matieres.consulter', 'ressources.bibliotheque.consulter');
         $calendrier = $droit('planification.calendrier-academique.creer', 'planification.calendrier-academique.modifier');
         $repartition = $droit('planification.repartition-horaire.modifier');
 

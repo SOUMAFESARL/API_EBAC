@@ -130,6 +130,7 @@ return [
         'ressources' => [
             'libelle' => 'Ressources pédagogiques',
             'sous_modules' => [
+                'bibliotheque' => ['Bibliothèque pédagogique', ['consulter']],
                 'quotas-supports' => ['Quotas de stockage', ['consulter', 'modifier']],
             ],
         ],
