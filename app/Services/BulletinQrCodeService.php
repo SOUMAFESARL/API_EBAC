@@ -13,18 +13,26 @@ class BulletinQrCodeService
     public function empreinte(Bulletin $bulletin): string
     {
         $bulletin->loadMissing('lignes');
-
-        return hash('sha256', json_encode([
+        $contenu = [
             $bulletin->only(['id', 'id_inscription', 'periode', 'moyenne', 'mention', 'rang', 'decision', 'statut', 'date_publication']),
             $bulletin->lignes->sortBy('id')->map(fn ($ligne) => $ligne->only([
                 'id', 'id_matiere', 'note', 'coefficient', 'moyenne_ponderee', 'appreciation',
             ]))->values()->all(),
-        ], JSON_THROW_ON_ERROR));
+        ];
+        // Fin de cycle seulement : l'empreinte des bulletins déjà imprimés ne change pas.
+        if ($bulletin->estFinDeCycle()) {
+            $bulletin->loadMissing('lignesFinDeCycle');
+            $contenu[] = $bulletin->lignesFinDeCycle->sortBy('id')->map(fn ($ligne) => $ligne->only([
+                'id', 'id_epreuve', 'libelle', 'note', 'coefficient',
+            ]))->values()->all();
+        }
+
+        return hash('sha256', json_encode($contenu, JSON_THROW_ON_ERROR));
     }
 
     public function presenter(Bulletin $bulletin): array
     {
-        $bulletin->loadMissing(['inscription.etudiant', 'inscription.promotion.niveau']);
+        $bulletin->loadMissing(['inscription.etudiant', 'inscription.promotion.niveau', 'niveau']);
         // No expiration: printed documents must remain verifiable. Changed results invalidate the fingerprint.
         $url = URL::signedRoute('api.v1.bulletins.verifier', [
             'id' => $bulletin->id, 'empreinte' => $this->empreinte($bulletin),
@@ -32,7 +40,7 @@ class BulletinQrCodeService
         $inscription = $bulletin->inscription;
         $contenu = [
             'matricule' => $inscription->etudiant?->matricule,
-            'niveau' => $inscription->promotion?->niveau?->libelle,
+            'niveau' => ($bulletin->niveau ?? $inscription->promotion?->niveau)?->libelle,
             'promotion' => $inscription->promotion?->num_promotion,
             'decision_fin_annee' => $bulletin->decision ?? $inscription->decision_passage,
             'moyenne_generale' => $bulletin->moyenne !== null ? (float) $bulletin->moyenne : null,

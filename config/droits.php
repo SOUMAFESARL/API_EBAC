@@ -112,6 +112,7 @@ return [
                 'validation-soutenances' => ['Validation des soutenances', ['consulter', 'valider']],
                 'fin-de-cycle-epreuves' => ['Épreuves de fin de cycle', ['consulter', 'creer', 'modifier', 'retirer']],
                 'fin-de-cycle-notes' => ['Notes de fin de cycle', ['consulter', 'saisir']],
+                'bulletins' => ['Bulletins', ['consulter', 'valider', 'rejeter', 'publier']],
             ],
         ],
         'finances' => [

@@ -8667,8 +8667,8 @@
                 "tags": [
                     "Fin de cycle"
                 ],
-                "summary": "Promotions proposées à la saisie",
-                "description": "Droit : notes.fin-de-cycle-notes.consulter. Du niveau le plus avancé au premier, puis de la promotion la plus récente.",
+                "summary": "Promotions de 3e Année proposées à la saisie",
+                "description": "Droit : notes.fin-de-cycle-notes.consulter ou notes.bulletins.consulter. Seules les promotions dont le niveau est de rang 3 (3e Année), de la plus récente à la plus ancienne.",
                 "operationId": "listerPromotionsFinDeCycle",
                 "responses": {
                     "200": {
@@ -8709,7 +8709,7 @@
                     "Fin de cycle"
                 ],
                 "summary": "Notes de fin de cycle d une promotion",
-                "description": "Droit : notes.fin-de-cycle-notes.consulter.",
+                "description": "Droit : notes.fin-de-cycle-notes.consulter ou notes.bulletins.consulter. Chaque étudiant porte l état de son bulletin.",
                 "operationId": "notesFinDeCycle",
                 "parameters": [
                     {
@@ -8835,7 +8835,7 @@
                         }
                     },
                     "409": {
-                        "description": "EPREUVE_RETIREE",
+                        "description": "EPREUVE_RETIREE, ou NOTES_VALIDEES (étudiants en cause : renvoyez-les en saisie)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -16905,6 +16905,410 @@
                     }
                 ]
             }
+        },
+        "/fin-de-cycle/promotions/{promotion}/validation": {
+            "post": {
+                "tags": [
+                    "Fin de cycle"
+                ],
+                "summary": "Valider les notes des étudiants retenus",
+                "description": "Droit : notes.bulletins.valider. Fige les notes de chaque étudiant sur un bulletin (période « Fin de cycle », statut Validé) que l étudiant ne voit pas encore ; ses notes ne se ressaisissent plus. Un étudiant déjà validé ou publié est laissé tel quel. Tout ou rien : un étudiant retenu sans toutes ses notes bloque la validation (NOTES_INCOMPLETES). Renvoie la feuille à jour.",
+                "operationId": "validerBulletinsFinDeCycle",
+                "parameters": [
+                    {
+                        "name": "promotion",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EtudiantsRetenusFinDeCycle"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Feuille à jour",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FeuilleFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "PROMOTION_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "NOTES_INCOMPLETES",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "ETUDIANT_HORS_PROMOTION, ou liste vide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/fin-de-cycle/promotions/{promotion}/renvoi": {
+            "post": {
+                "tags": [
+                    "Fin de cycle"
+                ],
+                "summary": "Renvoyer en saisie les étudiants retenus",
+                "description": "Droit : notes.bulletins.rejeter. Retire le bulletin validé : les notes redeviennent modifiables. Inscrit à l historique. Tout ou rien : un bulletin publié ne se renvoie pas (BULLETIN_PUBLIE). Un étudiant non validé est laissé tel quel.",
+                "operationId": "renvoyerBulletinsFinDeCycle",
+                "parameters": [
+                    {
+                        "name": "promotion",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EtudiantsRetenusFinDeCycle"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Feuille à jour",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FeuilleFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "PROMOTION_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "BULLETIN_PUBLIE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "ETUDIANT_HORS_PROMOTION, ou liste vide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/fin-de-cycle/promotions/{promotion}/publication": {
+            "post": {
+                "tags": [
+                    "Fin de cycle"
+                ],
+                "summary": "Publier le bulletin des étudiants retenus",
+                "description": "Droit : notes.bulletins.publier. Publication groupée d une promotion, en omettant qui l on veut : le bulletin paraît dans le portail de l étudiant et ne se reprend plus. Tout ou rien : un étudiant retenu non validé bloque la publication (BULLETIN_NON_VALIDE). Un bulletin déjà publié est laissé tel quel.",
+                "operationId": "publierBulletinsFinDeCycle",
+                "parameters": [
+                    {
+                        "name": "promotion",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EtudiantsRetenusFinDeCycle"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Feuille à jour",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FeuilleFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "PROMOTION_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "BULLETIN_NON_VALIDE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusFinDeCycle"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "ETUDIANT_HORS_PROMOTION, ou liste vide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/bulletins/filtres": {
+            "get": {
+                "tags": [
+                    "Registre des bulletins"
+                ],
+                "summary": "Niveaux et années du registre",
+                "description": "Droit : notes.bulletins.consulter. Les niveaux par rang, chacun avec son nombre de bulletins, et les années académiques de la plus récente à la plus ancienne.",
+                "operationId": "filtresRegistreBulletins",
+                "responses": {
+                    "200": {
+                        "description": "Filtres",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "niveaux",
+                                        "annees_academiques"
+                                    ],
+                                    "properties": {
+                                        "niveaux": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "code": {
+                                                        "type": "string"
+                                                    },
+                                                    "libelle": {
+                                                        "type": "string"
+                                                    },
+                                                    "rang": {
+                                                        "type": "integer"
+                                                    },
+                                                    "bulletins": {
+                                                        "type": "integer",
+                                                        "example": 42
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "annees_academiques": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "libelle": {
+                                                        "type": "string"
+                                                    },
+                                                    "date_debut": {
+                                                        "type": "string",
+                                                        "format": "date"
+                                                    },
+                                                    "date_fin": {
+                                                        "type": "string",
+                                                        "format": "date"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Droit manquant"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/bulletins": {
+            "get": {
+                "tags": [
+                    "Registre des bulletins"
+                ],
+                "summary": "Bulletins d un niveau",
+                "description": "Droit : notes.bulletins.consulter. Tous les bulletins dont le niveau est donné, du plus récent au plus ancien ; restreints à une année si elle est donnée.",
+                "operationId": "listerRegistreBulletins",
+                "parameters": [
+                    {
+                        "name": "id_niveau",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_annee_academique",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bulletins",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "bulletins"
+                                    ],
+                                    "properties": {
+                                        "bulletins": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/LigneRegistreBulletins"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Niveau absent ou inconnu"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/bulletins/{bulletin}": {
+            "get": {
+                "tags": [
+                    "Registre des bulletins"
+                ],
+                "summary": "Document d un bulletin",
+                "description": "Droit : notes.bulletins.consulter. La même forme que GET /etudiant/bulletins/{id} : { etudiant, bulletin } ; un bulletin de fin de cycle sert fin_de_cycle (elements, total, moyenne_generale, mention) à la place des matières.",
+                "operationId": "documentRegistreBulletins",
+                "parameters": [
+                    {
+                        "name": "bulletin",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Document",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "etudiant",
+                                        "bulletin"
+                                    ],
+                                    "properties": {
+                                        "etudiant": {
+                                            "type": "object",
+                                            "nullable": true
+                                        },
+                                        "bulletin": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "BULLETIN_INTROUVABLE"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -19162,6 +19566,14 @@
                                         },
                                         "type": "object"
                                     }
+                                },
+                                "bulletin": {
+                                    "oneOf": [
+                                        {
+                                            "$ref": "#/components/schemas/EtatBulletinFinDeCycle"
+                                        }
+                                    ],
+                                    "nullable": true
                                 }
                             },
                             "type": "object"
@@ -19184,12 +19596,23 @@
                             "PROMOTION_INTROUVABLE",
                             "REFERENTIEL_VIDE",
                             "EPREUVE_RETIREE",
-                            "ETUDIANT_HORS_PROMOTION"
+                            "ETUDIANT_HORS_PROMOTION",
+                            "NOTES_VALIDEES",
+                            "NOTES_INCOMPLETES",
+                            "BULLETIN_PUBLIE",
+                            "BULLETIN_NON_VALIDE"
                         ]
                     },
                     "message": {
                         "type": "string",
                         "example": "La dernière épreuve active ne peut pas être retirée."
+                    },
+                    "etudiants": {
+                        "description": "Étudiants en cause, sur les refus du circuit du bulletin.",
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
                     }
                 },
                 "type": "object"
@@ -22491,6 +22914,261 @@
                         "description": "Les deux documents attendus, déposés ou non"
                     }
                 }
+            },
+            "EtatBulletinFinDeCycle": {
+                "description": "État du bulletin de l étudiant ; null = notes en saisie.",
+                "required": [
+                    "id",
+                    "statut",
+                    "moyenne",
+                    "mention",
+                    "valide_par",
+                    "valide_le",
+                    "publie_par",
+                    "publie_le"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 812
+                    },
+                    "statut": {
+                        "description": "valide = notes figées, invisible de l étudiant ; publie = dans son portail, définitif.",
+                        "type": "string",
+                        "enum": [
+                            "valide",
+                            "publie"
+                        ]
+                    },
+                    "moyenne": {
+                        "type": "number",
+                        "example": 14.46,
+                        "nullable": true
+                    },
+                    "mention": {
+                        "type": "string",
+                        "example": "Bien",
+                        "nullable": true
+                    },
+                    "valide_par": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/PersonneFinDeCycle"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "valide_le": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "publie_par": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/PersonneFinDeCycle"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "publie_le": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "PersonneFinDeCycle": {
+                "required": [
+                    "id",
+                    "nom",
+                    "prenoms"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 7
+                    },
+                    "nom": {
+                        "type": "string",
+                        "example": "ADJOUA"
+                    },
+                    "prenoms": {
+                        "type": "string",
+                        "example": "Marie-Claire",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "EtudiantsRetenusFinDeCycle": {
+                "required": [
+                    "etudiants"
+                ],
+                "properties": {
+                    "etudiants": {
+                        "description": "Étudiants de la promotion retenus pour le geste ; les autres ne sont pas touchés.",
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "example": [
+                            51,
+                            52
+                        ],
+                        "minItems": 1
+                    }
+                },
+                "type": "object"
+            },
+            "LigneRegistreBulletins": {
+                "required": [
+                    "id",
+                    "periode",
+                    "fin_de_cycle",
+                    "statut",
+                    "moyenne",
+                    "mention",
+                    "date_publication",
+                    "valide_par",
+                    "valide_le",
+                    "publie_par",
+                    "etudiant",
+                    "promotion",
+                    "annee_academique",
+                    "niveau"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 812
+                    },
+                    "periode": {
+                        "type": "string",
+                        "example": "Fin de cycle"
+                    },
+                    "fin_de_cycle": {
+                        "description": "Bulletin de fin de cycle (épreuves) plutôt qu annuel (matières).",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "statut": {
+                        "type": "string",
+                        "example": "Publié",
+                        "enum": [
+                            "Brouillon",
+                            "Généré",
+                            "Validé",
+                            "Publié"
+                        ]
+                    },
+                    "moyenne": {
+                        "type": "number",
+                        "example": 14.46,
+                        "nullable": true
+                    },
+                    "mention": {
+                        "type": "string",
+                        "example": "Bien",
+                        "nullable": true
+                    },
+                    "date_publication": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "valide_par": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/PersonneFinDeCycle"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "valide_le": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "publie_par": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/PersonneFinDeCycle"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "etudiant": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "matricule": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "nom": {
+                                "type": "string"
+                            },
+                            "prenoms": {
+                                "type": "string",
+                                "nullable": true
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "promotion": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "code": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "num_promotion": {
+                                "type": "integer",
+                                "nullable": true
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "annee_academique": {
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "libelle": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "niveau": {
+                        "description": "Niveau du bulletin à son émission, pas celui qu a aujourd hui la promotion.",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "code": {
+                                "type": "string"
+                            },
+                            "libelle": {
+                                "type": "string"
+                            },
+                            "rang": {
+                                "type": "integer"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -22702,6 +23380,10 @@
         {
             "name": "Stage",
             "description": "Stage de 3e Année (CDC §7) : campagnes par promotion et affectations (une campagne se supprime tant qu aucune affectation n est validée), portail Église (journal, évaluation finale), espace Étudiant (journal, rapports), part de l Administration EBAC et validation de la Direction. Statuts de campagne et de stage lus des dates. Semaines validées, évaluations, part administrative et décisions ne se reprennent pas. ADMIN passe toujours. Erreurs : { code, message } (RefusStage)."
+        },
+        {
+            "name": "Registre des bulletins",
+            "description": "Tous les bulletins d un niveau — annuels et de fin de cycle, quel que soit leur statut — pour l administration. Droit : notes.bulletins.consulter (ADMIN passe toujours)."
         }
     ]
 }

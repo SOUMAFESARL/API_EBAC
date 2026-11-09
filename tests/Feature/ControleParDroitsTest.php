@@ -53,7 +53,7 @@ class ControleParDroitsTest extends TestCase
 
         $compter = fn (string $code) => Role::query()->where('code', $code)->firstOrFail()
             ->permissions()->whereNotNull('module')->count();
-        $this->assertSame(113, $compter('ADMIN'));
+        $this->assertSame(117, $compter('ADMIN'));
         $this->assertSame(28, $compter('DIRECTION'));
         $this->assertSame(0, $compter('ENSEIGNANT'));
         $this->assertSame(11, $compter('GESTIONNAIRE'));

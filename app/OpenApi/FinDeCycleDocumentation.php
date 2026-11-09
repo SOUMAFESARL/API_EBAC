@@ -43,11 +43,31 @@ use OpenApi\Attributes as OA;
             ], type: 'object'),
             new OA\Property(property: 'saisi_le', type: 'string', format: 'date-time', nullable: true),
         ])),
+        new OA\Property(property: 'bulletin', ref: '#/components/schemas/EtatBulletinFinDeCycle', nullable: true),
     ])),
 ])]
+#[OA\Schema(schema: 'EtatBulletinFinDeCycle', description: 'État du bulletin de l étudiant ; null = notes en saisie.', required: ['id', 'statut', 'moyenne', 'mention', 'valide_par', 'valide_le', 'publie_par', 'publie_le'], properties: [
+    new OA\Property(property: 'id', type: 'integer', example: 812),
+    new OA\Property(property: 'statut', description: 'valide = notes figées, invisible de l étudiant ; publie = dans son portail, définitif.', type: 'string', enum: ['valide', 'publie']),
+    new OA\Property(property: 'moyenne', type: 'number', nullable: true, example: 14.46),
+    new OA\Property(property: 'mention', type: 'string', nullable: true, example: 'Bien'),
+    new OA\Property(property: 'valide_par', ref: '#/components/schemas/PersonneFinDeCycle', nullable: true),
+    new OA\Property(property: 'valide_le', type: 'string', format: 'date-time', nullable: true),
+    new OA\Property(property: 'publie_par', ref: '#/components/schemas/PersonneFinDeCycle', nullable: true),
+    new OA\Property(property: 'publie_le', type: 'string', format: 'date-time', nullable: true),
+])]
+#[OA\Schema(schema: 'PersonneFinDeCycle', required: ['id', 'nom', 'prenoms'], properties: [
+    new OA\Property(property: 'id', type: 'integer', example: 7),
+    new OA\Property(property: 'nom', type: 'string', example: 'ADJOUA'),
+    new OA\Property(property: 'prenoms', type: 'string', nullable: true, example: 'Marie-Claire'),
+])]
+#[OA\Schema(schema: 'EtudiantsRetenusFinDeCycle', required: ['etudiants'], properties: [
+    new OA\Property(property: 'etudiants', description: 'Étudiants de la promotion retenus pour le geste ; les autres ne sont pas touchés.', type: 'array', minItems: 1, items: new OA\Items(type: 'integer'), example: [51, 52]),
+])]
 #[OA\Schema(schema: 'RefusFinDeCycle', required: ['code', 'message'], properties: [
-    new OA\Property(property: 'code', type: 'string', enum: ['EPREUVE_INTROUVABLE', 'PROMOTION_INTROUVABLE', 'REFERENTIEL_VIDE', 'EPREUVE_RETIREE', 'ETUDIANT_HORS_PROMOTION'], example: 'REFERENTIEL_VIDE'),
+    new OA\Property(property: 'code', type: 'string', enum: ['EPREUVE_INTROUVABLE', 'PROMOTION_INTROUVABLE', 'REFERENTIEL_VIDE', 'EPREUVE_RETIREE', 'ETUDIANT_HORS_PROMOTION', 'NOTES_VALIDEES', 'NOTES_INCOMPLETES', 'BULLETIN_PUBLIE', 'BULLETIN_NON_VALIDE'], example: 'REFERENTIEL_VIDE'),
     new OA\Property(property: 'message', type: 'string', example: 'La dernière épreuve active ne peut pas être retirée.'),
+    new OA\Property(property: 'etudiants', description: 'Étudiants en cause, sur les refus du circuit du bulletin.', type: 'array', items: new OA\Items(type: 'integer')),
 ])]
 
 /* --- Opérations ---------------------------------------------------------- */
@@ -87,13 +107,13 @@ use OpenApi\Attributes as OA;
     new OA\Response(response: 404, description: 'EPREUVE_INTROUVABLE', content: new OA\JsonContent(ref: '#/components/schemas/RefusFinDeCycle')),
     new OA\Response(response: 409, description: 'REFERENTIEL_VIDE', content: new OA\JsonContent(ref: '#/components/schemas/RefusFinDeCycle')),
 ])]
-#[OA\Get(path: '/fin-de-cycle/promotions', operationId: 'listerPromotionsFinDeCycle', summary: 'Promotions proposées à la saisie', description: 'Droit : notes.fin-de-cycle-notes.consulter. Du niveau le plus avancé au premier, puis de la promotion la plus récente.', tags: ['Fin de cycle'], security: [['sanctum' => []]], responses: [
+#[OA\Get(path: '/fin-de-cycle/promotions', operationId: 'listerPromotionsFinDeCycle', summary: 'Promotions de 3e Année proposées à la saisie', description: 'Droit : notes.fin-de-cycle-notes.consulter ou notes.bulletins.consulter. Seules les promotions dont le niveau est de rang 3 (3e Année), de la plus récente à la plus ancienne.', tags: ['Fin de cycle'], security: [['sanctum' => []]], responses: [
     new OA\Response(response: 200, description: 'Promotions', content: new OA\JsonContent(required: ['promotions'], properties: [
         new OA\Property(property: 'promotions', type: 'array', items: new OA\Items(ref: '#/components/schemas/PromotionFinDeCycle')),
     ])),
     new OA\Response(response: 403, description: 'Droit manquant'),
 ])]
-#[OA\Get(path: '/fin-de-cycle/promotions/{promotion}/notes', operationId: 'notesFinDeCycle', summary: 'Notes de fin de cycle d une promotion', description: 'Droit : notes.fin-de-cycle-notes.consulter.', tags: ['Fin de cycle'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'promotion', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [
+#[OA\Get(path: '/fin-de-cycle/promotions/{promotion}/notes', operationId: 'notesFinDeCycle', summary: 'Notes de fin de cycle d une promotion', description: 'Droit : notes.fin-de-cycle-notes.consulter ou notes.bulletins.consulter. Chaque étudiant porte l état de son bulletin.', tags: ['Fin de cycle'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'promotion', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], responses: [
     new OA\Response(response: 200, description: 'Feuille de la promotion', content: new OA\JsonContent(ref: '#/components/schemas/FeuilleFinDeCycle')),
     new OA\Response(response: 404, description: 'PROMOTION_INTROUVABLE', content: new OA\JsonContent(ref: '#/components/schemas/RefusFinDeCycle')),
 ])]
@@ -108,7 +128,25 @@ use OpenApi\Attributes as OA;
 ])), responses: [
     new OA\Response(response: 200, description: 'Feuille à jour', content: new OA\JsonContent(ref: '#/components/schemas/FeuilleFinDeCycle')),
     new OA\Response(response: 404, description: 'PROMOTION_INTROUVABLE ou EPREUVE_INTROUVABLE', content: new OA\JsonContent(ref: '#/components/schemas/RefusFinDeCycle')),
-    new OA\Response(response: 409, description: 'EPREUVE_RETIREE', content: new OA\JsonContent(ref: '#/components/schemas/RefusFinDeCycle')),
+    new OA\Response(response: 409, description: 'EPREUVE_RETIREE, ou NOTES_VALIDEES (étudiants en cause : renvoyez-les en saisie)', content: new OA\JsonContent(ref: '#/components/schemas/RefusFinDeCycle')),
     new OA\Response(response: 422, description: 'ETUDIANT_HORS_PROMOTION, ou note hors barème'),
+])]
+#[OA\Post(path: '/fin-de-cycle/promotions/{promotion}/validation', operationId: 'validerBulletinsFinDeCycle', summary: 'Valider les notes des étudiants retenus', description: 'Droit : notes.bulletins.valider. Fige les notes de chaque étudiant sur un bulletin (période « Fin de cycle », statut Validé) que l étudiant ne voit pas encore ; ses notes ne se ressaisissent plus. Un étudiant déjà validé ou publié est laissé tel quel. Tout ou rien : un étudiant retenu sans toutes ses notes bloque la validation (NOTES_INCOMPLETES). Renvoie la feuille à jour.', tags: ['Fin de cycle'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'promotion', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/EtudiantsRetenusFinDeCycle')), responses: [
+    new OA\Response(response: 200, description: 'Feuille à jour', content: new OA\JsonContent(ref: '#/components/schemas/FeuilleFinDeCycle')),
+    new OA\Response(response: 404, description: 'PROMOTION_INTROUVABLE', content: new OA\JsonContent(ref: '#/components/schemas/RefusFinDeCycle')),
+    new OA\Response(response: 409, description: 'NOTES_INCOMPLETES', content: new OA\JsonContent(ref: '#/components/schemas/RefusFinDeCycle')),
+    new OA\Response(response: 422, description: 'ETUDIANT_HORS_PROMOTION, ou liste vide'),
+])]
+#[OA\Post(path: '/fin-de-cycle/promotions/{promotion}/renvoi', operationId: 'renvoyerBulletinsFinDeCycle', summary: 'Renvoyer en saisie les étudiants retenus', description: 'Droit : notes.bulletins.rejeter. Retire le bulletin validé : les notes redeviennent modifiables. Inscrit à l historique. Tout ou rien : un bulletin publié ne se renvoie pas (BULLETIN_PUBLIE). Un étudiant non validé est laissé tel quel.', tags: ['Fin de cycle'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'promotion', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/EtudiantsRetenusFinDeCycle')), responses: [
+    new OA\Response(response: 200, description: 'Feuille à jour', content: new OA\JsonContent(ref: '#/components/schemas/FeuilleFinDeCycle')),
+    new OA\Response(response: 404, description: 'PROMOTION_INTROUVABLE', content: new OA\JsonContent(ref: '#/components/schemas/RefusFinDeCycle')),
+    new OA\Response(response: 409, description: 'BULLETIN_PUBLIE', content: new OA\JsonContent(ref: '#/components/schemas/RefusFinDeCycle')),
+    new OA\Response(response: 422, description: 'ETUDIANT_HORS_PROMOTION, ou liste vide'),
+])]
+#[OA\Post(path: '/fin-de-cycle/promotions/{promotion}/publication', operationId: 'publierBulletinsFinDeCycle', summary: 'Publier le bulletin des étudiants retenus', description: 'Droit : notes.bulletins.publier. Publication groupée d une promotion, en omettant qui l on veut : le bulletin paraît dans le portail de l étudiant et ne se reprend plus. Tout ou rien : un étudiant retenu non validé bloque la publication (BULLETIN_NON_VALIDE). Un bulletin déjà publié est laissé tel quel.', tags: ['Fin de cycle'], security: [['sanctum' => []]], parameters: [new OA\Parameter(name: 'promotion', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/EtudiantsRetenusFinDeCycle')), responses: [
+    new OA\Response(response: 200, description: 'Feuille à jour', content: new OA\JsonContent(ref: '#/components/schemas/FeuilleFinDeCycle')),
+    new OA\Response(response: 404, description: 'PROMOTION_INTROUVABLE', content: new OA\JsonContent(ref: '#/components/schemas/RefusFinDeCycle')),
+    new OA\Response(response: 409, description: 'BULLETIN_NON_VALIDE', content: new OA\JsonContent(ref: '#/components/schemas/RefusFinDeCycle')),
+    new OA\Response(response: 422, description: 'ETUDIANT_HORS_PROMOTION, ou liste vide'),
 ])]
 final class FinDeCycleDocumentation {}

@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\Administration\PermissionController;
 use App\Http\Controllers\Api\V1\Administration\ProfilController;
 use App\Http\Controllers\Api\V1\Administration\PublicationProgrammeController;
 use App\Http\Controllers\Api\V1\Administration\RattrapageController;
+use App\Http\Controllers\Api\V1\Administration\RegistreBulletinsController;
 use App\Http\Controllers\Api\V1\Administration\RoleController;
 use App\Http\Controllers\Api\V1\Administration\TableauNotesMatieresController;
 use App\Http\Controllers\Api\V1\Auth\AuthentificationController;
@@ -36,6 +37,7 @@ use App\Http\Controllers\Api\V1\Etudiant\PreInscriptionController;
 use App\Http\Controllers\Api\V1\Etudiant\ReclamationNoteController;
 use App\Http\Controllers\Api\V1\Etudiant\RegistreEtudiantController;
 use App\Http\Controllers\Api\V1\FichierPreinscriptionController;
+use App\Http\Controllers\Api\V1\FinDeCycleController;
 use App\Http\Controllers\Api\V1\Navigation\SidebarController;
 use App\Http\Controllers\Api\V1\Parametre\AnneeAcademiqueController;
 use App\Http\Controllers\Api\V1\Parametre\CalendrierAcademiqueController;
@@ -52,12 +54,11 @@ use App\Http\Controllers\Api\V1\Parametre\PromotionController;
 use App\Http\Controllers\Api\V1\Parametre\SalleController;
 use App\Http\Controllers\Api\V1\Parametre\UniteEnseignementController;
 use App\Http\Controllers\Api\V1\ProgrammePublieController;
-use App\Http\Controllers\Api\V1\FinDeCycleController;
-use App\Http\Controllers\Api\V1\SupportPedagogiqueController;
 use App\Http\Controllers\Api\V1\Stage\CampagneStageController;
 use App\Http\Controllers\Api\V1\Stage\StageAdministrationController;
 use App\Http\Controllers\Api\V1\Stage\StageEgliseController;
 use App\Http\Controllers\Api\V1\Stage\StageEtudiantController;
+use App\Http\Controllers\Api\V1\SupportPedagogiqueController;
 use App\Http\Controllers\Api\V1\VerificationBulletinController;
 use Illuminate\Support\Facades\Route;
 
@@ -345,7 +346,9 @@ Route::prefix('v1/supports')->name('api.v1.supports.')
 
 // Fin de cycle (bulletin de fin de cycle, 3e Année) : référentiel des
 // épreuves et saisie des notes. Une épreuve se retire, jamais ne se
-// supprime ; chaque note garde qui l'a saisie.
+// supprime ; chaque note garde qui l'a saisie. Les notes d'un étudiant se
+// valident, se renvoient en saisie tant que rien n'est publié, puis le
+// bulletin se publie — sur une promotion, en omettant qui l'on veut.
 Route::prefix('v1/fin-de-cycle')->name('api.v1.fin-de-cycle.')
     ->middleware(['auth:sanctum', 'compte.actif'])
     ->controller(FinDeCycleController::class)
@@ -357,12 +360,30 @@ Route::prefix('v1/fin-de-cycle')->name('api.v1.fin-de-cycle.')
             ->middleware($droit('notes.fin-de-cycle-epreuves.modifier'))->name('epreuves.update');
         Route::post('epreuves/{epreuve}/activation', 'activerEpreuve')->whereNumber('epreuve')
             ->middleware($droit('notes.fin-de-cycle-epreuves.retirer'))->name('epreuves.activation');
-        Route::get('promotions', 'promotions')->middleware($droit('notes.fin-de-cycle-notes.consulter'))->name('promotions.index');
+        $lectureFeuille = $droit('notes.fin-de-cycle-notes.consulter', 'notes.bulletins.consulter');
+        Route::get('promotions', 'promotions')->middleware($lectureFeuille)->name('promotions.index');
         Route::get('promotions/{promotion}/notes', 'notes')->whereNumber('promotion')
-            ->middleware($droit('notes.fin-de-cycle-notes.consulter'))->name('notes.index');
+            ->middleware($lectureFeuille)->name('notes.index');
+        Route::post('promotions/{promotion}/validation', 'valider')->whereNumber('promotion')
+            ->middleware($droit('notes.bulletins.valider'))->name('bulletins.valider');
+        Route::post('promotions/{promotion}/renvoi', 'renvoyer')->whereNumber('promotion')
+            ->middleware($droit('notes.bulletins.rejeter'))->name('bulletins.renvoyer');
+        Route::post('promotions/{promotion}/publication', 'publier')->whereNumber('promotion')
+            ->middleware($droit('notes.bulletins.publier'))->name('bulletins.publier');
         Route::put('promotions/{promotion}/epreuves/{epreuve}/notes', 'saisir')
             ->whereNumber(['promotion', 'epreuve'])
             ->middleware($droit('notes.fin-de-cycle-notes.saisir'))->name('notes.saisir');
+    });
+
+// Registre des bulletins : tous les bulletins d'un niveau (annuels et de
+// fin de cycle, quel que soit leur statut), chacun ouvert sur son document.
+Route::prefix('v1/bulletins')->name('api.v1.bulletins.registre.')
+    ->middleware(['auth:sanctum', 'compte.actif', $droit('notes.bulletins.consulter')])
+    ->controller(RegistreBulletinsController::class)
+    ->group(function () {
+        Route::get('filtres', 'filtres')->name('filtres');
+        Route::get('/', 'index')->name('index');
+        Route::get('{bulletin}', 'show')->whereNumber('bulletin')->name('show');
     });
 
 // Stage de 3e Année (CDC §7) : campagnes et affectations, part de

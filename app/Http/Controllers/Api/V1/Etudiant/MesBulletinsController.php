@@ -4,17 +4,17 @@ namespace App\Http\Controllers\Api\V1\Etudiant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bulletin;
-use App\Models\CoursAFaire;
 use App\Models\Etudiant;
 use App\Models\Inscription;
-use App\Services\BulletinQrCodeService;
-use App\Services\MentionBulletinService;
+use App\Services\DocumentBulletinService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class MesBulletinsController extends Controller
 {
+    public function __construct(private DocumentBulletinService $document) {}
+
     private function etudiant(Request $request): Etudiant
     {
         return Etudiant::where('user_id', $request->user()->id)->firstOrFail();
@@ -30,19 +30,7 @@ class MesBulletinsController extends Controller
 
     private function presenter(Bulletin $bulletin): array
     {
-        $inscription = $bulletin->inscription;
-        $annee = $inscription->anneeAcademique;
-
-        return [
-            ...$bulletin->only(['id', 'periode', 'mention', 'rang', 'decision', 'statut', 'date_publication']),
-            'mention' => MentionBulletinService::afficher($bulletin->mention, $bulletin->moyenne !== null ? (float) $bulletin->moyenne : null),
-            'moyenne_generale' => $bulletin->moyenne !== null ? (float) $bulletin->moyenne : null,
-            'telechargement_pdf_url' => route('api.v1.etudiant.bulletins.telecharger', ['id' => $bulletin->id]),
-            'annee_academique' => $annee ? [...$annee->only(['id', 'libelle', 'date_debut', 'date_fin']),
-                'statut' => $annee->date_fin->lt(today()) ? 'cloturee' : 'en_cours'] : null,
-            'promotion' => $inscription->promotion?->only(['id', 'code', 'num_promotion']),
-            'niveau' => $inscription->promotion?->niveau?->only(['id', 'code', 'libelle', 'rang']),
-        ];
+        return $this->document->presenter($bulletin);
     }
 
     public function index(Request $request)
@@ -97,64 +85,13 @@ class MesBulletinsController extends Controller
 
     private function presenterEtudiant(Etudiant $etudiant, string $formatDate = 'Y-m-d'): array
     {
-        $etudiant->loadMissing(['civilite', 'eglise', 'dossier']);
-
-        return [
-            ...$etudiant->only(['id', 'matricule', 'nom', 'prenoms', 'lieu_naissance', 'nationalite',
-                'email', 'telephone', 'adresse', 'statut_professionnel', 'situation_matrimonial',
-                'nombre_enfant', 'statut', 'civilite_id', 'eglise_id', 'photo_identite_url']),
-            'date_naissance' => $etudiant->date_naissance?->format($formatDate),
-            'date_inscription' => $etudiant->date_inscription?->format($formatDate),
-            'civilite' => $etudiant->civilite?->name,
-            'eglise' => $etudiant->eglise?->only(['id', 'code', 'nom', 'denomination', 'region', 'district', 'ville_commune']),
-            'dossier' => $etudiant->dossier ? [
-                ...$etudiant->dossier->only(['id', 'numero_dossier', 'statut']),
-                'date_ouverture' => $etudiant->dossier->date_ouverture?->format($formatDate),
-            ] : null,
-        ];
+        return $this->document->presenterEtudiant($etudiant, $formatDate);
     }
 
     private function detail(Request $request, int $id): array
     {
         $etudiant = $this->etudiant($request);
-        $bulletin = $this->bulletins($etudiant)->with('lignes.matiere.uniteEnseignement')->findOrFail($id);
-        $domaines = $bulletin->lignes->map(fn ($ligne) => $ligne->matiere?->uniteEnseignement)->filter()->keyBy('id');
-        $lignes = $bulletin->lignes->map(function ($ligne) {
-            $note = $ligne->note !== null ? (float) $ligne->note : null;
 
-            return [
-                'id' => $ligne->id,
-                'matiere' => $ligne->matiere?->only(['id', 'code', 'libelle', 'type', 'unite_ensigne_id']),
-                'coefficient' => (float) $ligne->coefficient, 'note' => $note,
-                'mention' => MentionBulletinService::calculer($note),
-                'moyenne_ponderee' => $ligne->moyenne_ponderee !== null ? (float) $ligne->moyenne_ponderee : null,
-                'appreciation' => $ligne->appreciation,
-                'statut' => $note === null ? 'a_completer' : ($ligne->matiere && $note >= (float) $ligne->matiere->note_validation ? 'validee' : 'non_validee'),
-            ];
-        });
-        $rattrapages = CoursAFaire::where('id_etudiant', $etudiant->id)->where('statut', 'a_faire')
-            ->whereHas('seance.moduleCalendrier.calendrier', fn ($q) => $q->where('id_annee_academique', $bulletin->inscription->id_annee_academique))
-            ->with(['matiere', 'cours', 'seance'])->orderBy('id')->get();
-
-        return [
-            'etudiant' => $this->presenterEtudiant($etudiant),
-            'bulletin' => [...$this->presenter($bulletin), 'matieres' => $lignes,
-                'unites_enseignement' => $lignes->groupBy('matiere.unite_ensigne_id')
-                    ->map(fn ($matieres) => [
-                        'unite_ensigne_id' => $matieres->first()['matiere']['unite_ensigne_id'] ?? null,
-                        'libelle' => $domaines->get($matieres->first()['matiere']['unite_ensigne_id'] ?? null)?->libelle,
-                        'matieres' => $matieres->values(),
-                    ])->values(),
-                'qr_code' => app(BulletinQrCodeService::class)->presenter($bulletin),
-                'recapitulatif_uv' => ['validees' => $lignes->where('statut', 'validee')->count(),
-                    'non_validees' => $lignes->where('statut', 'non_validee')->count(), 'a_completer' => $lignes->where('statut', 'a_completer')->count()],
-                'cours_a_faire' => $rattrapages->map(fn ($r) => [
-                    ...$r->only(['id', 'statut', 'motif']),
-                    'matiere' => $r->matiere?->only(['id', 'code', 'libelle', 'unite_ensigne_id']),
-                    'cours' => $r->cours?->only(['id', 'code', 'libelle']),
-                    'date_seance_manquee' => $r->seance?->date_prevue,
-                ]),
-            ],
-        ];
+        return $this->document->detail($this->bulletins($etudiant)->findOrFail($id));
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Bulletin;
 use App\Models\FeuilleNotes;
 use App\Models\Inscription;
 use App\Models\Matiere;
+use App\Models\Promotion;
 use Illuminate\Support\Facades\DB;
 
 class GenerationBulletinsService
@@ -29,6 +30,8 @@ class GenerationBulletinsService
                         ->from('historique_feuilles_notes as h2')->whereColumn('h2.id_feuille_notes', 'f.id'))))
                 ->get()->groupBy('id_etudiant');
             $matieres = Matiere::whereIn('id', $resultats->flatten(1)->pluck('id_matiere'))->get()->keyBy('id');
+            // Le niveau du bulletin est celui de la promotion l'année où il est émis.
+            $niveau = Promotion::whereKey($feuille->id_promotion)->value('id_niveau');
 
             foreach ($inscriptions as $inscription) {
                 $bulletin = Bulletin::where('id_inscription', $inscription->id)->where('periode', 'Annuel')->lockForUpdate()->first();
@@ -46,7 +49,7 @@ class GenerationBulletinsService
                     continue;
                 }
                 $bulletin ??= Bulletin::create(['id_inscription' => $inscription->id,
-                    'periode' => 'Annuel', 'statut' => 'Généré', 'created_by' => $acteur]);
+                    'periode' => 'Annuel', 'statut' => 'Généré', 'id_niveau' => $niveau, 'created_by' => $acteur]);
                 if ($bulletin->statut === 'Brouillon') {
                     $bulletin->lignes()->delete();
                 }
@@ -68,7 +71,7 @@ class GenerationBulletinsService
                 $moyenneGenerale = $coefficients > 0 ? round($somme / $coefficients, 2) : null;
                 $bulletin->update(['statut' => 'Généré', 'mention' => MentionBulletinService::calculer($moyenneGenerale), 'rang' => null,
                     'decision' => null, 'fichier_chemin' => null,
-                    'moyenne' => $moyenneGenerale,
+                    'moyenne' => $moyenneGenerale, 'id_niveau' => $niveau,
                     'updated_by' => $acteur]);
             }
         });

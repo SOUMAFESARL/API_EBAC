@@ -87,6 +87,27 @@ class FinDeCycleApiTest extends TestCase
             ->assertStatus(409)->assertJsonPath('code', 'REFERENTIEL_VIDE');
     }
 
+    public function test_seules_les_promotions_de_3e_annee_sont_proposees(): void
+    {
+        Sanctum::actingAs($this->admin);
+        $deuxieme = Niveau::create(['code' => 'N2', 'libelle' => '2e Année', 'rang' => 2]);
+        $quatrieme = Niveau::create(['code' => 'N4', 'libelle' => '4e Année', 'rang' => 4]);
+        $autre = Promotion::create(['code' => 'PROMO-14', 'num_promotion' => 14, 'annee_entree' => 2024, 'id_niveau' => $deuxieme->id]);
+        Promotion::create(['code' => 'PROMO-12', 'num_promotion' => 12, 'annee_entree' => 2022, 'id_niveau' => $quatrieme->id]);
+        Promotion::create(['code' => 'PROMO-15', 'num_promotion' => 15, 'annee_entree' => 2025, 'id_niveau' => $this->promotion->id_niveau]);
+
+        $this->getJson('/api/v1/fin-de-cycle/promotions')->assertOk()
+            ->assertJsonCount(2, 'promotions')
+            ->assertJsonPath('promotions.0.code', 'PROMO-15')
+            ->assertJsonPath('promotions.1.code', 'PROMO-13');
+
+        $this->getJson("/api/v1/fin-de-cycle/promotions/{$autre->id}/notes")
+            ->assertNotFound()->assertJsonPath('code', 'PROMOTION_INTROUVABLE');
+        $this->putJson("/api/v1/fin-de-cycle/promotions/{$autre->id}/epreuves/{$this->epreuve('predication')->id}/notes", [
+            'notes' => [['id_etudiant' => $this->etudiant->id, 'note' => 12]],
+        ])->assertNotFound()->assertJsonPath('code', 'PROMOTION_INTROUVABLE');
+    }
+
     public function test_la_saisie_garde_qui_a_saisi_et_ne_touche_que_les_notes_portees(): void
     {
         Sanctum::actingAs($this->admin);
