@@ -45,6 +45,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'code', type: 'string', example: 'MAT-1'),
         new OA\Property(property: 'libelle', type: 'string', example: 'Herméneutique'),
         new OA\Property(property: 'niveau', type: 'string', nullable: true, example: '1ère Année'),
+        new OA\Property(property: 'supports', description: 'Supports rangés sous la matière seule.', type: 'array', items: new OA\Items(ref: '#/components/schemas/SupportPedagogique')),
         new OA\Property(property: 'modules', type: 'array', items: new OA\Items(properties: [
             new OA\Property(property: 'id', type: 'integer', example: 8),
             new OA\Property(property: 'libelle', type: 'string', example: 'Méthodes'),
@@ -70,8 +71,8 @@ use OpenApi\Attributes as OA;
             new OA\Property(property: 'enseignant_responsable', ref: '#/components/schemas/PersonneSupport'),
             new OA\Property(property: 'documents', type: 'array', items: new OA\Items(properties: [
                 new OA\Property(property: 'support', ref: '#/components/schemas/SupportPedagogique'),
-                new OA\Property(property: 'module', type: 'string', example: 'Méthodes'),
-                new OA\Property(property: 'cours', type: 'string', example: 'Lecture'),
+                new OA\Property(property: 'module', type: 'string', nullable: true, example: 'Méthodes'),
+                new OA\Property(property: 'cours', type: 'string', nullable: true, example: 'Lecture'),
                 new OA\Property(property: 'ajoute_par', ref: '#/components/schemas/PersonneSupport'),
             ])),
         ])),
@@ -90,8 +91,10 @@ use OpenApi\Attributes as OA;
     new OA\Response(response: 200, description: 'Bibliothèque de l établissement', content: new OA\JsonContent(ref: '#/components/schemas/BibliothequeEtablissement')),
     new OA\Response(response: 403, description: 'Droit manquant'),
 ])]
-#[OA\Post(path: '/supports', operationId: 'deposerSupport', summary: 'Déposer un support', description: 'Enseignant sur un cours qui lui est affecté (dans son quota), ou ressources.bibliotheque.creer sur n importe quel cours (hors quota). ADMIN passe toujours.', tags: ['Bibliothèque pédagogique'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(required: ['id_cours', 'nom', 'type', 'fichier'], properties: [
-    new OA\Property(property: 'id_cours', type: 'integer', example: 21),
+#[OA\Post(path: '/supports', operationId: 'deposerSupport', summary: 'Déposer un support', description: 'Le support se range sous une matière ; module et cours sont facultatifs (le cours doit appartenir au module, le module à la matière). Enseignant dans sa portée — cours affecté, ou module/matière qui en porte un — dans son quota ; ou ressources.bibliotheque.creer partout (hors quota). ADMIN passe toujours.', tags: ['Bibliothèque pédagogique'], security: [['sanctum' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(required: ['id_matiere', 'nom', 'type', 'fichier'], properties: [
+    new OA\Property(property: 'id_matiere', type: 'integer', example: 4),
+    new OA\Property(property: 'id_module', type: 'integer', nullable: true, example: 9),
+    new OA\Property(property: 'id_cours', type: 'integer', nullable: true, example: 21),
     new OA\Property(property: 'nom', type: 'string', minLength: 3, maxLength: 120, example: 'Plan de cours'),
     new OA\Property(property: 'type', type: 'string', enum: ['cours', 'travaux-diriges', 'exercices', 'corrige', 'reference', 'media']),
     new OA\Property(property: 'fichier', description: '50 Mo maximum ; formats PDF, DOCX, ODT, PPTX, ODP, XLSX, MP3, MP4, JPG, PNG, ZIP.', type: 'string', format: 'binary'),

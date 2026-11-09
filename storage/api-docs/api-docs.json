@@ -17309,6 +17309,315 @@
                     }
                 ]
             }
+        },
+        "/administration/journal-audit": {
+            "get": {
+                "tags": [
+                    "Journal d'audit"
+                ],
+                "summary": "Une fenêtre du journal d audit",
+                "description": "Droit : securite-comptes.journal-audit.consulter. Entrées antéchronologiques de la fenêtre (jour, semaine lundi→dimanche, ou mois civil) qui contient l ancre, bornées aux catégories lisibles du titulaire.",
+                "operationId": "lireJournalAudit",
+                "parameters": [
+                    {
+                        "name": "periode",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "jour",
+                                "semaine",
+                                "mois"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ancre",
+                        "in": "query",
+                        "description": "AAAA-MM-JJ, un jour de la fenêtre.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "example": "2026-11-02"
+                    },
+                    {
+                        "name": "categorie",
+                        "in": "query",
+                        "description": "Absent = toutes les catégories lisibles. Catégorie fermée au titulaire : 403 CATEGORIE_FERMEE.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "authentification",
+                                "comptes",
+                                "notes",
+                                "corrections-notes",
+                                "finances",
+                                "documents-officiels",
+                                "parametrage",
+                                "exports",
+                                "incidents"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "criticite_minimale",
+                        "in": "query",
+                        "description": "Retient les entrées au moins aussi graves.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "moyen",
+                                "eleve",
+                                "critique"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "recherche",
+                        "in": "query",
+                        "description": "Auteur, action, objet ou adresse IP.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Ramenée à la dernière page si elle la dépasse.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "par_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Page du registre",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "required": [
+                                        "entrees",
+                                        "bornes",
+                                        "page",
+                                        "pages",
+                                        "total",
+                                        "parPage",
+                                        "categoriesLisibles"
+                                    ],
+                                    "properties": {
+                                        "entrees": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/EntreeJournalAudit"
+                                            }
+                                        },
+                                        "bornes": {
+                                            "description": "Fenêtre telle que le service l a comprise.",
+                                            "required": [
+                                                "debut",
+                                                "fin"
+                                            ],
+                                            "properties": {
+                                                "debut": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-11-02"
+                                                },
+                                                "fin": {
+                                                    "type": "string",
+                                                    "format": "date",
+                                                    "example": "2026-11-08"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "pages": {
+                                            "description": "Au moins 1.",
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 27
+                                        },
+                                        "parPage": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "categoriesLisibles": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "example": [
+                                                "comptes",
+                                                "notes",
+                                                "corrections-notes",
+                                                "documents-officiels",
+                                                "parametrage"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Droit manquant, ou catégorie fermée (RefusJournalAudit)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusJournalAudit"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Période ou ancre inexploitable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/journal-audit/exports": {
+            "post": {
+                "tags": [
+                    "Journal d'audit"
+                ],
+                "summary": "Inscrire au journal un export CSV",
+                "description": "Droit : securite-comptes.journal-audit.exporter. Le CSV est fabriqué par le client à partir des lignes affichées ; cet appel l inscrit au registre (catégorie exports). Seule écriture du module, et c est un ajout.",
+                "operationId": "declarerExportJournalAudit",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "periode",
+                                    "debut",
+                                    "fin",
+                                    "lignes"
+                                ],
+                                "properties": {
+                                    "periode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "jour",
+                                            "semaine",
+                                            "mois"
+                                        ]
+                                    },
+                                    "debut": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-11-02"
+                                    },
+                                    "fin": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-11-08"
+                                    },
+                                    "lignes": {
+                                        "type": "integer",
+                                        "example": 27,
+                                        "minimum": 0
+                                    },
+                                    "categorie": {
+                                        "description": "null = export non filtré.",
+                                        "type": "string",
+                                        "nullable": true,
+                                        "enum": [
+                                            "authentification",
+                                            "comptes",
+                                            "notes",
+                                            "corrections-notes",
+                                            "finances",
+                                            "documents-officiels",
+                                            "parametrage",
+                                            "exports",
+                                            "incidents"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Export inscrit",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "example": "1843",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Droit manquant, ou catégorie fermée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusJournalAudit"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Corps invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -23169,6 +23478,157 @@
                     }
                 },
                 "type": "object"
+            },
+            "EntreeJournalAudit": {
+                "required": [
+                    "id",
+                    "horodatage",
+                    "acteur",
+                    "action",
+                    "categorie",
+                    "criticite",
+                    "objet",
+                    "valeurAvant",
+                    "valeurApres",
+                    "adresseIp"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "example": "1842"
+                    },
+                    "horodatage": {
+                        "description": "ISO 8601 en temps universel.",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-11-09T08:14:03.271Z"
+                    },
+                    "acteur": {
+                        "required": [
+                            "id",
+                            "nom",
+                            "profil"
+                        ],
+                        "properties": {
+                            "id": {
+                                "description": "null : action sans titulaire identifié, ou compte supprimé depuis.",
+                                "type": "string",
+                                "example": "7",
+                                "nullable": true
+                            },
+                            "nom": {
+                                "description": "Déjà formaté, conservé si le compte disparaît.",
+                                "type": "string",
+                                "example": "Dr. GBAGBO Samuel"
+                            },
+                            "profil": {
+                                "type": "string",
+                                "nullable": true,
+                                "enum": [
+                                    "administrateur",
+                                    "direction",
+                                    "gestionnaire",
+                                    "secretariat-academique",
+                                    "enseignant",
+                                    "etudiant",
+                                    "eglise"
+                                ]
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "action": {
+                        "description": "Texte d affichage, pas un contrat.",
+                        "type": "string",
+                        "example": "Validation des notes par la Direction"
+                    },
+                    "categorie": {
+                        "type": "string",
+                        "enum": [
+                            "authentification",
+                            "comptes",
+                            "notes",
+                            "corrections-notes",
+                            "finances",
+                            "documents-officiels",
+                            "parametrage",
+                            "exports",
+                            "incidents"
+                        ]
+                    },
+                    "criticite": {
+                        "type": "string",
+                        "enum": [
+                            "moyen",
+                            "eleve",
+                            "critique"
+                        ]
+                    },
+                    "objet": {
+                        "required": [
+                            "type",
+                            "libelle"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "example": "Compte"
+                            },
+                            "libelle": {
+                                "type": "string",
+                                "example": "m.diallo@ebac.ci"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "valeurAvant": {
+                        "description": "Champ → valeur déjà mise en forme ; null si rien n était modifié.",
+                        "type": "object",
+                        "example": {
+                            "Statut": "Actif"
+                        },
+                        "nullable": true,
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    },
+                    "valeurApres": {
+                        "type": "object",
+                        "example": {
+                            "Statut": "Bloqué"
+                        },
+                        "nullable": true,
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    },
+                    "adresseIp": {
+                        "type": "string",
+                        "example": "41.202.219.12",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "RefusJournalAudit": {
+                "required": [
+                    "code",
+                    "message"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "enum": [
+                            "CATEGORIE_FERMEE"
+                        ]
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Cette catégorie du journal n’est pas ouverte à votre profil."
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -23384,6 +23844,10 @@
         {
             "name": "Registre des bulletins",
             "description": "Tous les bulletins d un niveau — annuels et de fin de cycle, quel que soit leur statut — pour l administration. Droit : notes.bulletins.consulter (ADMIN passe toujours)."
+        },
+        {
+            "name": "Journal d'audit",
+            "description": "Registre immuable des actions sensibles (CDC §15.4) : aucune route ne modifie ni ne supprime une entrée. Les écritures sensibles, connexions, refus d accès et erreurs serveur y sont inscrits par le service. ADMIN lit les neuf catégories ; tout autre titulaire du droit lit comptes, notes, corrections-notes, documents-officiels et parametrage."
         }
     ]
 }

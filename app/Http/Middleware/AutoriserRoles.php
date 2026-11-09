@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Audit\Journal;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,6 +18,8 @@ class AutoriserRoles
         }
 
         if (! in_array($utilisateur->role?->code, $rolesAutorises, true)) {
+            Journal::refusAcces($request, 'Rôle non autorisé : '.($utilisateur->role?->code ?? 'aucun'));
+
             return response()->json([
                 'message' => 'Votre rôle ne permet pas d’accéder à cette ressource.',
                 'roles_autorises' => $rolesAutorises,

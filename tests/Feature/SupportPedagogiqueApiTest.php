@@ -31,6 +31,10 @@ class SupportPedagogiqueApiTest extends TestCase
 
     private UniteEnseignement $domaine;
 
+    private Matiere $matiere;
+
+    private Matiere $autreMatiere;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -42,7 +46,8 @@ class SupportPedagogiqueApiTest extends TestCase
 
         $this->domaine = UniteEnseignement::create(['code' => 'BIB', 'libelle' => 'Connaissance de la Bible', 'statut' => 'Actif']);
         $niveau = Niveau::create(['code' => 'N1', 'libelle' => '1ère Année', 'rang' => 1]);
-        $matiere = Matiere::create(['code' => 'MAT-1', 'libelle' => 'Herméneutique', 'id_niveau' => $niveau->id, 'unite_ensigne_id' => $this->domaine->id]);
+        $matiere = $this->matiere = Matiere::create(['code' => 'MAT-1', 'libelle' => 'Herméneutique', 'id_niveau' => $niveau->id, 'unite_ensigne_id' => $this->domaine->id]);
+        $this->autreMatiere = Matiere::create(['code' => 'MAT-2', 'libelle' => 'Homilétique', 'id_niveau' => $niveau->id, 'unite_ensigne_id' => $this->domaine->id]);
         $module = Module::create(['id_matiere' => $matiere->id, 'libelle' => 'Méthodes', 'ordre' => 1]);
         $this->coursAffecte = Cours::create(['id_module' => $module->id, 'code' => 'C-1', 'libelle' => 'Lecture', 'ordre' => 1]);
         $this->autreCours = Cours::create(['id_module' => $module->id, 'code' => 'C-2', 'libelle' => 'Exégèse', 'ordre' => 2]);
@@ -51,10 +56,39 @@ class SupportPedagogiqueApiTest extends TestCase
 
     private function deposer(Cours $cours, string $fichier = 'plan.pdf', int $ko = 200)
     {
+        return $this->deposerSous(['id_matiere' => $this->matiere->id, 'id_module' => $cours->id_module, 'id_cours' => $cours->id], $fichier, $ko);
+    }
+
+    private function deposerSous(array $rattachement, string $fichier = 'plan.pdf', int $ko = 200)
+    {
         return $this->post('/api/v1/supports', [
-            'id_cours' => $cours->id, 'nom' => 'Plan de cours', 'type' => 'cours',
+            ...$rattachement, 'nom' => 'Plan de cours', 'type' => 'cours',
             'fichier' => UploadedFile::fake()->create($fichier, $ko),
         ], ['Accept' => 'application/json']);
+    }
+
+    public function test_module_et_cours_sont_facultatifs_mais_coherents(): void
+    {
+        Sanctum::actingAs($this->enseignant);
+        $this->deposerSous(['id_matiere' => $this->matiere->id])->assertCreated();
+        $this->deposerSous(['id_matiere' => $this->matiere->id, 'id_module' => $this->coursAffecte->id_module])->assertCreated();
+        $this->deposerSous(['id_matiere' => $this->autreMatiere->id])->assertForbidden()->assertJsonPath('code', 'COURS_NON_AFFECTE');
+        $this->deposerSous([])->assertStatus(422);
+        $this->deposerSous(['id_matiere' => $this->autreMatiere->id, 'id_cours' => $this->coursAffecte->id])->assertStatus(422);
+
+        $this->getJson('/api/v1/enseignant/bibliotheque')->assertOk()
+            ->assertJsonCount(1, 'matieres.0.supports')
+            ->assertJsonCount(1, 'matieres.0.modules.0.supports')
+            ->assertJsonCount(0, 'matieres.0.modules.0.cours.0.supports');
+
+        Sanctum::actingAs($this->admin);
+        $this->deposerSous(['id_matiere' => $this->autreMatiere->id])->assertCreated();
+        $reponse = $this->getJson('/api/v1/supports/bibliotheque')->assertOk();
+        $documents = collect($reponse->json('domaines.0.matieres'))->flatMap(fn ($m) => $m['documents']);
+        $this->assertCount(3, $documents);
+        $this->assertNull($documents->first()['module']);
+        $this->assertNull($documents->first()['cours']);
+        $this->assertSame('Méthodes', $documents->get(1)['module']);
     }
 
     public function test_l_enseignant_depose_sur_son_cours_et_le_document_apparait_a_la_gestion(): void

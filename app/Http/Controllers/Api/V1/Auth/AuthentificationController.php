@@ -10,6 +10,7 @@ use App\Models\ConnexionDeuxFacteurs;
 use App\Models\User;
 use App\Notifications\CodeOtpConnexionNotification;
 use App\Notifications\CodeReinitialisationMotDePasseNotification;
+use App\Support\Audit\Journal;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -138,6 +139,7 @@ class AuthentificationController extends Controller
         ])->save();
         $utilisateur->tokens()->delete();
         DB::table('password_reset_tokens')->where('email', $utilisateur->email)->delete();
+        Journal::consigner('authentification', 'Réinitialisation du mot de passe', 'eleve', self::objetCompte($utilisateur), acteur: $utilisateur);
 
         return response()->json([
             'message' => 'Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter.',
@@ -158,6 +160,7 @@ class AuthentificationController extends Controller
             'prochaine_connexion_sans_otp' => false,
             'tentatives_echouees' => 0,
         ])->save();
+        Journal::consigner('authentification', 'Modification du mot de passe', objet: self::objetCompte($utilisateur), acteur: $utilisateur);
 
         return response()->json([
             'message' => 'Votre mot de passe a été modifié avec succès. Votre session reste active.',
@@ -182,6 +185,10 @@ class AuthentificationController extends Controller
             if ($utilisateur) {
                 $utilisateur->increment('tentatives_echouees');
             }
+            Journal::consigner('authentification', 'Échec de connexion — identifiants incorrects', 'eleve',
+                ['type' => 'Compte', 'libelle' => $identifiants->email],
+                apres: $utilisateur ? ['Tentatives échouées' => (string) $utilisateur->tentatives_echouees] : null,
+                acteur: $utilisateur, nomActeur: $identifiants->email);
 
             throw ValidationException::withMessages([
                 'email' => ['Les identifiants fournis sont incorrects.'],
@@ -189,6 +196,9 @@ class AuthentificationController extends Controller
         }
 
         if (! $utilisateur->is_active || $utilisateur->statut !== 'Actif') {
+            Journal::consigner('authentification', 'Connexion refusée — compte inactif', 'eleve',
+                self::objetCompte($utilisateur), apres: ['Statut' => (string) $utilisateur->statut], acteur: $utilisateur);
+
             return response()->json([
                 'message' => 'Ce compte est inactif ou ne peut pas se connecter.',
             ], 403);
@@ -212,6 +222,7 @@ class AuthentificationController extends Controller
 
         if ($connexionSansOtp) {
             $jeton = $utilisateur->createToken($identifiants->nomAppareil)->plainTextToken;
+            Journal::consigner('authentification', 'Connexion réussie', objet: self::objetCompte($utilisateur), acteur: $utilisateur);
 
             return ConnexionResource::make([
                 'token' => $jeton,
@@ -283,8 +294,14 @@ class AuthentificationController extends Controller
         if ($tentative->tentatives >= 5 || ! Hash::check($donnees['code_otp'], $tentative->code_otp_hash)) {
             $tentative->increment('tentatives');
 
-            if ($tentative->fresh()->tentatives >= 5) {
+            $epuise = $tentative->fresh()->tentatives >= 5;
+            if ($epuise) {
                 $tentative->forceFill(['reussi' => false])->save();
+            }
+            if ($tentative->compte) {
+                Journal::consigner('authentification',
+                    $epuise ? 'Connexion bloquée — trop de codes OTP erronés' : 'Code OTP incorrect',
+                    $epuise ? 'critique' : 'eleve', self::objetCompte($tentative->compte), acteur: $tentative->compte);
             }
 
             throw ValidationException::withMessages([
@@ -311,6 +328,7 @@ class AuthentificationController extends Controller
         ])->save();
 
         $jeton = $utilisateur->createToken($tentative->nom_appareil)->plainTextToken;
+        Journal::consigner('authentification', 'Connexion réussie', objet: self::objetCompte($utilisateur), acteur: $utilisateur);
 
         return ConnexionResource::make([
             'token' => $jeton,
@@ -328,6 +346,7 @@ class AuthentificationController extends Controller
     public function deconnexion(Request $request): JsonResponse
     {
         $request->user()?->currentAccessToken()?->delete();
+        Journal::consigner('authentification', 'Déconnexion');
 
         return response()->json([
             'message' => 'Déconnexion réussie.',
@@ -337,9 +356,16 @@ class AuthentificationController extends Controller
     public function deconnexionGlobale(Request $request): JsonResponse
     {
         $request->user()?->tokens()->delete();
+        Journal::consigner('authentification', 'Déconnexion de tous les appareils');
 
         return response()->json([
             'message' => 'Déconnexion effectuée sur tous les appareils.',
         ]);
+    }
+
+    /** @return array{type: string, libelle: string} */
+    private static function objetCompte(User $utilisateur): array
+    {
+        return ['type' => 'Compte', 'libelle' => (string) $utilisateur->email];
     }
 }

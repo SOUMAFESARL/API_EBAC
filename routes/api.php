@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Administration\BulletinNotesEtudiantController;
 use App\Http\Controllers\Api\V1\Administration\CompteController;
 use App\Http\Controllers\Api\V1\Administration\CorrectionNoteController;
 use App\Http\Controllers\Api\V1\Administration\CorrectionsGroupeesController;
+use App\Http\Controllers\Api\V1\Administration\JournalAuditController;
 use App\Http\Controllers\Api\V1\Administration\MenuController;
 use App\Http\Controllers\Api\V1\Administration\NotesTransmisesController;
 use App\Http\Controllers\Api\V1\Administration\PermissionController;
@@ -661,6 +662,16 @@ Route::apiResource('v1/eglises', EgliseController::class)->only(['update', 'dest
     ->names('api.v1.eglises')
     ->parameters(['eglises' => 'id'])
     ->middleware(['auth:sanctum', 'compte.actif', $droit('gestion-academique.eglises.modifier')]);
+
+// Registre immuable : ni PUT, ni PATCH, ni DELETE.
+Route::prefix('v1/administration/journal-audit')
+    ->name('api.v1.administration.journal-audit.')
+    ->middleware(['auth:sanctum', 'compte.actif'])
+    ->controller(JournalAuditController::class)
+    ->group(function () use ($droit) {
+        Route::get('/', 'index')->middleware($droit('securite-comptes.journal-audit.consulter'))->name('index');
+        Route::post('exports', 'exporter')->middleware($droit('securite-comptes.journal-audit.exporter'))->name('exports');
+    });
 
 Route::prefix('v1/administration/comptes')
     ->name('api.v1.administration.comptes.')

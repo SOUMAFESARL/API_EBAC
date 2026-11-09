@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Cours;
 use App\Models\Matiere;
+use App\Models\Module;
 use App\Models\QuotaStockage;
 use App\Models\Role;
 use App\Models\SupportPedagogique;
@@ -16,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SupportPedagogiqueController extends Controller
@@ -33,20 +35,31 @@ class SupportPedagogiqueController extends Controller
             return $this->refus(404, 'AUCUNE_AFFECTATION', 'Aucun cours ne vous est affecté.');
         }
 
+        $portee = $this->service->portee($enseignant);
         $cours = Cours::query()->whereIn('id', $ids)->with(['module.matiere.niveau'])->orderBy('ordre')->get();
-        $supports = SupportPedagogique::query()->whereIn('id_cours', $ids)->with('auteur')->orderBy('id')->get()->groupBy('id_cours');
+        $tous = SupportPedagogique::query()->with('auteur')->orderBy('id')
+            ->where(fn ($q) => $q->whereIn('id_cours', $ids)
+                ->orWhere(fn ($q) => $q->whereNull('id_cours')->whereIn('id_module', $portee['modules']))
+                ->orWhere(fn ($q) => $q->whereNull('id_cours')->whereNull('id_module')->whereIn('id_matiere', $portee['matieres'])))
+            ->get();
+        $supports = $tous->whereNotNull('id_cours')->groupBy('id_cours');
+        $parModule = $tous->whereNull('id_cours')->whereNotNull('id_module')->groupBy('id_module');
+        $parMatiere = $tous->whereNull('id_cours')->whereNull('id_module')->groupBy('id_matiere');
+        $liste = fn ($groupe, $cle) => ($groupe[$cle] ?? collect())->map(fn ($s) => $this->service->support($s))->values()->all();
 
-        $matieres = $cours->groupBy(fn (Cours $c) => $c->module->id_matiere)->map(function ($liste) use ($supports) {
-            $matiere = $liste->first()->module->matiere;
+        $matieres = $cours->groupBy(fn (Cours $c) => $c->module->id_matiere)->map(function ($items) use ($supports, $parModule, $parMatiere, $liste) {
+            $matiere = $items->first()->module->matiere;
 
             return [
                 'id' => $matiere->id,
                 'code' => $matiere->code,
                 'libelle' => $matiere->libelle,
                 'niveau' => $matiere->niveau?->libelle,
-                'modules' => $liste->groupBy('id_module')->map(fn ($items) => [
+                'supports' => $liste($parMatiere, $matiere->id),
+                'modules' => $items->groupBy('id_module')->map(fn ($items) => [
                     'id' => $items->first()->module->id,
                     'libelle' => $items->first()->module->libelle,
+                    'supports' => $liste($parModule, $items->first()->module->id),
                     'cours' => $items->map(fn (Cours $c) => [
                         'id' => $c->id,
                         'libelle' => $c->libelle,
@@ -67,14 +80,14 @@ class SupportPedagogiqueController extends Controller
     public function bibliotheque(): JsonResponse
     {
         $supports = SupportPedagogique::query()
-            ->with(['auteur', 'cours.module.matiere.niveau', 'cours.module.matiere.enseignant'])
-            ->whereHas('cours.module.matiere')->orderBy('id')->get();
+            ->with(['auteur', 'matiere.niveau', 'matiere.enseignant', 'module', 'cours'])
+            ->whereHas('matiere')->orderBy('id')->get();
 
-        $parMatiere = $supports->groupBy(fn ($s) => $s->cours->module->id_matiere);
+        $parMatiere = $supports->groupBy('id_matiere');
         $domaines = UniteEnseignement::query()->orderBy('libelle')->get()->keyBy('id');
 
         $matieres = $parMatiere->map(function ($liste) {
-            $matiere = $liste->first()->cours->module->matiere;
+            $matiere = $liste->first()->matiere;
 
             return [
                 'domaine_id' => $matiere->unite_ensigne_id,
@@ -87,8 +100,8 @@ class SupportPedagogiqueController extends Controller
                     'enseignant_responsable' => $this->service->personne($matiere->enseignant),
                     'documents' => $liste->map(fn (SupportPedagogique $s) => [
                         'support' => $this->service->support($s),
-                        'module' => $s->cours->module->libelle,
-                        'cours' => $s->cours->libelle,
+                        'module' => $s->module?->libelle,
+                        'cours' => $s->cours?->libelle,
                         'ajoute_par' => $this->service->personne($s->auteur),
                     ])->values()->all(),
                 ],
@@ -116,14 +129,17 @@ class SupportPedagogiqueController extends Controller
     public function store(Request $request): JsonResponse
     {
         $donnees = $request->validate([
-            'id_cours' => ['required', 'integer', Rule::exists('cours', 'id')->whereNull('deleted_at')],
+            'id_matiere' => ['required', 'integer', Rule::exists('matieres', 'id')->whereNull('deleted_at')],
+            'id_module' => ['nullable', 'integer', Rule::exists('modules', 'id')->whereNull('deleted_at')],
+            'id_cours' => ['nullable', 'integer', Rule::exists('cours', 'id')->whereNull('deleted_at')],
             'nom' => ['required', 'string', 'min:3', 'max:120'],
             'type' => ['required', Rule::in(SupportPedagogique::TYPES)],
             'fichier' => ['required', 'file'],
         ]);
         $utilisateur = $request->user();
+        [$matiereId, $moduleId, $coursId] = $this->rattachement($donnees);
 
-        if (! $this->service->peutEcrire($utilisateur, (int) $donnees['id_cours'], 'creer')) {
+        if (! $this->service->peutEcrire($utilisateur, $matiereId, $moduleId, $coursId, 'creer')) {
             return $this->service->estEnseignant($utilisateur)
                 ? $this->refus(403, 'COURS_NON_AFFECTE', 'Ce cours ne vous est pas affecté.')
                 : $this->refus(403, 'DROITS_INSUFFISANTS', 'Vous ne disposez pas de la permission nécessaire pour cette action.');
@@ -136,7 +152,9 @@ class SupportPedagogiqueController extends Controller
         $chemin = $fichier->store('supports', self::DISQUE);
         try {
             $support = SupportPedagogique::create([
-                'id_cours' => $donnees['id_cours'],
+                'id_matiere' => $matiereId,
+                'id_module' => $moduleId,
+                'id_cours' => $coursId,
                 'nom' => $donnees['nom'],
                 'type' => $donnees['type'],
                 'chemin' => $chemin,
@@ -167,7 +185,7 @@ class SupportPedagogiqueController extends Controller
         if (! $item) {
             return $this->refus(404, 'SUPPORT_INTROUVABLE', 'Support introuvable.');
         }
-        if (! $this->service->peutEcrire($utilisateur, $item->id_cours, 'supprimer')) {
+        if (! $this->service->peutEcrire($utilisateur, $item->id_matiere, $item->id_module, $item->id_cours, 'supprimer')) {
             return $this->service->estEnseignant($utilisateur)
                 ? $this->refus(403, 'SUPPORT_NON_AFFECTE', "Ce support relève d'un cours qui ne vous est pas affecté.")
                 : $this->refus(403, 'DROITS_INSUFFISANTS', 'Vous ne disposez pas de la permission nécessaire pour cette action.');
@@ -182,7 +200,7 @@ class SupportPedagogiqueController extends Controller
 
     public function telecharger(Request $request, int $support): JsonResponse|StreamedResponse
     {
-        $item = SupportPedagogique::with('cours.module.matiere.niveau')->find($support);
+        $item = SupportPedagogique::with('matiere.niveau')->find($support);
         if (! $item || ! Storage::disk(self::DISQUE)->exists($item->chemin)) {
             return $this->refus(404, 'SUPPORT_INTROUVABLE', 'Fichier introuvable.');
         }
@@ -232,6 +250,32 @@ class SupportPedagogiqueController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Matière obligatoire ; module et cours facultatifs, mais cohérents :
+     * le cours appartient au module, le module à la matière.
+     *
+     * @return array{0: int, 1: ?int, 2: ?int}
+     */
+    private function rattachement(array $donnees): array
+    {
+        $matiereId = (int) $donnees['id_matiere'];
+        $moduleId = isset($donnees['id_module']) ? (int) $donnees['id_module'] : null;
+        $coursId = isset($donnees['id_cours']) ? (int) $donnees['id_cours'] : null;
+
+        if ($coursId !== null) {
+            $moduleDuCours = (int) Cours::query()->whereKey($coursId)->value('id_module');
+            if ($moduleId !== null && $moduleId !== $moduleDuCours) {
+                throw ValidationException::withMessages(['id_cours' => "Ce cours n'appartient pas au module choisi."]);
+            }
+            $moduleId = $moduleDuCours;
+        }
+        if ($moduleId !== null && (int) Module::query()->whereKey($moduleId)->value('id_matiere') !== $matiereId) {
+            throw ValidationException::withMessages(['id_module' => "Ce module n'appartient pas à la matière choisie."]);
+        }
+
+        return [$matiereId, $moduleId, $coursId];
     }
 
     /** Quota du déposant enseignant ; `null` pour la gestion, hors quota. */

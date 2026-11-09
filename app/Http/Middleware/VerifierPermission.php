@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Audit\Journal;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,6 +25,8 @@ class VerifierPermission
         }
 
         if (! ($utilisateur->role?->actif ?? true)) {
+            Journal::refusAcces($request, 'Rôle inactif');
+
             return response()->json(['message' => 'Votre rôle est inactif.'], 403);
         }
 
@@ -42,6 +45,8 @@ class VerifierPermission
         $permissionsActives = $utilisateur->codesPermissions();
 
         if (array_intersect($permissions, $permissionsActives) === []) {
+            Journal::refusAcces($request, 'Droit manquant : '.implode(', ', $permissions));
+
             return response()->json([
                 'message' => 'Vous ne disposez pas de la permission nécessaire pour cette action.',
                 'permissions_requises' => $permissions,
