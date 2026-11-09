@@ -326,6 +326,10 @@ Route::get('v1/enseignant/bibliotheque', [SupportPedagogiqueController::class, '
     ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ENSEIGNANT'])
     ->name('api.v1.enseignant.bibliotheque');
 
+Route::get('v1/etudiant/bibliotheque', [SupportPedagogiqueController::class, 'espaceEtudiant'])
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ETUDIANT'])
+    ->name('api.v1.etudiant.bibliotheque');
+
 // Écritures : l'enseignant sur ses cours affectés, la gestion avec
 // ressources.bibliotheque.creer / supprimer (contrôlé dans le contrôleur).
 // Pas de versions : un document se supprime puis se redépose.

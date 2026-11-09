@@ -12285,7 +12285,7 @@
                     "Rattrapages"
                 ],
                 "summary": "Inscrire un etudiant a une session de rattrapage",
-                "description": "Droit requis : progression.rattrapages.inscrire. ADMIN passe toujours. La date, les horaires, l enseignant et la salle sont derives de la session ; ne pas les fournir. La session doit correspondre au meme enseignement et etre prevue, non passee. Une programmation par absence. POST /administration/rattrapages accepte aussi ce format. Pour reprogrammer apres annulation, PUT /administration/rattrapages/{id} avec id_seance_rattrapage et observations facultatives, sans id_cours_a_faire. Une inscription ne valide pas le cours et ne cree aucune note.",
+                "description": "Droit requis : progression.rattrapages.inscrire. ADMIN passe toujours. La date, les horaires, l enseignant et la salle sont derives de la session ; ne pas les fournir. La session doit correspondre au meme enseignement et etre prevue, non passee. Une programmation par absence. POST /administration/rattrapages accepte aussi ce format. Apres annulation, ce meme POST reprend la programmation annulee et repond 200 ; PUT /administration/rattrapages/{id} avec id_seance_rattrapage et observations facultatives, sans id_cours_a_faire. Une inscription ne valide pas le cours et ne cree aucune note.",
                 "operationId": "1ac17777a0aea440e45b93ed7771d24e",
                 "requestBody": {
                     "required": true,

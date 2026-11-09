@@ -3,10 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\AffectationEnseignant;
+use App\Models\AnneeAcademique;
 use App\Models\Cours;
+use App\Models\Etudiant;
+use App\Models\Inscription;
 use App\Models\Matiere;
 use App\Models\Module;
 use App\Models\Niveau;
+use App\Models\Promotion;
 use App\Models\QuotaStockage;
 use App\Models\Role;
 use App\Models\UniteEnseignement;
@@ -181,5 +185,34 @@ class SupportPedagogiqueApiTest extends TestCase
         Sanctum::actingAs($this->admin);
         $this->putJson("/api/v1/supports/quotas/{$this->enseignant->id}", ['quota_mo' => 50])->assertOk();
         $this->getJson('/api/v1/supports/quotas')->assertOk()->assertJsonPath('quotas.0.quota_mo', 50);
+    }
+
+    public function test_l_etudiant_voit_les_supports_de_ses_matieres_sans_le_deposant(): void
+    {
+        Sanctum::actingAs($this->enseignant);
+        $id = $this->deposer($this->coursAffecte)->assertCreated()->json('support.id');
+        $this->deposerSous(['id_matiere' => $this->matiere->id])->assertCreated();
+
+        $annee = AnneeAcademique::create(['libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31']);
+        $promotion = Promotion::create(['num_promotion' => 17, 'annee_entree' => 2026, 'id_niveau' => $this->matiere->id_niveau]);
+        $compte = User::factory()->create(['id_role' => Role::create(['code' => 'ETUDIANT', 'libelle' => 'Étudiant'])->id]);
+        $etudiant = Etudiant::create(['user_id' => $compte->id, 'matricule' => 'ETU-1', 'nom' => 'KONE', 'prenoms' => 'Awa', 'date_inscription' => '2026-09-01']);
+        Inscription::create(['id_etudiant' => $etudiant->id, 'id_promotion' => $promotion->id, 'id_annee_academique' => $annee->id, 'date_inscription' => '2026-09-01']);
+
+        Sanctum::actingAs($compte);
+        $reponse = $this->getJson('/api/v1/etudiant/bibliotheque')->assertOk()
+            ->assertJsonPath('supports_accessibles', 2)
+            ->assertJsonCount(1, 'matieres')
+            ->assertJsonPath('matieres.0.libelle', 'Herméneutique')
+            ->assertJsonCount(1, 'matieres.0.supports')
+            ->assertJsonCount(1, 'matieres.0.modules.0.cours')
+            ->assertJsonPath('matieres.0.modules.0.cours.0.supports.0.id', $id)
+            ->assertJsonMissingPath('matieres.0.modules.0.cours.0.supports.0.depose_par')
+            ->assertJsonMissingPath('matieres.0.supports.0.depose_par');
+        $this->assertStringNotContainsString('KONAN', $reponse->getContent());
+        $this->get("/api/v1/supports/{$id}/fichier")->assertOk();
+
+        Sanctum::actingAs($this->enseignant);
+        $this->getJson('/api/v1/etudiant/bibliotheque')->assertForbidden();
     }
 }

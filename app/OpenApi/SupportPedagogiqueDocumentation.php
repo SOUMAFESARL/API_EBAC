@@ -87,6 +87,10 @@ use OpenApi\Attributes as OA;
     new OA\Response(response: 200, description: 'Bibliothèque de l enseignant', content: new OA\JsonContent(ref: '#/components/schemas/BibliothequeEnseignant')),
     new OA\Response(response: 404, description: 'AUCUNE_AFFECTATION', content: new OA\JsonContent(ref: '#/components/schemas/RefusSupport')),
 ])]
+#[OA\Get(path: '/etudiant/bibliotheque', operationId: 'bibliothequeEtudiant', summary: 'Bibliothèque de l étudiant connecté', description: 'Rôle ETUDIANT. Matières actives du niveau de la dernière inscription et des niveaux antérieurs, rangées matière › module › cours, réduites aux branches qui portent un document. Le déposant n est jamais servi.', tags: ['Bibliothèque pédagogique'], security: [['sanctum' => []]], responses: [
+    new OA\Response(response: 200, description: 'Bibliothèque de l étudiant : { matieres: [{ id, code, libelle, niveau, supports, modules: [{ id, libelle, supports, cours: [{ id, libelle, supports }] }] }], supports_accessibles }'),
+    new OA\Response(response: 404, description: 'AUCUNE_INSCRIPTION', content: new OA\JsonContent(ref: '#/components/schemas/RefusSupport')),
+])]
 #[OA\Get(path: '/supports/bibliotheque', operationId: 'bibliothequeEtablissement', summary: 'Bibliothèque de l établissement', description: 'Droit requis : ressources.bibliotheque.consulter. ADMIN passe toujours. Tous les documents, rangés par domaine d enseignement puis matière.', tags: ['Bibliothèque pédagogique'], security: [['sanctum' => []]], responses: [
     new OA\Response(response: 200, description: 'Bibliothèque de l établissement', content: new OA\JsonContent(ref: '#/components/schemas/BibliothequeEtablissement')),
     new OA\Response(response: 403, description: 'Droit manquant'),

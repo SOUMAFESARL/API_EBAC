@@ -156,7 +156,13 @@ class RattrapageApiTest extends TestCase
         $this->assertDatabaseHas('presences', ['id' => $data['presence']->id, 'statut' => 'absent']);
         $this->postJson(self::URL.'/'.$id.'/annuler')->assertOk()->assertJsonPath('rattrapage.statut', 'annule');
         $this->postJson(self::URL.'/'.$id.'/annuler')->assertUnprocessable();
-        $this->getJson(self::URL.'/plan')->assertOk()->assertJsonPath('statistiques.non_planifies', 1);
+        $this->getJson(self::URL.'/plan')->assertOk()->assertJsonPath('statistiques.non_planifies', 1)
+            ->assertJsonPath('data.0.rattrapage.statut', 'annule');
+        $this->postJson(self::URL.'/inscrire', $payload)->assertOk()
+            ->assertJsonPath('rattrapage.id', $id)->assertJsonPath('rattrapage.statut', 'programme');
+        $this->postJson(self::URL.'/inscrire', $payload)->assertUnprocessable();
+        $this->assertDatabaseCount('programmations_rattrapage', 1);
+        $this->postJson(self::URL.'/'.$id.'/annuler')->assertOk();
         $this->putJson(self::URL.'/'.$id, ['id_seance_rattrapage' => $session->id])->assertOk()
             ->assertJsonPath('rattrapage.statut', 'programme');
         $session->update(['id_cours' => null]);

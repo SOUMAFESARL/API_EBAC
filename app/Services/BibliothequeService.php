@@ -90,14 +90,20 @@ class BibliothequeService
         }
 
         if ($utilisateur->role?->code === 'ETUDIANT') {
-            $rang = Etudiant::query()->where('user_id', $utilisateur->id)->first()?->inscriptions()->with('promotion.niveau')
-                ->latest('date_inscription')->latest('id')->first()?->promotion?->niveau?->rang;
+            $rang = $this->rangEtudiant($utilisateur);
             $rangMatiere = $support->matiere?->niveau?->rang;
 
-            return $rang !== null && $rangMatiere !== null && $rangMatiere <= $rang;
+            return $rang !== null && $rangMatiere !== null && $rangMatiere <= $rang && $support->matiere->active;
         }
 
         return $utilisateur->detientUnDroit('ressources.bibliotheque.consulter');
+    }
+
+    /** Rang du niveau de la dernière inscription : l'étudiant lit les matières jusqu'à ce rang. */
+    public function rangEtudiant(User $etudiant): ?int
+    {
+        return Etudiant::query()->where('user_id', $etudiant->id)->first()?->inscriptions()->with('promotion.niveau')
+            ->latest('date_inscription')->latest('id')->first()?->promotion?->niveau?->rang;
     }
 
     public function utiliseOctets(User $enseignant): int
@@ -133,6 +139,12 @@ class BibliothequeService
     {
         $support->loadMissing('auteur');
 
+        return [...$this->supportSansAuteur($support), 'depose_par' => $this->personne($support->auteur)];
+    }
+
+    /** Vue étudiante : le déposant n'est jamais divulgué. */
+    public function supportSansAuteur(SupportPedagogique $support): array
+    {
         return [
             'id' => $support->id,
             'nom' => $support->nom,
@@ -140,7 +152,6 @@ class BibliothequeService
             'taille_mo' => max(0.1, round($support->taille_octets / 1048576, 1)),
             'format' => $support->format,
             'depose_le' => $support->created_at?->toDateString(),
-            'depose_par' => $this->personne($support->auteur),
         ];
     }
 

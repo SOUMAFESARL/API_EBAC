@@ -170,14 +170,21 @@ class RattrapageController extends Controller
         $item = DB::transaction(function () use ($request) {
             $data = $this->payload($request);
             $this->verifierAbsence($data['id_cours_a_faire']);
-            if (ProgrammationRattrapage::where('id_cours_a_faire', $data['id_cours_a_faire'])->exists()) {
+            $existant = ProgrammationRattrapage::where('id_cours_a_faire', $data['id_cours_a_faire'])->lockForUpdate()->first();
+            // Une programmation annulee se reprend : l'absence n'en porte qu'une.
+            if ($existant?->statut === 'annule') {
+                $existant->update(['statut' => 'programme', ...$data, 'updated_by' => $request->user()->id]);
+
+                return $existant;
+            }
+            if ($existant) {
                 throw ValidationException::withMessages(['id_cours_a_faire' => 'Un rattrapage existe deja pour cette absence. Modifiez sa programmation.']);
             }
 
             return ProgrammationRattrapage::create(['statut' => 'programme', ...$data, 'created_by' => $request->user()->id, 'updated_by' => $request->user()->id]);
         });
 
-        return response()->json(['message' => 'Rattrapage programme.', 'rattrapage' => $item->load(self::RELATIONS)], 201);
+        return response()->json(['message' => 'Rattrapage programme.', 'rattrapage' => $item->load(self::RELATIONS)], $item->wasRecentlyCreated ? 201 : 200);
     }
 
     public function update(Request $request, int $id)

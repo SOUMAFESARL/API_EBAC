@@ -76,6 +76,54 @@ class SupportPedagogiqueController extends Controller
         ]);
     }
 
+    /**
+     * Bibliothèque de l'étudiant : matières de son niveau et des niveaux
+     * antérieurs, réduites aux branches qui portent un document ; sans déposant.
+     */
+    public function espaceEtudiant(Request $request): JsonResponse
+    {
+        $rang = $this->service->rangEtudiant($request->user());
+        if ($rang === null) {
+            return $this->refus(404, 'AUCUNE_INSCRIPTION', 'Aucune inscription en cours.');
+        }
+
+        $supports = SupportPedagogique::query()->with(['matiere.niveau', 'module', 'cours'])
+            ->whereHas('matiere', fn ($q) => $q->where('active', true)->whereHas('niveau', fn ($q) => $q->where('rang', '<=', $rang)))
+            ->orderBy('id')->get();
+        $vue = fn ($liste) => $liste->map(fn ($s) => $this->service->supportSansAuteur($s))->values()->all();
+
+        $matieres = $supports->groupBy('id_matiere')->map(function ($liste) use ($vue) {
+            $matiere = $liste->first()->matiere;
+            $modules = $liste->whereNotNull('id_module')->groupBy('id_module')
+                ->sortBy(fn ($items) => $items->first()->module?->ordre ?? PHP_INT_MAX)
+                ->map(fn ($items) => [
+                    'id' => $items->first()->id_module,
+                    'libelle' => $items->first()->module?->libelle ?? '',
+                    'supports' => $vue($items->whereNull('id_cours')),
+                    'cours' => $items->whereNotNull('id_cours')->groupBy('id_cours')
+                        ->sortBy(fn ($docs) => $docs->first()->cours?->ordre ?? PHP_INT_MAX)
+                        ->map(fn ($docs) => [
+                            'id' => $docs->first()->id_cours,
+                            'libelle' => $docs->first()->cours?->libelle ?? '',
+                            'supports' => $vue($docs),
+                        ])->values()->all(),
+                ])->values()->all();
+
+            return [
+                'id' => $matiere->id,
+                'code' => $matiere->code,
+                'libelle' => $matiere->libelle,
+                'niveau' => $matiere->niveau?->libelle,
+                'rang' => $matiere->niveau?->rang ?? PHP_INT_MAX,
+                'supports' => $vue($liste->whereNull('id_module')),
+                'modules' => $modules,
+            ];
+        })->sortBy([['rang', 'asc'], [fn ($a, $b) => strcmp($a['libelle'], $b['libelle'])]])
+            ->map(fn ($m) => collect($m)->except('rang')->all())->values();
+
+        return response()->json(['matieres' => $matieres, 'supports_accessibles' => $supports->count()]);
+    }
+
     /** Toute la bibliothèque, rangée par domaine puis matière (espaces de gestion). */
     public function bibliotheque(): JsonResponse
     {

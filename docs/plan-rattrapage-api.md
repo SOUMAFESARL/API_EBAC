@@ -30,7 +30,7 @@ Obtenir `id_cours_a_faire` dans `/plan`, puis choisir un identifiant dans `/cour
 }
 ```
 
-Envoyer ce corps à `POST /inscrire` (ou au POST existant `/rattrapages`). Date, horaires, enseignant et salle sont dérivés de la séance sélectionnée. Une séance annulée, réalisée, passée ou d'un autre enseignement est refusée. La promotion d'accueil peut différer de celle d'origine ; l'inscription de l'étudiant et sa présence initiale restent conservées. Une seule programmation existe par absence.
+Envoyer ce corps à `POST /inscrire` (ou au POST existant `/rattrapages`). Date, horaires, enseignant et salle sont dérivés de la séance sélectionnée. Une séance annulée, réalisée, passée ou d'un autre enseignement est refusée. La promotion d'accueil peut différer de celle d'origine ; l'inscription de l'étudiant et sa présence initiale restent conservées. Une seule programmation existe par absence : après une annulation, le même `POST /inscrire` la reprend sur la nouvelle séance (réponse 200 au lieu de 201).
 
 Pour reprogrammer : `PUT /{id}` avec `{"id_seance_rattrapage": 26}`. Ne pas envoyer `id_cours_a_faire`. Une programmation réalisée ne peut plus être modifiée.
 
