@@ -35,7 +35,7 @@ class ControleParDroitsTest extends TestCase
 
     public function test_les_roles_semes_recoivent_leurs_droits_par_defaut(): void
     {
-        foreach (['DIRECTION' => 28, 'SECRETARIAT' => 44, 'SECRETAIRE_ACADEMIQUE' => 44, 'GESTIONNAIRE' => 11, 'ENSEIGNANT' => 0, 'PERSONNALISE' => 0] as $code => $attendus) {
+        foreach (['DIRECTION' => 28, 'SECRETARIAT' => 45, 'SECRETAIRE_ACADEMIQUE' => 45, 'GESTIONNAIRE' => 11, 'ENSEIGNANT' => 0, 'PERSONNALISE' => 0] as $code => $attendus) {
             $role = Role::query()->create(['code' => $code, 'libelle' => $code]);
             $this->assertSame($attendus, $role->permissions()->whereNotNull('module')->count(), $code);
         }
@@ -53,12 +53,12 @@ class ControleParDroitsTest extends TestCase
 
         $compter = fn (string $code) => Role::query()->where('code', $code)->firstOrFail()
             ->permissions()->whereNotNull('module')->count();
-        $this->assertSame(112, $compter('ADMIN'));
+        $this->assertSame(113, $compter('ADMIN'));
         $this->assertSame(28, $compter('DIRECTION'));
         $this->assertSame(0, $compter('ENSEIGNANT'));
         $this->assertSame(11, $compter('GESTIONNAIRE'));
-        $this->assertSame(44, $compter('SECRETARIAT'));
-        $this->assertSame(44, $compter('SECRETAIRE_ACADEMIQUE'));
+        $this->assertSame(45, $compter('SECRETARIAT'));
+        $this->assertSame(45, $compter('SECRETAIRE_ACADEMIQUE'));
     }
 
     public function test_les_droits_par_defaut_n_ecrasent_pas_un_reglage(): void

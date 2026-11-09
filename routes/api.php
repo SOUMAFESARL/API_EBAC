@@ -54,6 +54,10 @@ use App\Http\Controllers\Api\V1\Parametre\UniteEnseignementController;
 use App\Http\Controllers\Api\V1\ProgrammePublieController;
 use App\Http\Controllers\Api\V1\FinDeCycleController;
 use App\Http\Controllers\Api\V1\SupportPedagogiqueController;
+use App\Http\Controllers\Api\V1\Stage\CampagneStageController;
+use App\Http\Controllers\Api\V1\Stage\StageAdministrationController;
+use App\Http\Controllers\Api\V1\Stage\StageEgliseController;
+use App\Http\Controllers\Api\V1\Stage\StageEtudiantController;
 use App\Http\Controllers\Api\V1\VerificationBulletinController;
 use Illuminate\Support\Facades\Route;
 
@@ -359,6 +363,60 @@ Route::prefix('v1/fin-de-cycle')->name('api.v1.fin-de-cycle.')
         Route::put('promotions/{promotion}/epreuves/{epreuve}/notes', 'saisir')
             ->whereNumber(['promotion', 'epreuve'])
             ->middleware($droit('notes.fin-de-cycle-notes.saisir'))->name('notes.saisir');
+    });
+
+// Stage de 3e Année (CDC §7) : campagnes et affectations, part de
+// l'administration, validation de la Direction. Une campagne se supprime
+// tant qu'aucune affectation n'est validée ; le reste ne se reprend pas.
+Route::prefix('v1/stages')->name('api.v1.stages.')
+    ->middleware(['auth:sanctum', 'compte.actif'])
+    ->group(function () use ($droit) {
+        $lecture = $droit('gestion-academique.stages.consulter', 'gestion-academique.validation-stages.consulter');
+        $modifier = $droit('gestion-academique.stages.modifier');
+        Route::get('campagnes', [CampagneStageController::class, 'index'])->middleware($lecture)->name('campagnes.index');
+        Route::get('campagnes/promotions-eligibles', [CampagneStageController::class, 'promotionsEligibles'])
+            ->middleware($droit('gestion-academique.stages.creer'))->name('campagnes.promotions-eligibles');
+        Route::post('campagnes', [CampagneStageController::class, 'store'])
+            ->middleware($droit('gestion-academique.stages.creer'))->name('campagnes.store');
+        Route::get('campagnes/{campagne}', [CampagneStageController::class, 'show'])->whereNumber('campagne')
+            ->middleware($lecture)->name('campagnes.show');
+        Route::patch('campagnes/{campagne}', [CampagneStageController::class, 'update'])->whereNumber('campagne')
+            ->middleware($modifier)->name('campagnes.update');
+        Route::delete('campagnes/{campagne}', [CampagneStageController::class, 'destroy'])->whereNumber('campagne')
+            ->middleware($droit('gestion-academique.stages.supprimer'))->name('campagnes.destroy');
+        Route::patch('affectations/{affectation}', [CampagneStageController::class, 'affecter'])->whereNumber('affectation')
+            ->middleware($modifier)->name('affectations.update');
+        Route::post('affectations/{affectation}/validation', [CampagneStageController::class, 'valider'])->whereNumber('affectation')
+            ->middleware($modifier)->name('affectations.validation');
+        Route::get('/', [StageAdministrationController::class, 'index'])->middleware($lecture)->name('index');
+        Route::post('{stage}/part-administration', [StageAdministrationController::class, 'partAdministration'])->whereNumber('stage')
+            ->middleware($modifier)->name('part-administration');
+        Route::post('{stage}/validation', [StageAdministrationController::class, 'valider'])->whereNumber('stage')
+            ->middleware($droit('gestion-academique.validation-stages.valider'))->name('validation');
+    });
+
+// Portail Église : l'église se déduit du compte (adresse d'un représentant).
+Route::prefix('v1/eglise')->name('api.v1.eglise.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:EGLISE'])
+    ->controller(StageEgliseController::class)
+    ->group(function () {
+        Route::get('stages', 'index')->name('stages.index');
+        Route::get('stages/{stage}', 'show')->whereNumber('stage')->name('stages.show');
+        Route::post('stages/{stage}/evaluation', 'evaluer')->whereNumber('stage')->name('stages.evaluation');
+        Route::get('stages/{stage}/rapports/{type}/fichier', 'rapport')->whereNumber('stage')
+            ->whereIn('type', ['mi-parcours', 'final'])->name('stages.rapport');
+        Route::post('journaux-stage/{semaine}/decision', 'statuer')->whereNumber('semaine')->name('journaux-stage.decision');
+    });
+
+// Espace Étudiant : le stage du porteur du jeton, sans identifiant.
+Route::prefix('v1/etudiant/stage')->name('api.v1.etudiant.stage.')
+    ->middleware(['auth:sanctum', 'compte.actif', 'roles.autorises:ETUDIANT'])
+    ->controller(StageEtudiantController::class)
+    ->group(function () {
+        Route::get('/', 'show')->name('show');
+        Route::post('journal', 'consigner')->name('journal');
+        Route::post('rapports', 'deposer')->name('rapports.store');
+        Route::get('rapports/{type}/fichier', 'rapport')->whereIn('type', ['mi-parcours', 'final'])->name('rapports.fichier');
     });
 
 Route::prefix('v1/enseignant/mes-cours')

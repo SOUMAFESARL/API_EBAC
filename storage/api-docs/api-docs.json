@@ -15518,6 +15518,1393 @@
                     }
                 ]
             }
+        },
+        "/stages/campagnes": {
+            "get": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Lister les campagnes de stage",
+                "description": "Droit : gestion-academique.stages.consulter ou gestion-academique.validation-stages.consulter. La plus récente d abord. Statut lu des dates : ouverte avant le début, en-cours jusqu à la fin, cloturee ensuite.",
+                "operationId": "listerCampagnesStage",
+                "responses": {
+                    "200": {
+                        "description": "Campagnes",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "campagnes"
+                                    ],
+                                    "properties": {
+                                        "campagnes": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CampagneStage"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Droit manquant"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Ouvrir une campagne de stage",
+                "description": "Droit : gestion-academique.stages.creer. Une campagne par promotion ; chaque étudiant inscrit dans la promotion reçoit une affectation vierge. Au moins 4 semaines entre le début et la fin.",
+                "operationId": "ouvrirCampagneStage",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "promotion_id",
+                                    "debut",
+                                    "fin"
+                                ],
+                                "properties": {
+                                    "promotion_id": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "debut": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-01-04"
+                                    },
+                                    "fin": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-03-28"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Campagne ouverte",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "campagne"
+                                    ],
+                                    "properties": {
+                                        "campagne": {
+                                            "$ref": "#/components/schemas/CampagneStage"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "PROMOTION_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "CAMPAGNE_EXISTE, PERIODE_INVALIDE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/stages/campagnes/promotions-eligibles": {
+            "get": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Promotions proposées à l ouverture",
+                "description": "Droit : gestion-academique.stages.creer. Du niveau le plus avancé au premier ; une promotion déjà servie porte id_campagne.",
+                "operationId": "listerPromotionsEligiblesStage",
+                "responses": {
+                    "200": {
+                        "description": "Promotions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "promotions"
+                                    ],
+                                    "properties": {
+                                        "promotions": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PromotionEligibleStage"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Droit manquant"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/stages/campagnes/{campagne}": {
+            "get": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Dossier d une campagne",
+                "description": "Droit : gestion-academique.stages.consulter ou gestion-academique.validation-stages.consulter. Campagne et affectations en une réponse.",
+                "operationId": "lireCampagneStage",
+                "parameters": [
+                    {
+                        "name": "campagne",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identifiant de la campagne",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dossier",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DossierCampagneStage"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "CAMPAGNE_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Reprendre les dates d une campagne",
+                "description": "Droit : gestion-academique.stages.modifier. Refusé sur une campagne clôturée. Une fois un journal entamé, le début ne bouge plus et la fin ne recule pas sous la dernière semaine consignée (JOURNAL_ENTAME).",
+                "operationId": "modifierDatesCampagneStage",
+                "parameters": [
+                    {
+                        "name": "campagne",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identifiant de la campagne",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "debut",
+                                    "fin"
+                                ],
+                                "properties": {
+                                    "debut": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "fin": {
+                                        "type": "string",
+                                        "format": "date"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Campagne",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "campagne"
+                                    ],
+                                    "properties": {
+                                        "campagne": {
+                                            "$ref": "#/components/schemas/CampagneStage"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "CAMPAGNE_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "CAMPAGNE_CLOTUREE, PERIODE_INVALIDE, JOURNAL_ENTAME",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Supprimer une campagne",
+                "description": "Droit : gestion-academique.stages.supprimer. Tant que rien n est engagé : ni clôturée, ni une affectation validée (la validation a notifié l église et ouvert le journal). Les affectations vierges ou saisies partent avec la campagne.",
+                "operationId": "supprimerCampagneStage",
+                "parameters": [
+                    {
+                        "name": "campagne",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identifiant de la campagne",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Campagne supprimée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "id"
+                                    ],
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Droit manquant"
+                    },
+                    "404": {
+                        "description": "CAMPAGNE_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "CAMPAGNE_CLOTUREE, CAMPAGNE_ENGAGEE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/stages/affectations/{affectation}": {
+            "patch": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Affecter un étudiant à une église et à un tuteur",
+                "description": "Droit : gestion-academique.stages.modifier. Reprenable jusqu à la validation. L église doit être active et avoir encore de la place pour la campagne (capacite_max_stagiaires).",
+                "operationId": "affecterStagiaire",
+                "parameters": [
+                    {
+                        "name": "affectation",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identifiant de l affectation",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "eglise_id",
+                                    "tuteur_nom"
+                                ],
+                                "properties": {
+                                    "eglise_id": {
+                                        "type": "integer"
+                                    },
+                                    "tuteur_nom": {
+                                        "type": "string",
+                                        "maxLength": 160,
+                                        "example": "BROU Michel"
+                                    },
+                                    "tuteur_telephone": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 40
+                                    },
+                                    "tuteur_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "nullable": true,
+                                        "maxLength": 180
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Dossier de campagne",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DossierCampagneStage"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "AFFECTATION_INTROUVABLE, EGLISE_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "CAMPAGNE_CLOTUREE, AFFECTATION_DEJA_VALIDEE, AFFECTATION_INCOMPLETE, EGLISE_INDISPONIBLE, EGLISE_COMPLETE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/stages/affectations/{affectation}/validation": {
+            "post": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Valider une affectation",
+                "description": "Droit : gestion-academique.stages.modifier. Ouvre le stage : l église le voit à son portail, le stagiaire tient son journal. Sans retour.",
+                "operationId": "validerAffectationStage",
+                "parameters": [
+                    {
+                        "name": "affectation",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identifiant de l affectation",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dossier de campagne",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DossierCampagneStage"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "AFFECTATION_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "CAMPAGNE_CLOTUREE, AFFECTATION_DEJA_VALIDEE, AFFECTATION_INCOMPLETE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/stages": {
+            "get": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Stages de l école",
+                "description": "Droit : gestion-academique.stages.consulter ou gestion-academique.validation-stages.consulter. Toutes églises confondues.",
+                "operationId": "listerStagesAdministration",
+                "responses": {
+                    "200": {
+                        "description": "Stages",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "stages"
+                                    ],
+                                    "properties": {
+                                        "stages": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/StageEcole"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Droit manquant"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/stages/{stage}/part-administration": {
+            "post": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Porter la part de l Administration EBAC",
+                "description": "Droit : gestion-academique.stages.modifier. Le critère « journal » (15 %), après l évaluation de l église. Ne se reprend pas.",
+                "operationId": "porterPartAdministrationStage",
+                "parameters": [
+                    {
+                        "name": "stage",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identifiant du stage",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "criteres"
+                                ],
+                                "properties": {
+                                    "criteres": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "items": {
+                                            "$ref": "#/components/schemas/LigneGrilleStage"
+                                        }
+                                    },
+                                    "appreciation": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 2000
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Stage",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "stage"
+                                    ],
+                                    "properties": {
+                                        "stage": {
+                                            "$ref": "#/components/schemas/StageEcole"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "STAGE_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "EVALUATION_ATTENDUE, PART_ADMINISTRATION_PORTEE, CRITERE_INCONNU",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/stages/{stage}/validation": {
+            "post": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Trancher la matière Stage",
+                "description": "Droit : gestion-academique.validation-stages.valider. Acte de la Direction, sur une note complète (église + administration). Une non-validation exige un motif. Sans retour.",
+                "operationId": "validerMatiereStage",
+                "parameters": [
+                    {
+                        "name": "stage",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identifiant du stage",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "decision"
+                                ],
+                                "properties": {
+                                    "decision": {
+                                        "type": "string",
+                                        "enum": [
+                                            "validee",
+                                            "non-validee"
+                                        ]
+                                    },
+                                    "motif": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 2000
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Stage",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "stage"
+                                    ],
+                                    "properties": {
+                                        "stage": {
+                                            "$ref": "#/components/schemas/StageEcole"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "STAGE_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "STAGE_DEJA_VALIDE, NOTE_INCOMPLETE, MOTIF_REQUIS",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/eglise/stages": {
+            "get": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Stagiaires de l église",
+                "description": "Rôle EGLISE. L église se déduit du compte : celle dont un représentant porte l adresse du compte, à défaut celle dont c est l adresse propre. Une adresse déclarée dans deux dossiers ne rattache à aucun.",
+                "operationId": "listerStagesEglise",
+                "responses": {
+                    "200": {
+                        "description": "Église et stages",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "eglise",
+                                        "stages"
+                                    ],
+                                    "properties": {
+                                        "eglise": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "nom": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "stages": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/StageEcole"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "EGLISE_NON_RATTACHEE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "EGLISE_AMBIGUE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/eglise/stages/{stage}": {
+            "get": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Dossier d un stagiaire",
+                "description": "Rôle EGLISE. Stage, journal et rapports. Un stage d une autre église répond STAGE_INTROUVABLE.",
+                "operationId": "lireStageEglise",
+                "parameters": [
+                    {
+                        "name": "stage",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identifiant du stage",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dossier",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DossierStage"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "STAGE_INTROUVABLE, EGLISE_NON_RATTACHEE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/eglise/stages/{stage}/evaluation": {
+            "post": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Remettre l évaluation finale",
+                "description": "Rôle EGLISE. Part Église (5 critères, 85 %). Pas d évaluation sans journal : toutes les semaines prévues consignées et validées. La note est recalculée par le service. Clôt le journal.",
+                "operationId": "remettreEvaluationStage",
+                "parameters": [
+                    {
+                        "name": "stage",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identifiant du stage",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "criteres"
+                                ],
+                                "properties": {
+                                    "criteres": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "items": {
+                                            "$ref": "#/components/schemas/LigneGrilleStage"
+                                        }
+                                    },
+                                    "appreciationGenerale": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 2000
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Stage",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "stage"
+                                    ],
+                                    "properties": {
+                                        "stage": {
+                                            "$ref": "#/components/schemas/StageEcole"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "STAGE_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "EVALUATION_DEJA_REMISE, JOURNAL_INCOMPLET, STAGE_EN_COURS, CRITERE_INCONNU",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/eglise/stages/{stage}/rapports/{type}/fichier": {
+            "get": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Télécharger un rapport du stagiaire",
+                "description": "Rôle EGLISE.",
+                "operationId": "telechargerRapportStageEglise",
+                "parameters": [
+                    {
+                        "name": "stage",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identifiant du stage",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "mi-parcours",
+                                "final"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier du rapport",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "STAGE_INTROUVABLE, RAPPORT_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/eglise/journaux-stage/{semaine}/decision": {
+            "post": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Statuer sur une semaine du journal",
+                "description": "Rôle EGLISE. Valider (sans retour) ou commenter (observation obligatoire) une semaine consignée.",
+                "operationId": "statuerSemaineStage",
+                "parameters": [
+                    {
+                        "name": "semaine",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identifiant de la semaine",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "decision"
+                                ],
+                                "properties": {
+                                    "decision": {
+                                        "type": "string",
+                                        "enum": [
+                                            "valider",
+                                            "commenter"
+                                        ]
+                                    },
+                                    "observation": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "maxLength": 2000
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Semaine",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "semaine"
+                                    ],
+                                    "properties": {
+                                        "semaine": {
+                                            "$ref": "#/components/schemas/SemaineStage"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "SEMAINE_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "SEMAINE_DEJA_VALIDEE, OBSERVATION_REQUISE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/etudiant/stage": {
+            "get": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Mon dossier de stage",
+                "description": "Rôle ETUDIANT. Le stage le plus récent du porteur du jeton ; aucun identifiant reçu.",
+                "operationId": "lireMonStage",
+                "responses": {
+                    "200": {
+                        "description": "Dossier",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DossierStage"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "STAGE_ABSENT",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/etudiant/stage/journal": {
+            "post": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Consigner une semaine du journal",
+                "description": "Rôle ETUDIANT. Les bornes se déduisent du rang et du début de la campagne. Une semaine se consigne dès le jour où elle commence ; une semaine commentée se complète et repart à la décision de l église ; une semaine validée ne se réécrit plus.",
+                "operationId": "consignerSemaineStage",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "numero",
+                                    "theme",
+                                    "activites",
+                                    "heures"
+                                ],
+                                "properties": {
+                                    "numero": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "example": 3
+                                    },
+                                    "theme": {
+                                        "type": "string",
+                                        "minLength": 5,
+                                        "maxLength": 120
+                                    },
+                                    "activites": {
+                                        "type": "string",
+                                        "minLength": 30,
+                                        "maxLength": 2000
+                                    },
+                                    "heures": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 80
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Dossier",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DossierStage"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "STAGE_ABSENT",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "STAGE_CLOS, SEMAINE_HORS_PERIODE, SEMAINE_A_VENIR, SEMAINE_DEJA_VALIDEE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/etudiant/stage/rapports": {
+            "post": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Déposer un rapport de stage",
+                "description": "Rôle ETUDIANT. PDF, DOCX ou ODT, 15 Mo au plus. Un redépôt remplace le fichier tant que le stage n est pas clos.",
+                "operationId": "deposerRapportStage",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "type",
+                                    "fichier"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "mi-parcours",
+                                            "final"
+                                        ]
+                                    },
+                                    "fichier": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Dossier",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DossierStage"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "STAGE_ABSENT",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "STAGE_CLOS",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation invalide"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/etudiant/stage/rapports/{type}/fichier": {
+            "get": {
+                "tags": [
+                    "Stage"
+                ],
+                "summary": "Télécharger mon rapport",
+                "description": "Rôle ETUDIANT.",
+                "operationId": "telechargerMonRapportStage",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "mi-parcours",
+                                "final"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier du rapport",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "STAGE_ABSENT, RAPPORT_INTROUVABLE",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusStage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -20566,6 +21953,544 @@
                     }
                 },
                 "type": "object"
+            },
+            "RefusStage": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "message"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "example": "CAMPAGNE_ENGAGEE"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            },
+            "PersonneStage": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "nom": {
+                        "type": "string"
+                    },
+                    "prenoms": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            },
+            "CampagneStage": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "promotion": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "code": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "num_promotion": {
+                                "type": "integer",
+                                "nullable": true
+                            }
+                        }
+                    },
+                    "niveau": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "libelle": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "debut": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "fin": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "semaines_prevues": {
+                        "type": "integer"
+                    },
+                    "statut": {
+                        "type": "string",
+                        "enum": [
+                            "ouverte",
+                            "en-cours",
+                            "cloturee"
+                        ]
+                    },
+                    "effectif": {
+                        "type": "integer"
+                    },
+                    "affectes": {
+                        "type": "integer"
+                    },
+                    "valides": {
+                        "type": "integer"
+                    },
+                    "ouverte_le": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "ouverte_par": {
+                        "$ref": "#/components/schemas/PersonneStage"
+                    }
+                }
+            },
+            "PromotionEligibleStage": {
+                "type": "object",
+                "properties": {
+                    "promotion": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "code": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "num_promotion": {
+                                "type": "integer",
+                                "nullable": true
+                            }
+                        }
+                    },
+                    "niveau": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "libelle": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "effectif": {
+                        "type": "integer"
+                    },
+                    "id_campagne": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                }
+            },
+            "AffectationStage": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "id_campagne": {
+                        "type": "integer"
+                    },
+                    "etudiant": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "matricule": {
+                                "type": "string"
+                            },
+                            "nom": {
+                                "type": "string"
+                            },
+                            "prenoms": {
+                                "type": "string",
+                                "nullable": true
+                            }
+                        }
+                    },
+                    "eglise": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "nom": {
+                                "type": "string"
+                            },
+                            "ville": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "tuteur_nom": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "tuteur_telephone": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "tuteur_email": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "statut": {
+                        "type": "string",
+                        "enum": [
+                            "a-affecter",
+                            "affectee",
+                            "validee"
+                        ]
+                    },
+                    "validee_le": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "id_stage": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                }
+            },
+            "DossierCampagneStage": {
+                "type": "object",
+                "required": [
+                    "campagne",
+                    "affectations"
+                ],
+                "properties": {
+                    "campagne": {
+                        "$ref": "#/components/schemas/CampagneStage"
+                    },
+                    "affectations": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AffectationStage"
+                        }
+                    }
+                }
+            },
+            "LigneGrilleStage": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "note"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "enum": [
+                            "discipline",
+                            "engagement",
+                            "predication",
+                            "maturite",
+                            "leadership",
+                            "journal"
+                        ]
+                    },
+                    "note": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 20
+                    },
+                    "appreciation": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            },
+            "StageEcole": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "id_campagne": {
+                        "type": "integer"
+                    },
+                    "etudiant": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "matricule": {
+                                "type": "string"
+                            },
+                            "nom": {
+                                "type": "string"
+                            },
+                            "prenoms": {
+                                "type": "string",
+                                "nullable": true
+                            }
+                        }
+                    },
+                    "promotion": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "code": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "num_promotion": {
+                                "type": "integer",
+                                "nullable": true
+                            }
+                        }
+                    },
+                    "niveau": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "libelle": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "eglise": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "nom": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "encadreur": {
+                        "type": "string"
+                    },
+                    "debut": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "fin": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "semaines_prevues": {
+                        "type": "integer"
+                    },
+                    "statut": {
+                        "type": "string",
+                        "enum": [
+                            "a-demarrer",
+                            "en-cours",
+                            "termine"
+                        ]
+                    },
+                    "semaines_consignees": {
+                        "type": "integer"
+                    },
+                    "semaines_validees": {
+                        "type": "integer"
+                    },
+                    "evaluation": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "criteres": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/LigneGrilleStage"
+                                }
+                            },
+                            "appreciation_generale": {
+                                "type": "string"
+                            },
+                            "note": {
+                                "type": "number"
+                            },
+                            "remise_le": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                            },
+                            "remise_par": {
+                                "$ref": "#/components/schemas/PersonneStage"
+                            }
+                        }
+                    },
+                    "part_administration": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "criteres": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/LigneGrilleStage"
+                                }
+                            },
+                            "appreciation": {
+                                "type": "string"
+                            },
+                            "portee_le": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                            },
+                            "portee_par": {
+                                "$ref": "#/components/schemas/PersonneStage"
+                            }
+                        }
+                    },
+                    "validation": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "decision": {
+                                "type": "string",
+                                "enum": [
+                                    "validee",
+                                    "non-validee"
+                                ]
+                            },
+                            "motif": {
+                                "type": "string"
+                            },
+                            "prononcee_le": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                            },
+                            "prononcee_par": {
+                                "$ref": "#/components/schemas/PersonneStage"
+                            }
+                        }
+                    }
+                }
+            },
+            "SemaineStage": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "numero": {
+                        "type": "integer"
+                    },
+                    "debut": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "fin": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "theme": {
+                        "type": "string"
+                    },
+                    "activites": {
+                        "type": "string"
+                    },
+                    "heures": {
+                        "type": "integer"
+                    },
+                    "statut": {
+                        "type": "string",
+                        "enum": [
+                            "a-valider",
+                            "validee",
+                            "commentee"
+                        ]
+                    },
+                    "observation": {
+                        "type": "string"
+                    },
+                    "statuee_le": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "statuee_par": {
+                        "$ref": "#/components/schemas/PersonneStage"
+                    }
+                }
+            },
+            "RapportStage": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "mi-parcours",
+                            "final"
+                        ]
+                    },
+                    "titre": {
+                        "type": "string"
+                    },
+                    "nom_fichier": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "taille_octets": {
+                        "type": "integer"
+                    },
+                    "depose_le": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                }
+            },
+            "DossierStage": {
+                "type": "object",
+                "required": [
+                    "stage",
+                    "semaines",
+                    "rapports"
+                ],
+                "properties": {
+                    "stage": {
+                        "$ref": "#/components/schemas/StageEcole"
+                    },
+                    "semaines": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SemaineStage"
+                        },
+                        "description": "La plus récente d abord"
+                    },
+                    "rapports": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RapportStage"
+                        },
+                        "description": "Les deux documents attendus, déposés ou non"
+                    }
+                }
             }
         },
         "securitySchemes": {
@@ -20773,6 +22698,10 @@
         {
             "name": "Salles",
             "description": "Salles"
+        },
+        {
+            "name": "Stage",
+            "description": "Stage de 3e Année (CDC §7) : campagnes par promotion et affectations (une campagne se supprime tant qu aucune affectation n est validée), portail Église (journal, évaluation finale), espace Étudiant (journal, rapports), part de l Administration EBAC et validation de la Direction. Statuts de campagne et de stage lus des dates. Semaines validées, évaluations, part administrative et décisions ne se reprennent pas. ADMIN passe toujours. Erreurs : { code, message } (RefusStage)."
         }
     ]
 }
