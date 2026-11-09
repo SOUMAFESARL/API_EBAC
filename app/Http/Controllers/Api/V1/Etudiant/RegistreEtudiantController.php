@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1\Etudiant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Etudiant;
-use App\Models\Inscription;
 use App\Models\Promotion;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -81,14 +80,6 @@ class RegistreEtudiantController extends Controller
         if ($promotion && ! in_array($promotion->statut, ['Active', 'Actif'], true)) {
             return response()->json(['message' => 'La promotion sélectionnée n’est pas active.'], 422);
         }
-        if ($promotion && Inscription::query()
-            ->where('id_etudiant', $etudiant->id)
-            ->where('id_promotion', $promotion->id)
-            ->whereKeyNot($inscription->id)
-            ->exists()) {
-            return response()->json(['message' => 'Cet étudiant possède déjà une inscription dans cette promotion.'], 422);
-        }
-
         DB::transaction(function () use ($request, $donnees, $etudiant, $inscription, $promotion): void {
             $inscription->update(array_filter([
                 'id_promotion' => $promotion?->id,

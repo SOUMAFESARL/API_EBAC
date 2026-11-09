@@ -79,6 +79,7 @@ return [
         'api.v1.fin-de-cycle.epreuves.update' => ['parametrage', 'Modification — épreuve de fin de cycle'],
         'api.v1.fin-de-cycle.epreuves.activation' => ['parametrage', 'Retrait ou rétablissement d’une épreuve de fin de cycle'],
         'api.v1.supports.quotas.update' => ['parametrage', 'Quota de stockage d’un enseignant', 'eleve'],
+        'api.v1.administration.passages-niveau.executer' => ['parametrage', 'Passage de niveau d’une promotion', 'critique'],
 
         'api.v1.administration.comptes.store' => ['comptes', 'Création d’un compte'],
         'api.v1.administration.comptes.etudiants.store' => ['comptes', 'Création d’un compte étudiant'],
@@ -164,6 +165,8 @@ return [
         'Module' => 'Module pédagogique',
         'ModuleCalendrier' => 'Module du calendrier',
         'Niveau' => 'Niveau',
+        'ParcoursAcademique' => 'Parcours académique',
+        'PassageNiveau' => 'Passage de niveau',
         'NoteCours' => 'Note',
         'NoteFinDeCycle' => 'Note de fin de cycle',
         'NouvelleAdmission' => 'Admission',

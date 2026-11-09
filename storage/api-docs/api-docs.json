@@ -17618,6 +17618,158 @@
                     }
                 ]
             }
+        },
+        "/administration/passages-niveau": {
+            "get": {
+                "tags": [
+                    "Passage de niveau"
+                ],
+                "summary": "Promotions éligibles au passage de niveau",
+                "description": "Un de ces droits requis : progression.passage-de-niveau.consulter ou .executer. ADMIN passe toujours. Promotions en cours ayant un niveau suivant actif : la dernière année du cursus (4e Année) n’est jamais proposée. Effectif = inscriptions de l’année que la promotion achève.",
+                "operationId": "listerPromotionsPassageNiveau",
+                "responses": {
+                    "200": {
+                        "description": "promotions[] : id, code, num_promotion, annee_entree, niveau_actuel, niveau_suivant, effectif."
+                    },
+                    "403": {
+                        "description": "Droit manquant."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/passages-niveau/{promotion}": {
+            "get": {
+                "tags": [
+                    "Passage de niveau"
+                ],
+                "summary": "Rapport d’état préalable au passage",
+                "description": "Jamais mis en cache. genere_le (ms epoch) repart dans rapport_vu_le. notes_de_l_annee : matières actives du niveau, validee si toutes leurs feuilles sont validee_direction. etudiants : inscrits de l’année, matières validées / partielles / non commencées (présence validée et cours à faire), cours_a_faire, suit_la_promotion (faux pour un départ). obstacles : notes-en-attente (avertissement), dernier-niveau, promotion-close, promotion-vide, annee-suivante-absente.",
+                "operationId": "rapportPassageNiveau",
+                "parameters": [
+                    {
+                        "name": "promotion",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rapport d’avancement."
+                    },
+                    "403": {
+                        "description": "Droit manquant."
+                    },
+                    "404": {
+                        "description": "Promotion introuvable."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Passage de niveau"
+                ],
+                "summary": "Faire passer toute la promotion au niveau suivant",
+                "description": "Droit requis : progression.passage-de-niveau.executer. Collectif et irréversible. La promotion prend le niveau suivant ; chaque étudiant qui suit la formation reçoit une inscription dans l’année académique suivante (décision posée sur l’inscription quittée, parcours académique tenu). Les cours à faire restent attachés aux dossiers. Refus 409 avec code : DERNIER_NIVEAU, PROMOTION_CLOSE, ANNEE_SUIVANTE_ABSENTE, RAPPORT_PERIME, NOTES_EN_ATTENTE, PASSAGE_DEJA_EFFECTUE ; 404 PROMOTION_INTROUVABLE.",
+                "operationId": "executerPassageNiveau",
+                "parameters": [
+                    {
+                        "name": "promotion",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "rapport_vu_le"
+                                ],
+                                "properties": {
+                                    "rapport_vu_le": {
+                                        "type": "integer",
+                                        "example": 1793000000000
+                                    },
+                                    "malgre_notes_en_attente": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "message et bilan : niveau_atteint_id, niveau_atteint_libelle, annee_academique, etudiants_avances, etudiants_non_avances, cours_a_faire_reportes."
+                    },
+                    "403": {
+                        "description": "Droit manquant."
+                    },
+                    "404": {
+                        "description": "PROMOTION_INTROUVABLE"
+                    },
+                    "409": {
+                        "description": "Refus fonctionnel (champ code)."
+                    },
+                    "422": {
+                        "description": "rapport_vu_le manquant."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/etudiant/bibliotheque": {
+            "get": {
+                "tags": [
+                    "Bibliothèque pédagogique"
+                ],
+                "summary": "Bibliothèque de l étudiant connecté",
+                "description": "Rôle ETUDIANT. Matières actives du niveau de la dernière inscription et des niveaux antérieurs, rangées matière › module › cours, réduites aux branches qui portent un document. Le déposant n est jamais servi.",
+                "operationId": "bibliothequeEtudiant",
+                "responses": {
+                    "200": {
+                        "description": "Bibliothèque de l étudiant : { matieres: [{ id, code, libelle, niveau, supports, modules: [{ id, libelle, supports, cours: [{ id, libelle, supports }] }] }], supports_accessibles }"
+                    },
+                    "404": {
+                        "description": "AUCUNE_INSCRIPTION",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RefusSupport"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -23848,6 +24000,10 @@
         {
             "name": "Journal d'audit",
             "description": "Registre immuable des actions sensibles (CDC §15.4) : aucune route ne modifie ni ne supprime une entrée. Les écritures sensibles, connexions, refus d accès et erreurs serveur y sont inscrits par le service. ADMIN lit les neuf catégories ; tout autre titulaire du droit lit comptes, notes, corrections-notes, documents-officiels et parametrage."
+        },
+        {
+            "name": "Passage de niveau",
+            "description": "Passage de niveau annuel d’une promotion : rapport d’état puis exécution collective et irréversible. La dernière année du cursus n’a pas de passage."
         }
     ]
 }

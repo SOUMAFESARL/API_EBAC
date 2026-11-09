@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Administration\CorrectionsGroupeesController;
 use App\Http\Controllers\Api\V1\Administration\JournalAuditController;
 use App\Http\Controllers\Api\V1\Administration\MenuController;
 use App\Http\Controllers\Api\V1\Administration\NotesTransmisesController;
+use App\Http\Controllers\Api\V1\Administration\PassageNiveauController;
 use App\Http\Controllers\Api\V1\Administration\PermissionController;
 use App\Http\Controllers\Api\V1\Administration\ProfilController;
 use App\Http\Controllers\Api\V1\Administration\PublicationProgrammeController;
@@ -104,6 +105,17 @@ Route::prefix('v1/administration/rattrapages')->name('api.v1.administration.ratt
         Route::put('{id}', 'update')->whereNumber('id')->middleware($inscrire)->name('update');
         Route::post('{id}/annuler', 'annuler')->whereNumber('id')->middleware($annuler)->name('annuler');
         Route::delete('{id}', 'destroy')->whereNumber('id')->middleware($annuler)->name('destroy');
+    });
+
+Route::prefix('v1/administration/passages-niveau')->name('api.v1.administration.passages-niveau.')
+    ->middleware(['auth:sanctum', 'compte.actif'])
+    ->controller(PassageNiveauController::class)
+    ->group(function () use ($droit) {
+        $lecture = $droit('progression.passage-de-niveau.consulter', 'progression.passage-de-niveau.executer');
+        Route::get('/', 'index')->middleware($lecture)->name('index');
+        Route::get('{promotion}', 'show')->whereNumber('promotion')->middleware($lecture)->name('show');
+        Route::post('{promotion}', 'executer')->whereNumber('promotion')
+            ->middleware($droit('progression.passage-de-niveau.executer'))->name('executer');
     });
 
 Route::prefix('v1/administration/autorisations-evaluations')->name('api.v1.administration.autorisations-evaluations.')
