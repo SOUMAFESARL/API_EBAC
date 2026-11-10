@@ -52,17 +52,19 @@ class DocumentBulletinService
         $rattrapages = $finDeCycle || ! $etudiant ? collect() : CoursAFaire::where('id_etudiant', $etudiant->id)->where('statut', 'a_faire')
             ->whereHas('seance.moduleCalendrier.calendrier', fn ($q) => $q->where('id_annee_academique', $bulletin->inscription->id_annee_academique))
             ->with(['matiere', 'cours', 'seance', 'rattrapage'])->orderBy('id')->get();
-        // Une matière reste « à reprendre » tant qu'un de ses cours à faire de l'année n'est pas validé.
+        // « À compléter » : sans note ou avec un cours à faire de l'année non rattrapé ; « À reprendre » : moyenne sous le seuil.
         $aReprendre = $rattrapages->countBy('id_matiere');
-        // Toutes les matières actives du niveau figurent au bulletin ; celle sans note est « à reprendre ».
+        // Toutes les matières actives du niveau figurent au bulletin, une seule fois chacune.
         $niveau = $bulletin->id_niveau ?? $bulletin->inscription->promotion?->id_niveau;
         $absentes = $finDeCycle || ! $niveau ? collect() : Matiere::query()->where('active', true)->where('id_niveau', $niveau)
             ->whereNotIn('id', $bulletin->lignes->pluck('id_matiere')->filter())
             ->with('uniteEnseignement')->orderBy('libelle')->get();
         $domaines = $bulletin->lignes->toBase()->map(fn ($ligne) => $ligne->matiere?->uniteEnseignement)
             ->concat($absentes->toBase()->map(fn (Matiere $matiere) => $matiere->uniteEnseignement))->filter()->keyBy('id');
-        $lignes = $bulletin->lignes->map(function ($ligne) use ($aReprendre) {
+        $lignes = $bulletin->lignes->unique(fn ($ligne) => $ligne->id_matiere ?? 'ligne-'.$ligne->id)->values()->map(function ($ligne) use ($aReprendre) {
             $note = $ligne->note !== null ? (float) $ligne->note : null;
+            $statut = $note === null ? 'a_completer' : ($ligne->matiere && $note >= (float) $ligne->matiere->note_validation ? 'validee' : 'non_validee');
+            $aCompleter = $note === null || $aReprendre->get($ligne->id_matiere, 0) > 0;
 
             return [
                 'id' => $ligne->id,
@@ -71,8 +73,9 @@ class DocumentBulletinService
                 'mention' => MentionBulletinService::calculer($note),
                 'moyenne_ponderee' => $ligne->moyenne_ponderee !== null ? (float) $ligne->moyenne_ponderee : null,
                 'appreciation' => $ligne->appreciation,
-                'statut' => $note === null ? 'a_completer' : ($ligne->matiere && $note >= (float) $ligne->matiere->note_validation ? 'validee' : 'non_validee'),
-                'a_reprendre' => $note === null || $aReprendre->get($ligne->id_matiere, 0) > 0,
+                'statut' => $statut,
+                'a_completer' => $aCompleter,
+                'a_reprendre' => ! $aCompleter && $statut === 'non_validee',
                 'cours_a_reprendre' => $aReprendre->get($ligne->id_matiere, 0),
             ];
         })->concat($absentes->map(fn (Matiere $matiere) => [
@@ -80,7 +83,7 @@ class DocumentBulletinService
             'matiere' => $matiere->only(['id', 'code', 'libelle', 'type', 'unite_ensigne_id']),
             'coefficient' => (float) $matiere->coefficient, 'note' => null, 'mention' => null,
             'moyenne_ponderee' => null, 'appreciation' => null, 'statut' => 'a_completer',
-            'a_reprendre' => true, 'cours_a_reprendre' => $aReprendre->get($matiere->id, 0),
+            'a_completer' => true, 'a_reprendre' => false, 'cours_a_reprendre' => $aReprendre->get($matiere->id, 0),
         ]));
 
         return [

@@ -51,6 +51,8 @@ class MesBulletinsEtudiantApiTest extends TestCase
             ->assertJsonPath('bulletin.rang', 3)->assertJsonCount(3, 'bulletin.matieres')
             ->assertJsonPath('bulletin.matieres.0.matiere.unite_ensigne_id', $domaine->id)
             ->assertJsonPath('bulletin.matieres.2.matiere.unite_ensigne_id', null)
+            ->assertJsonPath('bulletin.matieres.0.a_reprendre', false)->assertJsonPath('bulletin.matieres.1.a_reprendre', true)
+            ->assertJsonPath('bulletin.matieres.1.a_completer', false)->assertJsonPath('bulletin.matieres.2.a_completer', true)
             ->assertJsonCount(2, 'bulletin.unites_enseignement')
             ->assertJsonPath('bulletin.unites_enseignement.0.unite_ensigne_id', $domaine->id)
             ->assertJsonPath('bulletin.unites_enseignement.0.libelle', 'Domaine')
@@ -124,13 +126,13 @@ class MesBulletinsEtudiantApiTest extends TestCase
         }
         $this->getJson($base.'/'.$publie->id)->assertOk()->assertJsonCount(1, 'bulletin.cours_a_faire')
             ->assertJsonPath('bulletin.cours_a_faire.0.statut_rattrapage', 'À programmer')
-            ->assertJsonPath('bulletin.matieres.2.a_reprendre', true)->assertJsonPath('bulletin.matieres.2.cours_a_reprendre', 1)
-            ->assertJsonPath('bulletin.matieres.0.a_reprendre', false);
+            ->assertJsonPath('bulletin.matieres.2.a_completer', true)->assertJsonPath('bulletin.matieres.2.cours_a_reprendre', 1)
+            ->assertJsonPath('bulletin.matieres.2.a_reprendre', false)->assertJsonPath('bulletin.matieres.0.a_completer', false);
         $this->get($base.'/'.$publie->id.'/telecharger')->assertOk()->assertHeader('Content-Type', 'application/pdf');
         CoursAFaire::where('id_etudiant', $etudiant->id)->update(['statut' => 'termine']);
         $this->getJson($base.'/'.$publie->id)->assertOk()->assertJsonCount(0, 'bulletin.cours_a_faire')
-            ->assertJsonPath('bulletin.matieres.2.cours_a_reprendre', 0)->assertJsonPath('bulletin.matieres.2.a_reprendre', true)
-            ->assertJsonPath('bulletin.matieres.1.a_reprendre', false);
+            ->assertJsonPath('bulletin.matieres.2.cours_a_reprendre', 0)->assertJsonPath('bulletin.matieres.2.a_completer', true)
+            ->assertJsonPath('bulletin.matieres.1.a_completer', false);
         CoursAFaire::where('id_etudiant', $etudiant->id)->update(['statut' => 'a_faire']);
         $this->getJson($base.'/'.$ancienBulletin->id)->assertOk()->assertJsonCount(1, 'bulletin.cours_a_faire');
         $genere = Bulletin::create(['id_inscription' => $inscription->id, 'periode' => 'Provisoire', 'statut' => 'Généré']);

@@ -95,7 +95,8 @@ class NotesTransmisesApiTest extends TestCase
             ->assertJsonCount(2, 'bulletin.matieres')->assertJsonPath('bulletin.matieres.0.note', 14)
             ->assertJsonPath('bulletin.matieres.0.a_reprendre', false)
             ->assertJsonPath('bulletin.matieres.1.matiere.code', 'PENDING')->assertJsonPath('bulletin.matieres.1.note', null)
-            ->assertJsonPath('bulletin.matieres.1.a_reprendre', true)->assertJsonPath('bulletin.recapitulatif_uv.a_completer', 1);
+            ->assertJsonPath('bulletin.matieres.1.a_completer', true)->assertJsonPath('bulletin.matieres.1.a_reprendre', false)
+            ->assertJsonPath('bulletin.recapitulatif_uv.a_completer', 1);
         // The same document is refreshed throughout the validation workflow.
         Sanctum::actingAs($users['SECRETARIAT']);
         $this->postJson($this->url($feuille).'/transmettre-direction')->assertOk();
