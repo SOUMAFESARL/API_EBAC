@@ -9193,7 +9193,7 @@
                                             "$ref": "#/components/schemas/ProfilEtudiantBulletin"
                                         },
                                         "bulletin": {
-                                            "description": "Bulletin avec annee_academique, promotion, niveau, matieres (avec mention par matiere, a_reprendre et cours_a_reprendre tant qu un cours a faire de l annee n est pas valide), moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire (avec statut_rattrapage) et telechargement_pdf_url.",
+                                            "description": "Bulletin avec annee_academique, promotion, niveau, matieres (avec mention par matiere, a_reprendre tant qu un cours a faire de l annee n est pas valide ou si la moyenne est sous le seuil de validation, a_completer si la matiere est sans note et sans cours a faire, et cours_a_reprendre), moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire (avec statut_rattrapage) et telechargement_pdf_url.",
                                             "properties": {
                                                 "matieres": {
                                                     "type": "array",
@@ -9250,6 +9250,7 @@
                                                                 "nullable": true
                                                             },
                                                             "statut": {
+                                                                "description": "en_cours (booléen voisin) prime sur a_reprendre et a_completer tant que la matière n’est pas terminée pour la promotion.",
                                                                 "type": "string",
                                                                 "enum": [
                                                                     "a_completer",
@@ -9706,7 +9707,8 @@
                             "enum": [
                                 "validee",
                                 "a_completer",
-                                "non_validee"
+                                "non_validee",
+                                "en_cours"
                             ]
                         }
                     },
@@ -17770,6 +17772,245 @@
                     }
                 ]
             }
+        },
+        "/administration/matieres-terminees": {
+            "get": {
+                "tags": [
+                    "Matières terminées"
+                ],
+                "summary": "Promotions dont on peut terminer les matières",
+                "description": "Un de ces droits requis : progression.matieres-terminees.consulter, .terminer ou .rouvrir. ADMIN passe toujours. Promotions encore dans le cursus, avec leur niveau actuel.",
+                "operationId": "listerPromotionsMatieresTerminees",
+                "responses": {
+                    "200": {
+                        "description": "promotions[] : id, code, num_promotion, annee_entree, niveau."
+                    },
+                    "401": {
+                        "description": "Authentification requise."
+                    },
+                    "403": {
+                        "description": "Droit requis."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Matières terminées"
+                ],
+                "summary": "Marquer une matière terminée pour une promotion",
+                "description": "Droit requis : progression.matieres-terminees.terminer. Idempotent : 201 à la création, 200 si déjà terminée. La matière doit être au niveau actuel de la promotion.",
+                "operationId": "terminerMatiere",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_matiere",
+                                    "id_promotion"
+                                ],
+                                "properties": {
+                                    "id_matiere": {
+                                        "type": "integer"
+                                    },
+                                    "id_promotion": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Matière terminée : message, terminee."
+                    },
+                    "200": {
+                        "description": "Déjà terminée."
+                    },
+                    "403": {
+                        "description": "Droit requis."
+                    },
+                    "409": {
+                        "description": "PROMOTION_CLOSE."
+                    },
+                    "422": {
+                        "description": "NIVEAU_DIFFERENT ou champs invalides."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/matieres-terminees/{promotion}": {
+            "get": {
+                "tags": [
+                    "Matières terminées"
+                ],
+                "summary": "Matières du niveau de la promotion et leur fin",
+                "description": "Matières actives du niveau actuel de la promotion. terminee est null tant que la matière n’est pas terminée : l’étudiant la voit alors « En cours » sur son relevé et son bulletin.",
+                "operationId": "etatMatieresTerminees",
+                "parameters": [
+                    {
+                        "name": "promotion",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "promotion, annee_academique, matieres[] (id, code, libelle, enseignant, terminee).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "matieres": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "libelle": {
+                                                        "type": "string"
+                                                    },
+                                                    "terminee": {
+                                                        "$ref": "#/components/schemas/MatiereTerminee"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Droit requis."
+                    },
+                    "404": {
+                        "description": "Promotion introuvable."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/administration/matieres-terminees/{id}": {
+            "delete": {
+                "tags": [
+                    "Matières terminées"
+                ],
+                "summary": "Rouvrir une matière terminée",
+                "description": "Droit requis : progression.matieres-terminees.rouvrir. Refusé (409 PASSAGE_EFFECTUE) une fois la promotion passée au niveau suivant.",
+                "operationId": "rouvrirMatiere",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Matière rouverte."
+                    },
+                    "403": {
+                        "description": "Droit requis."
+                    },
+                    "404": {
+                        "description": "Introuvable."
+                    },
+                    "409": {
+                        "description": "PASSAGE_EFFECTUE."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/enseignant/mes-cours/{matiere}/terminer": {
+            "post": {
+                "tags": [
+                    "Enseignant - Mes cours"
+                ],
+                "summary": "L’enseignant affecté marque sa matière terminée",
+                "description": "Rôle ENSEIGNANT avec une affectation en cours sur la matière. Même règle et même réponse que POST /administration/matieres-terminees ; l’enseignant ne rouvre pas.",
+                "operationId": "terminerMaMatiere",
+                "parameters": [
+                    {
+                        "name": "matiere",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_promotion"
+                                ],
+                                "properties": {
+                                    "id_promotion": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Matière terminée."
+                    },
+                    "200": {
+                        "description": "Déjà terminée."
+                    },
+                    "404": {
+                        "description": "Matière non affectée."
+                    },
+                    "409": {
+                        "description": "PROMOTION_CLOSE."
+                    },
+                    "422": {
+                        "description": "NIVEAU_DIFFERENT."
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -23786,6 +24027,24 @@
                     }
                 },
                 "type": "object"
+            },
+            "MatiereTerminee": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "le": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "par": {
+                        "description": "Nom et prénoms de l’auteur.",
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object",
+                "nullable": true
             }
         },
         "securitySchemes": {
@@ -24009,6 +24268,10 @@
         {
             "name": "Passage de niveau",
             "description": "Passage de niveau annuel d’une promotion : rapport d’état puis exécution collective et irréversible. La dernière année du cursus n’a pas de passage."
+        },
+        {
+            "name": "Matières terminées",
+            "description": "Matières terminées"
         }
     ]
 }

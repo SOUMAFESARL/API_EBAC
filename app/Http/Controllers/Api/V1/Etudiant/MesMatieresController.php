@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Etudiant;
 use App\Models\LigneBulletin;
 use App\Models\Matiere;
+use App\Services\MatiereTermineeService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,11 +15,13 @@ use Illuminate\Validation\Rule;
 
 class MesMatieresController extends Controller
 {
+    public function __construct(private readonly MatiereTermineeService $terminees) {}
+
     public function index(Request $request): JsonResponse
     {
         $filtres = $request->validate([
             'recherche' => ['nullable', 'string', 'max:180'],
-            'statut' => ['sometimes', Rule::in(['validee', 'a_completer', 'non_validee'])],
+            'statut' => ['sometimes', Rule::in(['validee', 'a_completer', 'non_validee', 'en_cours'])],
             'id_niveau' => ['sometimes', 'integer', Rule::exists('niveaux', 'id')->whereNull('deleted_at')],
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
@@ -26,13 +29,15 @@ class MesMatieresController extends Controller
         [$etudiant, $inscription] = $this->contexte($request);
         $niveau = $inscription->promotion->niveau;
         $notes = $this->notes($etudiant->id);
+        $terminees = $this->terminees->terminees($inscription->id_promotion);
         $query = $this->matieresAutorisees($niveau->rang)
             ->when($filtres['recherche'] ?? null, function (Builder $query, string $recherche) {
                 $terme = '%'.$recherche.'%';
                 $query->where(fn ($q) => $q->where('code', 'like', $terme)->orWhere('libelle', 'like', $terme));
             })
             ->when($filtres['id_niveau'] ?? null, fn ($q, int $id) => $q->where('id_niveau', $id));
-        $matieres = $query->get()->map(fn (Matiere $matiere) => $this->presenter($matiere, $notes->get($matiere->id)));
+        $matieres = $query->get()->map(fn (Matiere $matiere) => $this->presenter($matiere, $notes->get($matiere->id),
+            $this->terminees->enCours($matiere, $inscription->promotion, $terminees)));
         if (isset($filtres['statut'])) {
             $matieres = $matieres->where('statut', $filtres['statut'])->values();
         }
@@ -67,7 +72,7 @@ class MesMatieresController extends Controller
         ])->values();
 
         return response()->json(['matiere' => [
-            ...$this->presenter($item, $note),
+            ...$this->presenter($item, $note, $this->terminees->enCours($item, $inscription->promotion)),
             'nombre_modules' => $modules->count(),
             'nombre_cours' => $modules->sum(fn ($module) => $module['cours']->count()),
             'modules' => $modules,
@@ -97,10 +102,14 @@ class MesMatieresController extends Controller
             ->sortByDesc(fn ($ligne) => $ligne->bulletin->date_publication)->unique('id_matiere')->keyBy('id_matiere');
     }
 
-    private function presenter(Matiere $matiere, ?LigneBulletin $ligne): array
+    private function presenter(Matiere $matiere, ?LigneBulletin $ligne, bool $enCours): array
     {
         $note = $ligne?->note !== null ? (float) $ligne->note : null;
-        $statut = $note === null ? 'a_completer' : ($note >= (float) $matiere->note_validation ? 'validee' : 'non_validee');
+        $statut = match (true) {
+            $enCours => 'en_cours',
+            $note === null => 'a_completer',
+            default => $note >= (float) $matiere->note_validation ? 'validee' : 'non_validee',
+        };
 
         return [
             ...$matiere->only(['id', 'code', 'libelle']),

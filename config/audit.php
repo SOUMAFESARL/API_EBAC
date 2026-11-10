@@ -80,6 +80,9 @@ return [
         'api.v1.fin-de-cycle.epreuves.activation' => ['parametrage', 'Retrait ou rétablissement d’une épreuve de fin de cycle'],
         'api.v1.supports.quotas.update' => ['parametrage', 'Quota de stockage d’un enseignant', 'eleve'],
         'api.v1.administration.passages-niveau.executer' => ['parametrage', 'Passage de niveau d’une promotion', 'critique'],
+        'api.v1.administration.matieres-terminees.store' => ['parametrage', 'Matière marquée terminée pour une promotion', 'eleve'],
+        'api.v1.administration.matieres-terminees.destroy' => ['parametrage', 'Réouverture d’une matière terminée', 'eleve'],
+        'api.v1.enseignant.mes-cours.terminer' => ['parametrage', 'Matière marquée terminée par l’enseignant', 'eleve'],
 
         'api.v1.administration.comptes.store' => ['comptes', 'Création d’un compte'],
         'api.v1.administration.comptes.etudiants.store' => ['comptes', 'Création d’un compte étudiant'],

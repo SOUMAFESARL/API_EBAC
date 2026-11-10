@@ -69,7 +69,7 @@
                     <td class="number">{{ number_format($ligne['coefficient'], 2, ',', ' ') }}</td>
                     <td class="number">{{ $ligne['note'] !== null ? number_format($ligne['note'], 2, ',', ' ') : '—' }}</td>
                     <td>{{ $ligne['mention'] ?? '—' }}</td>
-                    <td>{{ $ligne['a_completer'] ? 'À compléter' : ($ligne['a_reprendre'] ? 'À reprendre' : ['validee' => 'Validée', 'non_validee' => 'Non validée', 'a_completer' => 'À compléter'][$ligne['statut']]) }}</td>
+                    <td>{{ ($ligne['en_cours'] ?? false) ? 'En cours' : ($ligne['a_reprendre'] ? 'À reprendre' : ($ligne['a_completer'] ? 'À compléter' : ['validee' => 'Validée', 'non_validee' => 'Non validée', 'a_completer' => 'À compléter'][$ligne['statut']])) }}</td>
                     <td>{{ $ligne['appreciation'] ?? '—' }}</td>
                 </tr>
             @endforeach

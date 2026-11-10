@@ -18,9 +18,9 @@ class CatalogueDroitsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_la_migration_seme_les_117_droits_du_catalogue(): void
+    public function test_la_migration_seme_les_120_droits_du_catalogue(): void
     {
-        $this->assertSame(117, Permission::query()->whereNotNull('module')->count());
+        $this->assertSame(120, Permission::query()->whereNotNull('module')->count());
 
         $this->assertDatabaseHas('permissions', [
             'code' => 'planification.calendrier-academique.activer-annee',
@@ -49,12 +49,12 @@ class CatalogueDroitsTest extends TestCase
         (new CatalogueDroitsSeeder)->run();
         (new CatalogueDroitsSeeder)->run();
 
-        $this->assertSame(117, Permission::query()->whereNotNull('module')->count());
+        $this->assertSame(120, Permission::query()->whereNotNull('module')->count());
         $this->assertSame(1, Permission::query()->where('code', 'notes.validation-notes.valider')->count());
         $this->assertSame('Validation des notes — Valider', $droit->fresh()->libelle);
         $this->assertNotNull(Permission::query()->where('code', 'accueil.tableau-de-bord.consulter')->first());
         $this->assertSame(['notes.validation-notes.valider'], $direction->permissions()->pluck('code')->all());
-        $this->assertSame(117, $admin->permissions()->whereNotNull('module')->count());
+        $this->assertSame(120, $admin->permissions()->whereNotNull('module')->count());
     }
 
     public function test_la_liste_des_permissions_sert_tout_le_catalogue_en_une_page_avec_son_rangement(): void

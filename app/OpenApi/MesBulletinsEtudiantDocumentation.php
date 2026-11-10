@@ -27,7 +27,7 @@ use OpenApi\Attributes as OA;
     responses: [new OA\Response(response: 200, description: 'Profil personnel complet de l etudiant et bulletin avec matieres, recapitulatif_uv et cours_a_faire. Dates du profil au format YYYY-MM-DD. Relations absentes a null.',
         content: new OA\JsonContent(properties: [
             new OA\Property(property: 'etudiant', ref: '#/components/schemas/ProfilEtudiantBulletin'),
-            new OA\Property(property: 'bulletin', type: 'object', description: 'Bulletin avec annee_academique, promotion, niveau, matieres (avec mention par matiere, a_completer tant que la matiere est sans note ou qu un cours a faire de l annee n est pas valide, a_reprendre si la moyenne est sous le seuil de validation, et cours_a_reprendre), moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire (avec statut_rattrapage) et telechargement_pdf_url.', properties: [
+            new OA\Property(property: 'bulletin', type: 'object', description: 'Bulletin avec annee_academique, promotion, niveau, matieres (avec mention par matiere, a_reprendre tant qu un cours a faire de l annee n est pas valide ou si la moyenne est sous le seuil de validation, a_completer si la matiere est sans note et sans cours a faire, et cours_a_reprendre), moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire (avec statut_rattrapage) et telechargement_pdf_url.', properties: [
                 new OA\Property(property: 'matieres', type: 'array', items: new OA\Items(type: 'object', properties: [
                     new OA\Property(property: 'id', description: 'Identifiant de la ligne du bulletin.', type: 'integer', example: 101),
                     new OA\Property(property: 'matiere', type: 'object', nullable: true, properties: [
@@ -42,7 +42,7 @@ use OpenApi\Attributes as OA;
                     new OA\Property(property: 'mention', type: 'string', example: 'Bien'),
                     new OA\Property(property: 'moyenne_ponderee', type: 'number', nullable: true, example: 28),
                     new OA\Property(property: 'appreciation', type: 'string', nullable: true),
-                    new OA\Property(property: 'statut', type: 'string', enum: ['a_completer', 'validee', 'non_validee']),
+                    new OA\Property(property: 'statut', type: 'string', enum: ['a_completer', 'validee', 'non_validee'], description: 'en_cours (booléen voisin) prime sur a_reprendre et a_completer tant que la matière n’est pas terminée pour la promotion.'),
                 ])),
                 new OA\Property(property: 'mention', description: 'Mention enregistree ou calculee : sans note ou <10 À REPRENDRE, >=10 Passable, >=12 Assez bien, >=14 Bien, >=16 Tres bien.', type: 'string', example: 'Bien'),
                 new OA\Property(property: 'unites_enseignement', description: 'Chaque unite_ensigne_id apparait une seule fois avec toutes ses matieres dans un tableau matieres. L identifiant de chaque matiere est matiere.id ; id est celui de la ligne du bulletin. Le groupe unite_ensigne_id null contient les matieres sans domaine. Tableau vide si aucune matiere.', type: 'array', example: [

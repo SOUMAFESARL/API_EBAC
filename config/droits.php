@@ -54,6 +54,7 @@ return [
         'bloquer' => 'Bloquer',
         'inscrire' => 'Inscrire',
         'annuler' => 'Annuler',
+        'rouvrir' => 'Rouvrir',
     ],
 
     'modules' => [
@@ -98,6 +99,7 @@ return [
             'sous_modules' => [
                 'passage-de-niveau' => ['Passage de niveau', ['consulter', 'executer']],
                 'rattrapages' => ['Plan de rattrapage', ['consulter', 'inscrire', 'annuler', 'exporter']],
+                'matieres-terminees' => ['Fin des matières', ['consulter', 'terminer', 'rouvrir']],
             ],
         ],
         'notes' => [
@@ -181,6 +183,9 @@ return [
                 'gestion-academique.etudiants.consulter',
                 'gestion-academique.validation-stages.consulter',
                 'gestion-academique.validation-stages.valider',
+                'progression.matieres-terminees.consulter',
+                'progression.matieres-terminees.terminer',
+                'progression.matieres-terminees.rouvrir',
                 'notes.validation-notes.consulter',
                 'notes.validation-notes.valider',
                 'notes.validation-notes.rejeter',
@@ -227,6 +232,9 @@ return [
                 'progression.rattrapages.inscrire',
                 'progression.rattrapages.annuler',
                 'progression.rattrapages.exporter',
+                'progression.matieres-terminees.consulter',
+                'progression.matieres-terminees.terminer',
+                'progression.matieres-terminees.rouvrir',
                 'notes.supervision-notes.consulter',
                 'notes.supervision-notes.transmettre',
                 'notes.supervision-notes.rejeter',

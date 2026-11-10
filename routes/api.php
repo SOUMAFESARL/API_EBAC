@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\Administration\CompteController;
 use App\Http\Controllers\Api\V1\Administration\CorrectionNoteController;
 use App\Http\Controllers\Api\V1\Administration\CorrectionsGroupeesController;
 use App\Http\Controllers\Api\V1\Administration\JournalAuditController;
+use App\Http\Controllers\Api\V1\Administration\MatiereTermineeController;
 use App\Http\Controllers\Api\V1\Administration\MenuController;
 use App\Http\Controllers\Api\V1\Administration\NotesTransmisesController;
 use App\Http\Controllers\Api\V1\Administration\PassageNiveauController;
@@ -116,6 +117,17 @@ Route::prefix('v1/administration/passages-niveau')->name('api.v1.administration.
         Route::get('{promotion}', 'show')->whereNumber('promotion')->middleware($lecture)->name('show');
         Route::post('{promotion}', 'executer')->whereNumber('promotion')
             ->middleware($droit('progression.passage-de-niveau.executer'))->name('executer');
+    });
+
+Route::prefix('v1/administration/matieres-terminees')->name('api.v1.administration.matieres-terminees.')
+    ->middleware(['auth:sanctum', 'compte.actif'])
+    ->controller(MatiereTermineeController::class)
+    ->group(function () use ($droit) {
+        $lecture = $droit('progression.matieres-terminees.consulter', 'progression.matieres-terminees.terminer', 'progression.matieres-terminees.rouvrir');
+        Route::get('/', 'index')->middleware($lecture)->name('index');
+        Route::get('{promotion}', 'show')->whereNumber('promotion')->middleware($lecture)->name('show');
+        Route::post('/', 'store')->middleware($droit('progression.matieres-terminees.terminer'))->name('store');
+        Route::delete('{id}', 'destroy')->whereNumber('id')->middleware($droit('progression.matieres-terminees.rouvrir'))->name('destroy');
     });
 
 Route::prefix('v1/administration/autorisations-evaluations')->name('api.v1.administration.autorisations-evaluations.')
@@ -463,6 +475,7 @@ Route::prefix('v1/enseignant/mes-cours')
     ->group(function () {
         Route::get('/', [MesCoursController::class, 'index'])->name('index');
         Route::get('{matiere}', [MesCoursController::class, 'show'])->whereNumber('matiere')->name('show');
+        Route::post('{matiere}/terminer', [MesCoursController::class, 'terminer'])->whereNumber('matiere')->name('terminer');
     });
 
 Route::get('v1/enseignant/emploi-du-temps', MonEmploiDuTempsController::class)

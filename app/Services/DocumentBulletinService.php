@@ -19,7 +19,7 @@ use App\Models\Matiere;
  */
 class DocumentBulletinService
 {
-    public function __construct(private BulletinQrCodeService $qr) {}
+    public function __construct(private BulletinQrCodeService $qr, private MatiereTermineeService $terminees) {}
 
     /** Ce que la liste montre d'un bulletin. */
     public function presenter(Bulletin $bulletin): array
@@ -52,7 +52,7 @@ class DocumentBulletinService
         $rattrapages = $finDeCycle || ! $etudiant ? collect() : CoursAFaire::where('id_etudiant', $etudiant->id)->where('statut', 'a_faire')
             ->whereHas('seance.moduleCalendrier.calendrier', fn ($q) => $q->where('id_annee_academique', $bulletin->inscription->id_annee_academique))
             ->with(['matiere', 'cours', 'seance', 'rattrapage'])->orderBy('id')->get();
-        // « À compléter » : sans note ou avec un cours à faire de l'année non rattrapé ; « À reprendre » : moyenne sous le seuil.
+        // « À reprendre » : un cours à faire de l'année non rattrapé, ou moyenne sous le seuil ; « À compléter » : sans note.
         $aReprendre = $rattrapages->countBy('id_matiere');
         // Toutes les matières actives du niveau figurent au bulletin, une seule fois chacune.
         $niveau = $bulletin->id_niveau ?? $bulletin->inscription->promotion?->id_niveau;
@@ -61,10 +61,14 @@ class DocumentBulletinService
             ->with('uniteEnseignement')->orderBy('libelle')->get();
         $domaines = $bulletin->lignes->toBase()->map(fn ($ligne) => $ligne->matiere?->uniteEnseignement)
             ->concat($absentes->toBase()->map(fn (Matiere $matiere) => $matiere->uniteEnseignement))->filter()->keyBy('id');
-        $lignes = $bulletin->lignes->unique(fn ($ligne) => $ligne->id_matiere ?? 'ligne-'.$ligne->id)->values()->map(function ($ligne) use ($aReprendre) {
+        $promotion = $finDeCycle ? null : $bulletin->inscription->promotion;
+        $terminees = $promotion ? $this->terminees->terminees($promotion->id) : collect();
+        $enCours = fn (?Matiere $matiere) => $matiere && $this->terminees->enCours($matiere, $promotion, $terminees);
+        $lignes = $bulletin->lignes->unique(fn ($ligne) => $ligne->id_matiere ?? 'ligne-'.$ligne->id)->values()->map(function ($ligne) use ($aReprendre, $enCours) {
             $note = $ligne->note !== null ? (float) $ligne->note : null;
             $statut = $note === null ? 'a_completer' : ($ligne->matiere && $note >= (float) $ligne->matiere->note_validation ? 'validee' : 'non_validee');
-            $aCompleter = $note === null || $aReprendre->get($ligne->id_matiere, 0) > 0;
+            $coursAFaire = $aReprendre->get($ligne->id_matiere, 0) > 0;
+            $encore = $enCours($ligne->matiere);
 
             return [
                 'id' => $ligne->id,
@@ -74,17 +78,24 @@ class DocumentBulletinService
                 'moyenne_ponderee' => $ligne->moyenne_ponderee !== null ? (float) $ligne->moyenne_ponderee : null,
                 'appreciation' => $ligne->appreciation,
                 'statut' => $statut,
-                'a_completer' => $aCompleter,
-                'a_reprendre' => ! $aCompleter && $statut === 'non_validee',
+                'en_cours' => $encore,
+                'a_completer' => ! $encore && ! $coursAFaire && $note === null,
+                'a_reprendre' => ! $encore && ($coursAFaire || $statut === 'non_validee'),
                 'cours_a_reprendre' => $aReprendre->get($ligne->id_matiere, 0),
             ];
-        })->concat($absentes->map(fn (Matiere $matiere) => [
-            'id' => null,
-            'matiere' => $matiere->only(['id', 'code', 'libelle', 'type', 'unite_ensigne_id']),
-            'coefficient' => (float) $matiere->coefficient, 'note' => null, 'mention' => null,
-            'moyenne_ponderee' => null, 'appreciation' => null, 'statut' => 'a_completer',
-            'a_completer' => true, 'a_reprendre' => false, 'cours_a_reprendre' => $aReprendre->get($matiere->id, 0),
-        ]));
+        })->concat($absentes->map(function (Matiere $matiere) use ($aReprendre, $enCours) {
+            $encore = $enCours($matiere);
+
+            return [
+                'id' => null,
+                'matiere' => $matiere->only(['id', 'code', 'libelle', 'type', 'unite_ensigne_id']),
+                'coefficient' => (float) $matiere->coefficient, 'note' => null, 'mention' => null,
+                'moyenne_ponderee' => null, 'appreciation' => null, 'statut' => 'a_completer',
+                'en_cours' => $encore, 'a_completer' => ! $encore && ! $aReprendre->has($matiere->id),
+                'a_reprendre' => ! $encore && $aReprendre->has($matiere->id),
+                'cours_a_reprendre' => $aReprendre->get($matiere->id, 0),
+            ];
+        }));
 
         return [
             'etudiant' => $etudiant ? $this->presenterEtudiant($etudiant) : null,

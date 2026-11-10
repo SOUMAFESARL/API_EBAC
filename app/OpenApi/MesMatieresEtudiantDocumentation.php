@@ -12,7 +12,7 @@ use OpenApi\Attributes as OA;
     tags: ['Espace étudiant'], security: [['sanctum' => []]],
     parameters: [
         new OA\Parameter(name: 'recherche', in: 'query', schema: new OA\Schema(type: 'string')),
-        new OA\Parameter(name: 'statut', in: 'query', schema: new OA\Schema(type: 'string', enum: ['validee', 'a_completer', 'non_validee'])),
+        new OA\Parameter(name: 'statut', in: 'query', schema: new OA\Schema(type: 'string', enum: ['validee', 'a_completer', 'non_validee', 'en_cours'])),
         new OA\Parameter(name: 'id_niveau', in: 'query', schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1)),
         new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100)),

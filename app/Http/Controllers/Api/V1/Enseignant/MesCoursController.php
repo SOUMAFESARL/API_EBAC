@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api\V1\Enseignant;
 
+use App\Http\Controllers\Api\V1\Administration\MatiereTermineeController;
 use App\Http\Controllers\Controller;
 use App\Models\AffectationEnseignant;
 use App\Models\AnneeAcademique;
 use App\Models\Cours;
 use App\Models\Creneau;
 use App\Models\Matiere;
+use App\Models\Promotion;
+use App\Services\MatiereTermineeService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +19,8 @@ use Illuminate\Validation\Rule;
 
 class MesCoursController extends Controller
 {
+    public function __construct(private readonly MatiereTermineeService $terminees) {}
+
     public function index(Request $request): JsonResponse
     {
         $filtres = $request->validate([
@@ -59,6 +64,15 @@ class MesCoursController extends Controller
         return response()->json(['matiere' => $this->matiere($affectations, $annee, true)]);
     }
 
+    public function terminer(Request $request, int $matiere): JsonResponse
+    {
+        $donnees = $request->validate(['id_promotion' => ['required', 'integer', Rule::exists('promotions', 'id')->whereNull('deleted_at')]]);
+        abort_if(! $this->affectations($request)->where('id_matiere', $matiere)->exists(), 404, 'Cette matière ne vous est pas affectée.');
+
+        return MatiereTermineeController::repondre($this->terminees->terminer(Matiere::findOrFail($matiere),
+            Promotion::findOrFail($donnees['id_promotion']), $request->user()->id), $this->terminees);
+    }
+
     private function affectations(Request $request)
     {
         return AffectationEnseignant::query()->whereHas('matiere')->where('enseignant_id', $request->user()->id)
@@ -89,7 +103,9 @@ class MesCoursController extends Controller
         $promotions = $creneaux->pluck('promotion')->filter()->unique('id')->values();
         $base = [
             ...$matiere->only(['id', 'code', 'libelle']), 'niveau' => $matiere->niveau?->only(['id', 'code', 'libelle']),
-            'promotions' => $promotions->map(fn ($p) => [...$p->only(['id', 'code', 'num_promotion']), 'nombre_etudiants' => $p->inscriptions->where('id_annee_academique', $annee?->id)->unique('id_etudiant')->count()])->all(),
+            'promotions' => $promotions->map(fn ($p) => [...$p->only(['id', 'code', 'num_promotion']), 'nombre_etudiants' => $p->inscriptions->where('id_annee_academique', $annee?->id)->unique('id_etudiant')->count(),
+                'au_niveau_de_la_matiere' => (int) $p->id_niveau === (int) $matiere->id_niveau,
+                'matiere_terminee' => $this->terminees->presenter($this->terminees->terminees($p->id)->get($matiere->id))])->all(),
             'modules_academiques' => $creneaux->pluck('moduleCalendrier')->filter()->unique('id')->sortBy('ordre')->values()->map->only(['id', 'libelle', 'ordre'])->all(),
             'nombre_etudiants' => $promotions->flatMap->inscriptions->where('id_annee_academique', $annee?->id)->unique('id_etudiant')->count(),
             'nombre_modules' => $cours->pluck('id_module')->unique()->count(), 'nombre_cours' => $cours->count(),

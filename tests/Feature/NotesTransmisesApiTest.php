@@ -77,6 +77,7 @@ class NotesTransmisesApiTest extends TestCase
         // A pending sheet must not contribute to the generated average.
         $autreMatiere = Matiere::create(['code' => 'PENDING', 'libelle' => 'En saisie',
             'id_niveau' => $feuille->matiere->id_niveau, 'coefficient' => 10]);
+        \App\Models\MatiereTerminee::create(['id_matiere' => $autreMatiere->id, 'id_promotion' => $feuille->id_promotion]);
         $autreFeuille = FeuilleNotes::create(['id_promotion' => $feuille->id_promotion,
             'id_annee_academique' => $feuille->id_annee_academique,
             'id_matiere' => $autreMatiere->id, 'statut' => 'transmise', 'updated_by' => $users['ENSEIGNANT']->id]);
