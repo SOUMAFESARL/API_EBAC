@@ -122,7 +122,15 @@ class MesBulletinsEtudiantApiTest extends TestCase
             CoursAFaire::create(['id_etudiant' => $personne->id, 'id_matiere' => $matiere->id,
                 'id_seance' => $seance->id, 'statut' => $statut, 'motif' => 'absence']);
         }
-        $this->getJson($base.'/'.$publie->id)->assertOk()->assertJsonCount(1, 'bulletin.cours_a_faire');
+        $this->getJson($base.'/'.$publie->id)->assertOk()->assertJsonCount(1, 'bulletin.cours_a_faire')
+            ->assertJsonPath('bulletin.cours_a_faire.0.statut_rattrapage', 'À programmer')
+            ->assertJsonPath('bulletin.matieres.2.a_reprendre', true)->assertJsonPath('bulletin.matieres.2.cours_a_reprendre', 1)
+            ->assertJsonPath('bulletin.matieres.0.a_reprendre', false);
+        $this->get($base.'/'.$publie->id.'/telecharger')->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        CoursAFaire::where('id_etudiant', $etudiant->id)->update(['statut' => 'termine']);
+        $this->getJson($base.'/'.$publie->id)->assertOk()->assertJsonCount(0, 'bulletin.cours_a_faire')
+            ->assertJsonPath('bulletin.matieres.2.a_reprendre', false);
+        CoursAFaire::where('id_etudiant', $etudiant->id)->update(['statut' => 'a_faire']);
         $this->getJson($base.'/'.$ancienBulletin->id)->assertOk()->assertJsonCount(1, 'bulletin.cours_a_faire');
         $genere = Bulletin::create(['id_inscription' => $inscription->id, 'periode' => 'Provisoire', 'statut' => 'Généré']);
         $qrGenere = $this->getJson($base.'/'.$genere->id)->assertOk()->json('bulletin.qr_code.verification_url');

@@ -69,7 +69,7 @@
                     <td class="number">{{ number_format($ligne['coefficient'], 2, ',', ' ') }}</td>
                     <td class="number">{{ $ligne['note'] !== null ? number_format($ligne['note'], 2, ',', ' ') : '—' }}</td>
                     <td>{{ $ligne['mention'] ?? '—' }}</td>
-                    <td>{{ ['validee' => 'Validée', 'non_validee' => 'Non validée', 'a_completer' => 'À compléter'][$ligne['statut']] }}</td>
+                    <td>{{ $ligne['a_reprendre'] ? 'À reprendre' : ['validee' => 'Validée', 'non_validee' => 'Non validée', 'a_completer' => 'À compléter'][$ligne['statut']] }}</td>
                     <td>{{ $ligne['appreciation'] ?? '—' }}</td>
                 </tr>
             @endforeach
@@ -91,12 +91,12 @@
         </tr>
     </table>
     @if ($bulletin['cours_a_faire']->isNotEmpty())
-        <h2>Cours à faire</h2>
+        <h2>Cours à reprendre</h2>
         <table>
-            <thead><tr><th>Matière</th><th>Cours</th><th>Motif</th></tr></thead>
+            <thead><tr><th>Matière</th><th>Cours</th><th>Rattrapage</th></tr></thead>
             <tbody>
             @foreach ($bulletin['cours_a_faire'] as $cours)
-                <tr><td>{{ $cours['matiere']['libelle'] ?? '—' }}</td><td>{{ $cours['cours']['libelle'] ?? '—' }}</td><td>{{ $cours['motif'] ?? '—' }}</td></tr>
+                <tr><td>{{ $cours['matiere']['libelle'] ?? '—' }}</td><td>{{ $cours['cours']['libelle'] ?? '—' }}</td><td>{{ $cours['statut_rattrapage'] }}</td></tr>
             @endforeach
             </tbody>
         </table>

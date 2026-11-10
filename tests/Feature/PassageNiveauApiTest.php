@@ -32,6 +32,7 @@ class PassageNiveauApiTest extends TestCase
         $n1 = Niveau::create(['code' => 'A1', 'libelle' => '1ère Année', 'rang' => 1]);
         $n2 = Niveau::create(['code' => 'A2', 'libelle' => '2e Année', 'rang' => 2]);
         $n4 = Niveau::create(['code' => 'A4', 'libelle' => '4e Année', 'rang' => 4]);
+        Niveau::create(['code' => 'A5', 'libelle' => '5e Année', 'rang' => 5]);
         $source = AnneeAcademique::create(['libelle' => '2025-2026', 'date_debut' => '2025-09-01', 'date_fin' => '2026-07-31', 'active' => true]);
         $cible = $anneeSuivante ? AnneeAcademique::create(['libelle' => '2026-2027', 'date_debut' => '2026-09-01', 'date_fin' => '2027-07-31', 'active' => false]) : null;
         $promotion = Promotion::create(['code' => 'P5', 'num_promotion' => 5, 'annee_entree' => 2025, 'id_niveau' => $n1->id, 'statut' => 'Active']);

@@ -48,8 +48,13 @@ class DocumentBulletinService
         $etudiant = $bulletin->inscription->etudiant;
         $finDeCycle = $bulletin->estFinDeCycle();
 
+        $rattrapages = $finDeCycle || ! $etudiant ? collect() : CoursAFaire::where('id_etudiant', $etudiant->id)->where('statut', 'a_faire')
+            ->whereHas('seance.moduleCalendrier.calendrier', fn ($q) => $q->where('id_annee_academique', $bulletin->inscription->id_annee_academique))
+            ->with(['matiere', 'cours', 'seance', 'rattrapage'])->orderBy('id')->get();
+        // Une matière reste « à reprendre » tant qu'un de ses cours à faire de l'année n'est pas validé.
+        $aReprendre = $rattrapages->countBy('id_matiere');
         $domaines = $bulletin->lignes->map(fn ($ligne) => $ligne->matiere?->uniteEnseignement)->filter()->keyBy('id');
-        $lignes = $bulletin->lignes->map(function ($ligne) {
+        $lignes = $bulletin->lignes->map(function ($ligne) use ($aReprendre) {
             $note = $ligne->note !== null ? (float) $ligne->note : null;
 
             return [
@@ -60,11 +65,10 @@ class DocumentBulletinService
                 'moyenne_ponderee' => $ligne->moyenne_ponderee !== null ? (float) $ligne->moyenne_ponderee : null,
                 'appreciation' => $ligne->appreciation,
                 'statut' => $note === null ? 'a_completer' : ($ligne->matiere && $note >= (float) $ligne->matiere->note_validation ? 'validee' : 'non_validee'),
+                'a_reprendre' => $aReprendre->get($ligne->id_matiere, 0) > 0,
+                'cours_a_reprendre' => $aReprendre->get($ligne->id_matiere, 0),
             ];
         });
-        $rattrapages = $finDeCycle || ! $etudiant ? collect() : CoursAFaire::where('id_etudiant', $etudiant->id)->where('statut', 'a_faire')
-            ->whereHas('seance.moduleCalendrier.calendrier', fn ($q) => $q->where('id_annee_academique', $bulletin->inscription->id_annee_academique))
-            ->with(['matiere', 'cours', 'seance'])->orderBy('id')->get();
 
         return [
             'etudiant' => $etudiant ? $this->presenterEtudiant($etudiant) : null,
@@ -84,6 +88,8 @@ class DocumentBulletinService
                     'matiere' => $r->matiere?->only(['id', 'code', 'libelle', 'unite_ensigne_id']),
                     'cours' => $r->cours?->only(['id', 'code', 'libelle']),
                     'date_seance_manquee' => $r->seance?->date_prevue,
+                    'statut_rattrapage' => $r->rattrapage?->statut === 'programme'
+                        ? 'Inscrit au rattrapage du '.$r->rattrapage->date_prevue->format('d/m/Y') : 'À programmer',
                 ]),
             ],
         ];

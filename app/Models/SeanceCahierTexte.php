@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -65,5 +66,11 @@ class SeanceCahierTexte extends Model
     public function feuillePresence(): HasOne
     {
         return $this->hasOne(FeuillePresence::class, 'id_seance');
+    }
+
+    /** Les rattrapages programmés sur cette séance (session de rattrapage). */
+    public function rattrapagesAccueillis(): HasMany
+    {
+        return $this->hasMany(ProgrammationRattrapage::class, 'id_seance_rattrapage');
     }
 }

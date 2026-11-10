@@ -9193,7 +9193,7 @@
                                             "$ref": "#/components/schemas/ProfilEtudiantBulletin"
                                         },
                                         "bulletin": {
-                                            "description": "Bulletin avec annee_academique, promotion, niveau, matieres (avec mention par matiere), moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire et telechargement_pdf_url.",
+                                            "description": "Bulletin avec annee_academique, promotion, niveau, matieres (avec mention par matiere, a_reprendre et cours_a_reprendre tant qu un cours a faire de l annee n est pas valide), moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire (avec statut_rattrapage) et telechargement_pdf_url.",
                                             "properties": {
                                                 "matieres": {
                                                     "type": "array",
@@ -20104,6 +20104,11 @@
                             "present",
                             "absent"
                         ]
+                    },
+                    "rattrapage": {
+                        "description": "Inscrit a un rattrapage sur cette seance. A la validation : present solde le cours a faire (rattrapage realise), absent le laisse a faire (rattrapage annule).",
+                        "type": "boolean",
+                        "example": false
                     }
                 },
                 "type": "object"

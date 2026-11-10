@@ -35,9 +35,17 @@ class PassageNiveauService
         return ! Str::startsWith($statut, ['depart', 'abandon', 'archiv', 'exclu', 'diplom', 'radie']);
     }
 
+    /** La 4e Année clôt le cursus, même si un niveau de rang supérieur existe. */
+    public static function derniereAnnee(Niveau $niveau): bool
+    {
+        $libelle = Str::lower(Str::ascii((string) $niveau->libelle));
+
+        return (bool) preg_match('/^\s*4\s*(e|eme|ieme)?\b.*annee/', $libelle);
+    }
+
     public function niveauSuivant(?Niveau $niveau): ?Niveau
     {
-        if (! $niveau) {
+        if (! $niveau || self::derniereAnnee($niveau)) {
             return null;
         }
 

@@ -42,6 +42,7 @@ class ListePresenceController extends Controller
                 'salle',
                 'moduleCalendrier.calendrier',
                 'feuillePresence.presences.etudiant',
+                'rattrapagesAccueillis.coursAFaire.etudiant',
             ])
             ->orderByDesc('date_prevue')
             ->orderByDesc('heure_debut_prevue')
@@ -108,11 +109,19 @@ class ListePresenceController extends Controller
                 'validee_par' => $request->user()->id,
                 'updated_by' => $request->user()->id,
             ]);
-            foreach ($feuille->presences->where('statut', 'absent') as $presence) {
+            $promotion = $this->etudiantsPromotion($item)->pluck('id');
+            foreach ($feuille->presences->where('statut', 'absent')->whereIn('id_etudiant', $promotion) as $presence) {
                 CoursAFaire::firstOrCreate(
                     ['id_etudiant' => $presence->id_etudiant, 'id_seance' => $item->id],
                     ['id_cours' => $item->id_cours, 'id_matiere' => $item->id_matiere, 'statut' => 'a_faire', 'motif' => 'absence'],
                 );
+            }
+            // Présent à sa session de rattrapage : le cours à faire est soldé ; absent : il reste à faire.
+            $statuts = $feuille->presences->pluck('statut', 'id_etudiant');
+            foreach ($this->rattrapages($item) as $rattrapage) {
+                $present = $statuts->get($rattrapage->coursAFaire->id_etudiant) === 'present';
+                $rattrapage->update(['statut' => $present ? 'realise' : 'annule', 'updated_by' => $request->user()->id]);
+                $rattrapage->coursAFaire->update(['statut' => $present ? 'termine' : 'a_faire']);
             }
         });
 
@@ -176,6 +185,7 @@ class ListePresenceController extends Controller
         if ($fournis->duplicates()->isNotEmpty() || $fournis->all() !== $concernes->all()) {
             throw ValidationException::withMessages(['presences' => ['La liste doit contenir exactement tous les étudiants concernés, sans doublon.']]);
         }
+        $feuille->presences()->whereNotIn('id_etudiant', $concernes)->delete();
         foreach ($presences as $presence) {
             $feuille->presences()->updateOrCreate(
                 ['id_etudiant' => $presence['id_etudiant']],
@@ -189,6 +199,24 @@ class ListePresenceController extends Controller
     }
 
     private function etudiantsConcernes(SeanceCahierTexte $seance): Collection
+    {
+        $promotion = $this->etudiantsPromotion($seance);
+
+        return $promotion->concat($this->rattrapages($seance)->pluck('coursAFaire.etudiant')
+            ->whereNotIn('id', $promotion->pluck('id'))->unique('id')->sortBy(['nom', 'prenoms']))->values();
+    }
+
+    /** Les rattrapages accueillis par la séance : programmés, ou déjà pointés sur sa liste. */
+    private function rattrapages(SeanceCahierTexte $seance): Collection
+    {
+        $seance->loadMissing(['rattrapagesAccueillis.coursAFaire.etudiant', 'feuillePresence.presences']);
+        $pointes = $seance->feuillePresence?->presences?->pluck('id_etudiant') ?? collect();
+
+        return $seance->rattrapagesAccueillis->filter(fn ($r) => $r->coursAFaire?->etudiant
+            && ($r->statut === 'programme' || $pointes->contains($r->coursAFaire->id_etudiant)))->values();
+    }
+
+    private function etudiantsPromotion(SeanceCahierTexte $seance): Collection
     {
         if ($seance->relationLoaded('etudiantsConcernes')) {
             return $seance->getRelation('etudiantsConcernes');
@@ -248,15 +276,18 @@ class ListePresenceController extends Controller
             'salle',
             'moduleCalendrier.calendrier',
             'feuillePresence.presences.etudiant',
+            'rattrapagesAccueillis.coursAFaire.etudiant',
         ]);
         $concernes = $this->etudiantsConcernes($seance);
         $marques = $seance->feuillePresence?->presences?->keyBy('id_etudiant') ?? collect();
+        $rattrapants = $this->rattrapages($seance)->pluck('coursAFaire.id_etudiant');
 
         return [
             ...$this->resume($seance),
             'etudiants' => $concernes->map(fn ($etudiant) => [
                 ...$etudiant->only(['id', 'matricule', 'nom', 'prenoms']),
                 'statut_presence' => $marques->get($etudiant->id)?->statut,
+                'rattrapage' => $rattrapants->contains($etudiant->id),
             ]),
             'modifiable' => $seance->feuillePresence?->statut !== 'validee',
             'date_validation' => $seance->feuillePresence?->date_validation,

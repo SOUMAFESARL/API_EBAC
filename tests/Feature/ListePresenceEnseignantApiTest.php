@@ -4,12 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\AnneeAcademique;
 use App\Models\Cours;
+use App\Models\CoursAFaire;
 use App\Models\Creneau;
 use App\Models\Etudiant;
 use App\Models\Inscription;
 use App\Models\Matiere;
 use App\Models\Module;
 use App\Models\Niveau;
+use App\Models\ProgrammationRattrapage;
 use App\Models\Promotion;
 use App\Models\Role;
 use App\Models\Salle;
@@ -108,6 +110,39 @@ class ListePresenceEnseignantApiTest extends TestCase
         $this->assertDatabaseHas('cours_a_faire', ['id_etudiant' => $data['etudiants'][1]->id, 'id_seance' => $data['seance']->id, 'statut' => 'a_faire']);
         $this->putJson($url, compact('presences'))->assertUnprocessable()->assertJsonValidationErrors('presences');
         $this->postJson($url.'/valider')->assertUnprocessable()->assertJsonValidationErrors('presences');
+    }
+
+    public function test_rattrapant_figure_sur_la_liste_et_sa_presence_solde_le_cours_a_faire(): void
+    {
+        $data = $this->contexte();
+        $seance = $data['seance'];
+        $manquee = $seance->replicate();
+        $manquee->fill(['date_prevue' => '2026-09-07', 'date_effective' => '2026-09-07', 'id_promotion' => null]);
+        $manquee->save();
+        $rattrapants = collect([$data['horsPromotion'], Etudiant::create(['matricule' => 'ETU-4', 'nom' => 'ABSENT', 'prenoms' => 'Encore', 'date_inscription' => '2026-09-01'])]);
+        $programmations = $rattrapants->map(function ($etudiant) use ($manquee, $seance) {
+            $aFaire = CoursAFaire::create(['id_etudiant' => $etudiant->id, 'id_seance' => $manquee->id, 'id_cours' => $seance->id_cours,
+                'id_matiere' => $seance->id_matiere, 'statut' => 'a_faire', 'motif' => 'absence']);
+
+            return ProgrammationRattrapage::create(['id_cours_a_faire' => $aFaire->id, 'id_seance_rattrapage' => $seance->id, 'statut' => 'programme',
+                'date_prevue' => '2026-09-14', 'heure_debut' => '08:00', 'heure_fin' => '10:00', 'enseignant_id' => $seance->enseignant_id]);
+        });
+        Sanctum::actingAs($data['enseignant']);
+        $url = '/api/v1/enseignant/liste-presence/'.$seance->id;
+        $this->getJson($url)->assertOk()->assertJsonCount(4, 'feuille_presence.etudiants')
+            ->assertJsonPath('feuille_presence.etudiants.0.rattrapage', false)
+            ->assertJsonPath('feuille_presence.etudiants.2.matricule', 'ETU-4')
+            ->assertJsonPath('feuille_presence.etudiants.2.rattrapage', true)
+            ->assertJsonPath('feuille_presence.etudiants.3.matricule', 'ETU-3');
+        $promotion = $data['etudiants']->map(fn ($e) => ['id_etudiant' => $e->id, 'statut' => 'present'])->all();
+        $this->putJson($url, ['presences' => $promotion])->assertUnprocessable()->assertJsonValidationErrors('presences');
+        $presences = [...$promotion, ['id_etudiant' => $rattrapants[0]->id, 'statut' => 'present'], ['id_etudiant' => $rattrapants[1]->id, 'statut' => 'absent']];
+        $this->putJson($url, compact('presences'))->assertOk()->assertJsonCount(4, 'feuille_presence.etudiants');
+        $this->assertDatabaseHas('programmations_rattrapage', ['id' => $programmations[0]->id, 'statut' => 'realise']);
+        $this->assertDatabaseHas('cours_a_faire', ['id' => $programmations[0]->id_cours_a_faire, 'statut' => 'termine']);
+        $this->assertDatabaseHas('programmations_rattrapage', ['id' => $programmations[1]->id, 'statut' => 'annule']);
+        $this->assertDatabaseHas('cours_a_faire', ['id' => $programmations[1]->id_cours_a_faire, 'statut' => 'a_faire']);
+        $this->assertDatabaseMissing('cours_a_faire', ['id_seance' => $seance->id]);
     }
 
     public function test_put_refuse_seance_non_realisee_et_presences_manquantes(): void

@@ -13,6 +13,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'nom', type: 'string', example: 'KOUAME'),
         new OA\Property(property: 'prenoms', type: 'string', example: 'Jean'),
         new OA\Property(property: 'statut_presence', type: 'string', enum: ['present', 'absent'], nullable: true, example: 'present'),
+        new OA\Property(property: 'rattrapage', type: 'boolean', description: 'Inscrit a un rattrapage sur cette seance. A la validation : present solde le cours a faire (rattrapage realise), absent le laisse a faire (rattrapage annule).', example: false),
     ]
 )]
 #[OA\Schema(

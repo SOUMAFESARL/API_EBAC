@@ -27,7 +27,7 @@ use OpenApi\Attributes as OA;
     responses: [new OA\Response(response: 200, description: 'Profil personnel complet de l etudiant et bulletin avec matieres, recapitulatif_uv et cours_a_faire. Dates du profil au format YYYY-MM-DD. Relations absentes a null.',
         content: new OA\JsonContent(properties: [
             new OA\Property(property: 'etudiant', ref: '#/components/schemas/ProfilEtudiantBulletin'),
-            new OA\Property(property: 'bulletin', type: 'object', description: 'Bulletin avec annee_academique, promotion, niveau, matieres (avec mention par matiere), moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire et telechargement_pdf_url.', properties: [
+            new OA\Property(property: 'bulletin', type: 'object', description: 'Bulletin avec annee_academique, promotion, niveau, matieres (avec mention par matiere, a_reprendre et cours_a_reprendre tant qu un cours a faire de l annee n est pas valide), moyenne_generale, rang, mention, recapitulatif_uv, cours_a_faire (avec statut_rattrapage) et telechargement_pdf_url.', properties: [
                 new OA\Property(property: 'matieres', type: 'array', items: new OA\Items(type: 'object', properties: [
                     new OA\Property(property: 'id', description: 'Identifiant de la ligne du bulletin.', type: 'integer', example: 101),
                     new OA\Property(property: 'matiere', type: 'object', nullable: true, properties: [
