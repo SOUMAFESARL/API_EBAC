@@ -129,7 +129,8 @@ class MesBulletinsEtudiantApiTest extends TestCase
         $this->get($base.'/'.$publie->id.'/telecharger')->assertOk()->assertHeader('Content-Type', 'application/pdf');
         CoursAFaire::where('id_etudiant', $etudiant->id)->update(['statut' => 'termine']);
         $this->getJson($base.'/'.$publie->id)->assertOk()->assertJsonCount(0, 'bulletin.cours_a_faire')
-            ->assertJsonPath('bulletin.matieres.2.a_reprendre', false);
+            ->assertJsonPath('bulletin.matieres.2.cours_a_reprendre', 0)->assertJsonPath('bulletin.matieres.2.a_reprendre', true)
+            ->assertJsonPath('bulletin.matieres.1.a_reprendre', false);
         CoursAFaire::where('id_etudiant', $etudiant->id)->update(['statut' => 'a_faire']);
         $this->getJson($base.'/'.$ancienBulletin->id)->assertOk()->assertJsonCount(1, 'bulletin.cours_a_faire');
         $genere = Bulletin::create(['id_inscription' => $inscription->id, 'periode' => 'Provisoire', 'statut' => 'Généré']);

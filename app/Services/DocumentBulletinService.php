@@ -6,6 +6,7 @@ use App\Models\Bulletin;
 use App\Models\CoursAFaire;
 use App\Models\Etudiant;
 use App\Models\LigneBulletinFinDeCycle;
+use App\Models\Matiere;
 
 /**
  * Le bulletin tel que le lit son document : l'étudiant dans son portail
@@ -44,7 +45,7 @@ class DocumentBulletinService
     /** Le document complet : `{ etudiant, bulletin }`. */
     public function detail(Bulletin $bulletin): array
     {
-        $bulletin->loadMissing(['inscription.etudiant', 'lignes.matiere.uniteEnseignement', 'lignesFinDeCycle']);
+        $bulletin->loadMissing(['inscription.etudiant', 'inscription.promotion', 'lignes.matiere.uniteEnseignement', 'lignesFinDeCycle']);
         $etudiant = $bulletin->inscription->etudiant;
         $finDeCycle = $bulletin->estFinDeCycle();
 
@@ -53,7 +54,13 @@ class DocumentBulletinService
             ->with(['matiere', 'cours', 'seance', 'rattrapage'])->orderBy('id')->get();
         // Une matière reste « à reprendre » tant qu'un de ses cours à faire de l'année n'est pas validé.
         $aReprendre = $rattrapages->countBy('id_matiere');
-        $domaines = $bulletin->lignes->map(fn ($ligne) => $ligne->matiere?->uniteEnseignement)->filter()->keyBy('id');
+        // Toutes les matières actives du niveau figurent au bulletin ; celle sans note est « à reprendre ».
+        $niveau = $bulletin->id_niveau ?? $bulletin->inscription->promotion?->id_niveau;
+        $absentes = $finDeCycle || ! $niveau ? collect() : Matiere::query()->where('active', true)->where('id_niveau', $niveau)
+            ->whereNotIn('id', $bulletin->lignes->pluck('id_matiere')->filter())
+            ->with('uniteEnseignement')->orderBy('libelle')->get();
+        $domaines = $bulletin->lignes->toBase()->map(fn ($ligne) => $ligne->matiere?->uniteEnseignement)
+            ->concat($absentes->toBase()->map(fn (Matiere $matiere) => $matiere->uniteEnseignement))->filter()->keyBy('id');
         $lignes = $bulletin->lignes->map(function ($ligne) use ($aReprendre) {
             $note = $ligne->note !== null ? (float) $ligne->note : null;
 
@@ -65,10 +72,16 @@ class DocumentBulletinService
                 'moyenne_ponderee' => $ligne->moyenne_ponderee !== null ? (float) $ligne->moyenne_ponderee : null,
                 'appreciation' => $ligne->appreciation,
                 'statut' => $note === null ? 'a_completer' : ($ligne->matiere && $note >= (float) $ligne->matiere->note_validation ? 'validee' : 'non_validee'),
-                'a_reprendre' => $aReprendre->get($ligne->id_matiere, 0) > 0,
+                'a_reprendre' => $note === null || $aReprendre->get($ligne->id_matiere, 0) > 0,
                 'cours_a_reprendre' => $aReprendre->get($ligne->id_matiere, 0),
             ];
-        });
+        })->concat($absentes->map(fn (Matiere $matiere) => [
+            'id' => null,
+            'matiere' => $matiere->only(['id', 'code', 'libelle', 'type', 'unite_ensigne_id']),
+            'coefficient' => (float) $matiere->coefficient, 'note' => null, 'mention' => null,
+            'moyenne_ponderee' => null, 'appreciation' => null, 'statut' => 'a_completer',
+            'a_reprendre' => true, 'cours_a_reprendre' => $aReprendre->get($matiere->id, 0),
+        ]));
 
         return [
             'etudiant' => $etudiant ? $this->presenterEtudiant($etudiant) : null,
